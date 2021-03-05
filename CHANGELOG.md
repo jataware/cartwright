@@ -1,3 +1,5 @@
+## 0.4.8 (2021-03-05)
+  - Forty Eighth release on PyPI.
 ## 0.4.7 (2021-03-05)
   - Forty Seventh release on PyPI.
 ## 0.4.6 (2021-03-05)
