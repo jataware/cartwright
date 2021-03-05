@@ -35,7 +35,7 @@ First you need to install numpy, torch and torchvision.
     
 Now you can pip install the geotime_classify repo. To pip install this repo use:
 
-    pip install geotime-classify==0.4.5
+    pip install geotime-classify==0.4.7
  
  
 Once it is installed you can instantiate the geotime_classify with the number of random samples (n) you want to take from each column of your csv. To take 100 samples from each column run. In most cases more samples of each column will result is more accurate classifications, however it will increase the time of processing. 
