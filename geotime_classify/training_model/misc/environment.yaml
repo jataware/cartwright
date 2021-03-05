@@ -1,0 +1,37 @@
+name: geotime_classify
+channels:
+  - defaults
+dependencies:
+ - python == 3.8
+ - pip # for the pip-only deps
+ - jupyter # jupyter notebooks
+ - jupyterlab # jupyter lab, much nicer notebooks
+ - numpy
+ - pandas >= 1.0
+ - matplotlib
+ - scipy # more math
+ - scikit-learn #models
+ - statsmodels # models
+ - matplotlib # plotting
+ - ipython # interactive terminal
+ - pyyaml # YAML IO
+ - joblib # easier multiprocessing and a faster pickler
+ - h5py # hdf5 file for dynasim aggregation
+ - pylint == 2.4.4 # linting, freeze at 2.4.4 as 2.5 gave errors
+ - lxml # parser for bs4
+ - xarray # SPEI loading
+ - numba # For fast stuff
+ - pyarrow # For Parquet IO in pandas
+ - psutil # For physical core detection, thread's don't help dynasim
+ - xlrd # Dependency pd.read_excel
+ - xlwt # For formatting (old) Excel files
+ - seaborn # Fancy plotting
+ # These packages are only available from pip or have later versions there
+ - pip:
+   - black # Code formatting
+   - coverage # Test coverage report
+   - flake8 # Grumpy linter
+   - pytest # Testing
+   - requests # read the web
+   - sphinx # Docs
+

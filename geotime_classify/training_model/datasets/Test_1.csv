@@ -1,0 +1,241 @@
+COUNTRY,COUNTRY CODE,ISO CODES,iso2,iso3,iso2_lower,iso3_lower,POPULATION ,AREA KM2,GDP $USD
+China,86,CN /CHN,CN,CHN,cn,chn,1330044000,9596960,9.33 Trillion
+India,91,IN / IND,IN,IND,in,ind,1173108018,3287590,1.67 Trillion
+United States,1,US / USA,US,USA,us,usa,310232863,9629091,16.72 Trillion
+Indonesia,62,ID / IDN,ID,IDN,id,idn,242968342,1919440,867.5 Billion
+Brazil,55,BR / BRA,BR,BRA,br,bra,201103330,8511965,2.19 Trillion
+Pakistan,92,PK / PAK,PK,PAK,pk,pak,184404791,803940,236.5 Billion
+Bangladesh,880,BD / BGD,BD,BGD,bd,bgd,156118464,144000,140.2 Billion
+Nigeria,234,NG / NGA,NG,NGA,ng,nga,154000000,923768,502 Billion
+Russia,7,RU / RUS,RU,RUS,ru,rus,140702000,17100000,2.113 Trillion
+Japan,81,JP / JPN,JP,JPN,jp,jpn,127288000,377835,5.007 Trillion
+Mexico,52,MX / MEX,MX,MEX,mx,mex,112468855,1972550,1.327 Trillion
+Philippines,63,PH / PHL,PH,PHL,ph,phl,99900177,300000,272.2 Billion
+Vietnam,84,VN / VNM,VN,VNM,vn,vnm,89571130,329560,170 Billion
+Ethiopia,251,ET / ETH,ET,ETH,et,eth,88013491,1127127,47.34 Billion
+Germany,49,DE / DEU,DE,DEU,de,deu,81802257,357021,3.593 Trillion
+Egypt,20,EG / EGY,EG,EGY,eg,egy,80471869,1001450,262 Billion
+Turkey,90,TR / TUR,TR,TUR,tr,tur,77804122,780580,821.8 Billion
+Iran,98,IR / IRN,IR,IRN,ir,irn,76923300,1648000,411.9 Billion
+Democratic Republic of the Congo,243,CD / COD,CD,COD,cd,cod,70916439,2345410,18.56 Billion
+Thailand,66,TH / THA,TH,THA,th,tha,67089500,514000,400.9 Billion
+France,33,FR / FRA,FR,FRA,fr,fra,64768389,547030,2.739 Trillion
+United Kingdom,44,GB / GBR,GB,GBR,gb,gbr,62348447,244820,2.49 Trillion
+Italy,39,IT / ITA,IT,ITA,it,ita,60340328,301230,2.068 Trillion
+Myanmar,95,MM / MMR,MM,MMR,mm,mmr,53414374,678500,59.43 Billion
+South Africa,27,ZA / ZAF,ZA,ZAF,za,zaf,49000000,1219912,353.9 Billion
+South Korea,82,KR / KOR,KR,KOR,kr,kor,48422644,98480,1.198 Trillion
+Colombia,57,CO / COL,CO,COL,co,col,47790000,1138910,369.2 Billion
+Spain,34,ES / ESP,ES,ESP,es,esp,46505963,504782,1.356 Trillion
+Ukraine,380,UA / UKR,UA,UKR,ua,ukr,45415596,603700,175.5 Billion
+Tanzania,255,TZ / TZA,TZ,TZA,tz,tza,41892895,945087,31.94 Billion
+Argentina,54,AR / ARG,AR,ARG,ar,arg,41343201,2766890,484.6 Billion
+Kenya,254,KE / KEN,KE,KEN,ke,ken,40046566,582650,45.31 Billion
+Poland,48,PL / POL,PL,POL,pl,pol,38500000,312685,513.9 Billion
+Sudan,249,SD / SDN,SD,SDN,sd,sdn,35000000,1861484,52.5 Billion
+Algeria,213,DZ / DZA,DZ,DZA,dz,dza,34586184,2381740,215.7 Billion
+Canada,1,CA / CAN,CA,CAN,ca,can,33679000,9984670,1.825 Trillion
+Uganda,256,UG / UGA,UG,UGA,ug,uga,33398682,236040,22.6 Billion
+Morocco,212,MA / MAR,MA,MAR,ma,mar,31627428,446550,104.8 Billion
+Peru,51,PE / PER,PE,PER,pe,per,29907003,1285220,210.3 Billion
+Iraq,964,IQ / IRQ,IQ,IRQ,iq,irq,29671605,437072,221.8 Billion
+Afghanistan,93,AF / AFG,AF,AFG,af,afg,29121286,647500,20.65 Billion
+Nepal,977,NP / NPL,NP,NPL,np,npl,28951852,140800,19.34 Billion
+Malaysia,60,MY / MYS,MY,MYS,my,mys,28274729,329750,312.4 Billion
+Uzbekistan,998,UZ / UZB,UZ,UZB,uz,uzb,27865738,447400,55.18 Billion
+Venezuela,58,VE / VEN,VE,VEN,ve,ven,27223228,912050,367.5 Billion
+Saudi Arabia,966,SA / SAU,SA,SAU,sa,sau,25731776,1960582,718.5 Billion
+Ghana,233,GH / GHA,GH,GHA,gh,gha,24339838,239460,45.55 Billion
+Yemen,967,YE / YEM,YE,YEM,ye,yem,23495361,527970,43.89 Billion
+North Korea,850,KP / PRK,KP,PRK,kp,prk,22912177,120540,28 Billion
+Taiwan,886,TW / TWN,TW,TWN,tw,twn,22894384,35980,484.7 Billion
+Syria,963,SY / SYR,SY,SYR,sy,syr,22198110,185180,64.7 Billion
+Mozambique,258,MZ / MOZ,MZ,MOZ,mz,moz,22061451,801590,14.67 Billion
+Romania,40,RO / ROU,RO,ROU,ro,rou,21959278,237500,188.9 Billion
+Australia,61,AU / AUS,AU,AUS,au,aus,21515754,7686850,1.488 Trillion
+Sri Lanka,94,LK / LKA,LK,LKA,lk,lka,21513990,65610,65.12 Billion
+Madagascar,261,MG / MDG,MG,MDG,mg,mdg,21281844,587040,10.53 Billion
+Ivory Coast,225,CI / CIV,CI,CIV,ci,civ,21058798,322460,28.28 Billion
+Cameroon,237,CM / CMR,CM,CMR,cm,cmr,19294149,475440,27.88 Billion
+Chile,56,CL / CHL,CL,CHL,cl,chl,16746491,756950,281.7 Billion
+Netherlands,31,NL / NLD,NL,NLD,nl,nld,16645000,41526,722.3 Billion
+Burkina Faso,226,BF / BFA,BF,BFA,bf,bfa,16241811,274200,12.13 Billion
+Niger,227,NE / NER,NE,NER,ne,ner,15878271,1267000,7.304 Billion
+Malawi,265,MW / MWI,MW,MWI,mw,mwi,15447500,118480,3.683 Billion
+Kazakhstan,7,KZ / KAZ,KZ,KAZ,kz,kaz,15340000,2717300,224.9 Billion
+Ecuador,593,EC / ECU,EC,ECU,ec,ecu,14790608,283560,91.41 Billion
+Cambodia,855,KH / KHM,KH,KHM,kh,khm,14453680,181040,15.64 Billion
+Mali,223,ML / MLI,ML,MLI,ml,mli,13796354,1240000,11.37 Billion
+Guatemala,502,GT / GTM,GT,GTM,gt,gtm,13550440,108890,53.9 Billion
+Zambia,260,ZM / ZMB,ZM,ZMB,zm,zmb,13460305,752614,22.24 Billion
+Angola,244,AO / AGO,AO,AGO,ao,ago,13068161,1246700,124 Billion
+Senegal,221,SN / SEN,SN,SEN,sn,sen,12323252,196190,15.36 Billion
+Zimbabwe,263,ZW / ZWE,ZW,ZWE,zw,zwe,11651858,390580,10.48 Billion
+Cuba,53,CU / CUB,CU,CUB,cu,cub,11423000,110860,72.3 Billion
+Rwanda,250,RW / RWA,RW,RWA,rw,rwa,11055976,26338,7.7 Billion
+Greece,30,GR / GRC,GR,GRC,gr,grc,11000000,131940,243.3 Billion
+Portugal,351,PT / PRT,PT,PRT,pt,prt,10676000,92391,219.3 Billion
+Tunisia,216,TN / TUN,TN,TUN,tn,tun,10589025,163610,48.38 Billion
+Chad,235,TD / TCD,TD,TCD,td,tcd,10543464,1284000,13.59 Billion
+Czech Republic,420,CZ / CZE,CZ,CZE,cz,cze,10476000,78866,194.8 Billion
+Belgium,32,BE / BEL,BE,BEL,be,bel,10403000,30510,507.4 Billion
+Guinea,224,GN / GIN,GN,GIN,gn,gin,10324025,245857,6.544 Billion
+Somalia,252,SO / SOM,SO,SOM,so,som,10112453,637657,2.372 Billion
+Hungary,36,HU / HUN,HU,HUN,hu,hun,9982000,93030,130.6 Billion
+Bolivia,591,BO / BOL,BO,BOL,bo,bol,9947418,1098580,30.79 Billion
+Burundi,257,BI / BDI,BI,BDI,bi,bdi,9863117,27830,2.676 Billion
+Dominican Republic,"1-809, 1-829, 1-849",DO / DOM,DO,DOM,do,dom,9823821,48730,59.27 Billion
+Belarus,375,BY / BLR,BY,BLR,by,blr,9685000,207600,69.24 Billion
+Haiti,509,HT / HTI,HT,HTI,ht,hti,9648924,27750,8.287 Billion
+Sweden,46,SE / SWE,SE,SWE,se,swe,9555893,449964,552 Billion
+Benin,229,BJ / BEN,BJ,BEN,bj,ben,9056010,112620,8.359 Billion
+Azerbaijan,994,AZ / AZE,AZ,AZE,az,aze,8303512,86600,76.01 Billion
+South Sudan,211,SS / SSD,SS,SSD,ss,ssd,8260490,644329,11.77 Billion
+Austria,43,AT / AUT,AT,AUT,at,aut,8205000,83858,417.9 Billion
+Honduras,504,HN / HND,HN,HND,hn,hnd,7989415,112090,18.88 Billion
+Switzerland,41,CH / CHE,CH,CHE,ch,che,7581000,41290,646.2 Billion
+Tajikistan,992,TJ / TJK,TJ,TJK,tj,tjk,7487489,143100,8.513 Billion
+Israel,972,IL / ISR,IL,ISR,il,isr,7353985,20770,272.7 Billion
+Serbia,381,RS / SRB,RS,SRB,rs,srb,7344847,88361,43.68 Billion
+Bulgaria,359,BG / BGR,BG,BGR,bg,bgr,7148785,110910,53.7 Billion
+Hong Kong,852,HK / HKG,HK,HKG,hk,hkg,6898686,1092,272.1 Billion
+Togo,228,TG / TGO,TG,TGO,tg,tgo,6587239,56785,4.299 Billion
+Libya,218,LY / LBY,LY,LBY,ly,lby,6461454,1759540,70.92 Billion
+Jordan,962,JO / JOR,JO,JOR,jo,jor,6407085,92300,34.08 Billion
+Paraguay,595,PY / PRY,PY,PRY,py,pry,6375830,406750,30.56 Billion
+Laos,856,LA / LAO,LA,LAO,la,lao,6368162,236800,10.1 Billion
+Papua New Guinea,675,PG / PNG,PG,PNG,pg,png,6064515,462840,16.1 Billion
+El Salvador,503,SV / SLV,SV,SLV,sv,slv,6052064,21040,24.67 Billion
+Nicaragua,505,NI / NIC,NI,NIC,ni,nic,5995928,129494,11.26 Billion
+Eritrea,291,ER / ERI,ER,ERI,er,eri,5792984,121320,3.438 Billion
+Kyrgyzstan,996,KG / KGZ,KG,KGZ,kg,kgz,5508626,198500,7.234 Billion
+Denmark,45,DK / DNK,DK,DNK,dk,dnk,5484000,43094,324.3 Billion
+Slovakia,421,SK / SVK,SK,SVK,sk,svk,5455000,48845,96.96 Billion
+Sierra Leone,232,SL / SLE,SL,SLE,sl,sle,5245695,71740,4.607 Billion
+Finland,358,FI / FIN,FI,FIN,fi,fin,5244000,337030,259.6 Billion
+Norway,47,NO / NOR,NO,NOR,no,nor,5009150,324220,515.8 Billion
+United Arab Emirates,971,AE / ARE,AE,ARE,ae,are,4975593,82880,390 Billion
+Turkmenistan,993,TM / TKM,TM,TKM,tm,tkm,4940916,488100,40.56 Billion
+Central African Republic,236,CF / CAF,CF,CAF,cf,caf,4844927,622984,2.05 Billion
+Singapore,65,SG / SGP,SG,SGP,sg,sgp,4701069,693,295.7 Billion
+Georgia,995,GE / GEO,GE,GEO,ge,geo,4630000,69700,15.95 Billion
+Ireland,353,IE / IRL,IE,IRL,ie,irl,4622917,70280,220.9 Billion
+Bosnia and Herzegovina,387,BA / BIH,BA,BIH,ba,bih,4590000,51129,18.87 Billion
+Costa Rica,506,CR / CRI,CR,CRI,cr,cri,4516220,51100,48.51 Billion
+Croatia,385,HR / HRV,HR,HRV,hr,hrv,4491000,56542,59.14 Billion
+Moldova,373,MD / MDA,MD,MDA,md,mda,4324000,33843,7.932 Billion
+New Zealand,64,NZ / NZL,NZ,NZL,nz,nzl,4252277,268680,181.1 Billion
+Lebanon,961,LB / LBN,LB,LBN,lb,lbn,4125247,10400,43.49 Billion
+Puerto Rico,"1-787, 1-939",PR / PRI,PR,PRI,pr,pri,3916632,9104,93.52 Billion
+Palestine,970,PS / PSE,PS,PSE,ps,pse,3800000,5970,6.641 Billion
+Liberia,231,LR / LBR,LR,LBR,lr,lbr,3685076,111370,1.977 Billion
+Uruguay,598,UY / URY,UY,URY,uy,ury,3477000,176220,57.11 Billion
+Panama,507,PA / PAN,PA,PAN,pa,pan,3410676,78200,40.62 Billion
+Mauritania,222,MR / MRT,MR,MRT,mr,mrt,3205060,1030700,4.183 Billion
+Mongolia,976,MN / MNG,MN,MNG,mn,mng,3086918,1565000,11.14 Billion
+Republic of the Congo,242,CG / COG,CG,COG,cg,cog,3039126,342000,14.25 Billion
+Albania,355,AL / ALB,AL,ALB,al,alb,2986952,28748,12.8 Billion
+Armenia,374,AM / ARM,AM,ARM,am,arm,2968000,29800,10.44 Billion
+Oman,968,OM / OMN,OM,OMN,om,omn,2967717,212460,81.95 Billion
+Lithuania,370,LT / LTU,LT,LTU,lt,ltu,2944459,65200,46.71 Billion
+Jamaica,1-876,JM / JAM,JM,JAM,jm,jam,2847232,10991,14.39 Billion
+Kuwait,965,KW / KWT,KW,KWT,kw,kwt,2789132,17820,179.5 Billion
+Latvia,371,LV / LVA,LV,LVA,lv,lva,2217969,64589,30.38 Billion
+Namibia,264,NA / NAM,NA,NAM,na,nam,2128471,825418,12.3 Billion
+Macedonia,389,MK / MKD,MK,MKD,mk,mkd,2062294,25333,10.65 Billion
+Botswana,267,BW / BWA,BW,BWA,bw,bwa,2029307,600370,15.53 Billion
+Slovenia,386,SI / SVN,SI,SVN,si,svn,2007000,20273,46.82 Billion
+Lesotho,266,LS / LSO,LS,LSO,ls,lso,1919552,30355,2.457 Billion
+Kosovo,383,XK / XKX,XK,XKX,xk,xkx,1800000,10887,7.15 Billion
+Gambia,220,GM / GMB,GM,GMB,gm,gmb,1593256,11300,896 Million
+Guinea-Bissau,245,GW / GNB,GW,GNB,gw,gnb,1565126,36120,880 Million
+Gabon,241,GA / GAB,GA,GAB,ga,gab,1545255,267667,19.97 Billion
+Swaziland,268,SZ / SWZ,SZ,SWZ,sz,swz,1354051,17363,3.807 Billion
+Mauritius,230,MU / MUS,MU,MUS,mu,mus,1294104,2040,11.9 Billion
+Estonia,372,EE / EST,EE,EST,ee,est,1291170,45226,24.28 Billion
+Trinidad and Tobago,1-868,TT / TTO,TT,TTO,tt,tto,1228691,5128,27.13 Billion
+East Timor,670,TL / TLS,TL,TLS,tl,tls,1154625,15007,6.129 Billion
+Cyprus,357,CY / CYP,CY,CYP,cy,cyp,1102677,9250,21.78 Billion
+Equatorial Guinea,240,GQ / GNQ,GQ,GNQ,gq,gnq,1014999,28051,17.08 Billion
+Fiji,679,FJ / FJI,FJ,FJI,fj,fji,875983,18270,4.218 Billion
+Qatar,974,QA / QAT,QA,QAT,qa,qat,840926,11437,213.1 Billion
+Reunion,262,RE / REU,RE,REU,re,reu,776948,2517,
+Comoros,269,KM / COM,KM,COM,km,com,773407,2170,658 Million
+Guyana,592,GY / GUY,GY,GUY,gy,guy,748486,214970,3.02 Billion
+Djibouti,253,DJ / DJI,DJ,DJI,dj,dji,740528,23000,1.459 Billion
+Bahrain,973,BH / BHR,BH,BHR,bh,bhr,738004,665,28.36 Billion
+Bhutan,975,BT / BTN,BT,BTN,bt,btn,699847,47000,2.133 Billion
+Montenegro,382,ME / MNE,ME,MNE,me,mne,666730,14026,4.518 Billion
+Solomon Islands,677,SB / SLB,SB,SLB,sb,slb,559198,28450,1.099 Billion
+Cape Verde,238,CV / CPV,CV,CPV,cv,cpv,508659,4033,1.955 Billion
+Luxembourg,352,LU / LUX,LU,LUX,lu,lux,497538,2586,60.54 Billion
+Suriname,597,SR / SUR,SR,SUR,sr,sur,492829,163270,5.009 Billion
+Macau,853,MO / MAC,MO,MAC,mo,mac,449198,254,51.68 Billion
+Malta,356,MT / MLT,MT,MLT,mt,mlt,403000,316,9.541 Billion
+Maldives,960,MV / MDV,MV,MDV,mv,mdv,395650,300,2.27 Billion
+Brunei,673,BN / BRN,BN,BRN,bn,brn,395027,5770,16.56 Billion
+Belize,501,BZ / BLZ,BZ,BLZ,bz,blz,314522,22966,1.637 Billion
+Iceland,354,IS / ISL,IS,ISL,is,isl,308910,103000,14.59 Billion
+Bahamas,1-242,BS / BHS,BS,BHS,bs,bhs,301790,13940,8.373 Billion
+Barbados,1-246,BB / BRB,BB,BRB,bb,brb,285653,431,4.262 Billion
+Western Sahara,212,EH / ESH,EH,ESH,eh,esh,273008,266000,
+French Polynesia,689,PF / PYF,PF,PYF,pf,pyf,270485,4167,5.65 Billion
+Vanuatu,678,VU / VUT,VU,VUT,vu,vut,221552,12200,828 Million
+New Caledonia,687,NC / NCL,NC,NCL,nc,ncl,216494,19060,9.28 Billion
+Samoa,685,WS / WSM,WS,WSM,ws,wsm,192001,2944,705 Million
+Sao Tome and Principe,239,ST / STP,ST,STP,st,stp,175808,1001,311 Million
+Saint Lucia,1-758,LC / LCA,LC,LCA,lc,lca,160922,616,1.377 Billion
+Guam,1-671,GU / GUM,GU,GUM,gu,gum,159358,549,4.6 Billion
+Mayotte,262,YT / MYT,YT,MYT,yt,myt,159042,374,
+Curacao,599,CW / CUW,CW,CUW,cw,cuw,141766,444,5.6 Billion
+Netherlands Antilles,599,AN / ANT,AN,ANT,an,ant,136197,960,
+Tonga,676,TO / TON,TO,TON,to,ton,122580,748,477 Million
+U.S. Virgin Islands,1-340,VI / VIR,VI,VIR,vi,vir,108708,352,
+Grenada,1-473,GD / GRD,GD,GRD,gd,grd,107818,344,811 Million
+Micronesia,691,FM / FSM,FM,FSM,fm,fsm,107708,702,339 Million
+Saint Vincent and the Grenadines,1-784,VC / VCT,VC,VCT,vc,vct,104217,389,742 Million
+Kiribati,686,KI / KIR,KI,KIR,ki,kir,92533,811,173 Million
+Jersey,44-1534,JE / JEY,JE,JEY,je,jey,90812,116,5.1 Billion
+Seychelles,248,SC / SYC,SC,SYC,sc,syc,88340,455,1.271 Billion
+Antigua and Barbuda,1-268,AG / ATG,AG,ATG,ag,atg,86754,443,1.22 Billion
+Andorra,376,AD / AND,AD,AND,ad,and,84000,468,4.8 Billion
+Isle of Man,44-1624,IM / IMN,IM,IMN,im,imn,75049,572,4.076 Billion
+Dominica,1-767,DM / DMA,DM,DMA,dm,dma,72813,754,495 Million
+Aruba,297,AW / ABW,AW,ABW,aw,abw,71566,193,2.516 Billion
+Marshall Islands,692,MH / MHL,MH,MHL,mh,mhl,65859,181,193 Million
+Bermuda,1-441,BM / BMU,BM,BMU,bm,bmu,65365,53,5.6 Billion
+Guernsey,44-1481,GG / GGY,GG,GGY,gg,ggy,65228,78,2.742 Billion
+American Samoa,1-684,AS / ASM,AS,ASM,as,asm,57881,199,462.2 Million
+Greenland,299,GL / GRL,GL,GRL,gl,grl,56375,2166086,2.16 Billion
+Northern Mariana Islands,1-670,MP / MNP,MP,MNP,mp,mnp,53883,477,733 Million
+Saint Kitts and Nevis,1-869,KN / KNA,KN,KNA,kn,kna,51134,261,767 Million
+Faroe Islands,298,FO / FRO,FO,FRO,fo,fro,48228,1399,2.32 Billion
+Cayman Islands,1-345,KY / CYM,KY,CYM,ky,cym,44270,262,2.25 Billion
+Sint Maarten,1-721,SX / SXM,SX,SXM,sx,sxm,37429,34,794.7 Million
+Saint Martin,590,MF / MAF,MF,MAF,mf,maf,35925,53,561.5 Million
+Liechtenstein,423,LI / LIE,LI,LIE,li,lie,35000,160,5.113 Billion
+Monaco,377,MC / MCO,MC,MCO,mc,mco,32965,2,5.748 Billion
+San Marino,378,SM / SMR,SM,SMR,sm,smr,31477,61,1.866 Billion
+Gibraltar,350,GI / GIB,GI,GIB,gi,gib,27884,7,1.106 Billion
+British Virgin Islands,1-284,VG / VGB,VG,VGB,vg,vgb,21730,153,1.095 Billion
+Cook Islands,682,CK / COK,CK,COK,ck,cok,21388,240,183.2 Million
+Turks and Caicos Islands,1-649,TC / TCA,TC,TCA,tc,tca,20556,430,
+Palau,680,PW / PLW,PW,PLW,pw,plw,19907,458,221 Million
+Wallis and Futuna,681,WF / WLF,WF,WLF,wf,wlf,16025,274,
+Anguilla,1-264,AI / AIA,AI,AIA,ai,aia,13254,102,175.4 Million
+Tuvalu,688,TV / TUV,TV,TUV,tv,tuv,10472,26,38 Million
+Nauru,674,NR / NRU,NR,NRU,nr,nru,10065,21,
+Montserrat,1-664,MS / MSR,MS,MSR,ms,msr,9341,102,
+Saint Barthelemy,590,BL / BLM,BL,BLM,bl,blm,8450,21,
+Saint Helena,290,SH / SHN,SH,SHN,sh,shn,7460,410,
+Saint Pierre and Miquelon,508,PM / SPM,PM,SPM,pm,spm,7012,242,215.3 Million
+British Indian Ocean Territory,246,IO / IOT,IO,IOT,io,iot,4000,60,
+Falkland Islands,500,FK / FLK,FK,FLK,fk,flk,2638,12173,164.5 Million
+Svalbard and Jan Mayen,47,SJ / SJM,SJ,SJM,sj,sjm,2550,62049,
+Niue,683,NU / NIU,NU,NIU,nu,niu,2166,260,10.01 Million
+Christmas Island,61,CX / CXR,CX,CXR,cx,cxr,1500,135,
+Tokelau,690,TK / TKL,TK,TKL,tk,tkl,1466,10,
+Vatican,379,VA / VAT,VA,VAT,va,vat,921,0,
+Cocos Islands,61,CC / CCK,CC,CCK,cc,cck,628,14,
+Pitcairn,64,PN / PCN,PN,PCN,pn,pcn,46,47,
+Antarctica,672,AQ / ATA,AQ,ATA,aq,ata,0,14000000,

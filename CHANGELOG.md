@@ -1,5 +1,49 @@
+## 0.4.5 (2021-03-05)
+  - Forty Fifth release on PyPI.
+## 0.4.4 (2021-03-05)
+  - Forty Forth release on PyPI.
+## 0.4.3 (2021-03-05)
+  - Forty Third release on PyPI.
+## 0.4.2 (2021-03-05)
+  - Forty Second release on PyPI.
+## 0.4.1 (2021-03-05)
+  - Forty First release on PyPI.
+## 0.4.0 (2021-03-05)
+  - Fortieth release on PyPI.
+## 0.3.9 (2021-03-04)
+  - thirty-ninth release on PyPI.
+## 0.3.8 (2021-03-04)
+  - thirty-eighth release on PyPI.
+## 0.3.7 (2021-03-04)
+  - thirty-seventh release on PyPI.
+## 0.3.6 (2021-03-04)
+  - thirty-sixth release on PyPI.
+## 0.3.5 (2021-03-04)
+  - thirty-fifth release on PyPI.
+## 0.3.4 (2021-03-04)
+  - thirty-fourth release on PyPI.
+## 0.3.3 (2021-03-04)
+  - thirty-third release on PyPI.
+## 0.3.2 (2021-03-04)
+  - thirty-second release on PyPI.
+## 0.3.1 (2021-03-04)
+  - thirty-first release on PyPI.
+## 0.3.0 (2021-03-04)
+  - thirtieth release on PyPI.
+## 0.2.9 (2021-03-04)
+  - twenty-ninth release on PyPI.
+
+## 0.2.8 (2021-03-04)
+  - twenty-eighth release on PyPI.
+
+## 0.2.7 (2021-03-04)
+  - twenty-seventh release on PyPI.
+
+## 0.2.6 (2021-03-04)
+  - twenty-sixth release on PyPI.
+
 ## 0.2.5 (2021-03-04)
-  - twenty-fourth release on PyPI.
+  - twenty-fifth release on PyPI.
 
 ## 0.2.4 (2021-03-04)
   - twenty-fourth release on PyPI.

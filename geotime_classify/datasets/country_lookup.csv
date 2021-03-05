@@ -1,0 +1,241 @@
+iso3,Country.x,country,iso2
+AFG,Afghanistan,afghanistan,CN 
+ALB,Albania,albania,IN 
+ANT,Netherlands Antilles,netherlands antilles,US 
+ARB,Aruba,aruba,ID 
+ARE,United Arab Emirates,united arab emirates,BR 
+ARG,Argentina,argentina,PK 
+ARM,Armenia,armenia,BD 
+ATG,Antigua and Barbuda,antigua and barbuda,NG 
+AUS,Australia,australia,RU 
+AUT,Austria,austria,JP 
+AZE,Azerbaijan,azerbaijan,MX 
+BDI,Burundi,burundi,PH 
+BEL,Belgium,belgium,VN 
+BEN,Benin,benin,ET 
+BFA,Burkina Faso,burkina faso,DE 
+BGD,Bangladesh,bangladesh,EG 
+BGR,Bulgaria,bulgaria,TR 
+BHR,Bahrain,bahrain,IR 
+BHS,Bahamas,bahamas,CD 
+BIH,Bosnia and Herzegovina,bosnia and herzegovina,TH 
+,Bosnia,bosnia,FR 
+BLR,Belarus,belarus,GB 
+BLZ,Belize,belize,IT 
+BMU,Bermuda,bermuda,MM 
+BOL,Bolivia,bolivia,ZA 
+BRA,Brazil,brazil,KR 
+BRB,Barbados,barbados,CO 
+BRN,Brunei Darussalam,brunei darussalam,ES 
+BTN,Bhutan,bhutan,UA 
+BWA,Botswana,botswana,TZ 
+CAF,Central African Republic,central african republic,AR 
+CAN,Canada,canada,KE 
+CHE,Switzerland,switzerland,PL 
+CHL,Chile,chile,SD 
+CHN,China,china,DZ 
+CIV,Cote dIvoire,cote divoire,CA 
+CMR,Cameroon,cameroon,UG 
+COD,Democratic Republic of the Congo,democratic republic of the congo,MA 
+COG,Congo,congo,PE 
+COK,Cook Islands,cook islands,IQ 
+COL,Colombia,colombia,AF 
+COM,Comoros,comoros,NP 
+CPV,Cape Verde,cape verde,MY 
+CRI,Costa Rica,costa rica,UZ 
+CUB,Cuba,cuba,VE 
+CYP,Cyprus,cyprus,SA 
+CZE,Czech Republic,czech republic,GH 
+DEU,Germany,germany,YE 
+DJI,Djibouti,djibouti,KP 
+DMA,Dominica,dominica,TW 
+DNK,Denmark,denmark,SY 
+DOM,Dominican Republic,dominican republic,MZ 
+DZA,Algeria,algeria,RO 
+ECU,Ecuador,ecuador,AU 
+EGY,Egypt,egypt,LK 
+ERI,Eritrea,eritrea,MG 
+ESP,Spain,spain,CI 
+EST,Estonia,estonia,CM 
+ETH,Ethiopia,ethiopia,CL 
+FIN,Finland,finland,NL 
+FJI,Fiji,fiji,BF 
+FRA,France,france,NE 
+FRO,Faroe Islands,faroe islands,MW 
+GAB,Gabon,gabon,KZ 
+GBR,United Kingdom,united kingdom,EC 
+GEO,Georgia,georgia,KH 
+GHA,Ghana,ghana,ML 
+GIN,Guinea,guinea,GT 
+GMB,Gambia,gambia,ZM 
+GNB,Guinea-Bissau,guinea-bissau,AO 
+GNQ,Equatorial Guinea,equatorial guinea,SN 
+GRC,Greece,greece,ZW 
+GRD,Grenada,grenada,CU 
+GRL,Greenland,greenland,RW 
+GTM,Guatemala,guatemala,GR 
+GUY,Guyana,guyana,PT 
+HKG,"Hong Kong SAR, China","hong kong sar, china",TN 
+HND,Honduras,honduras,TD 
+HRV,Croatia,croatia,CZ 
+HTI,Haiti,haiti,BE 
+HUN,Hungary,hungary,GN 
+IDN,Indonesia,indonesia,SO 
+IND,India,india,HU 
+IRL,Ireland,ireland,BO 
+IRN,Iran ,iran ,BI 
+IRQ,Iraq,iraq,DO 
+ISL,Iceland,iceland,BY 
+ISR,Israel,israel,HT 
+ITA,Italy,italy,SE 
+JAM,Jamaica,jamaica,BJ 
+JOR,Jordan,jordan,AZ 
+JPN,Japan,japan,SS 
+KAZ,Kazakhstan,kazakhstan,AT 
+KEN,Kenya,kenya,HN 
+KGZ,Kyrgyzstan,kyrgyzstan,CH 
+KHM,Cambodia,cambodia,TJ 
+KIR,Kiribati,kiribati,IL 
+KNA,Saint Kitts and Nevis,saint kitts and nevis,RS 
+KOR,Republic of Korea,republic of korea,BG 
+KOR,South Korea,south korea,HK 
+KWT,Kuwait,kuwait,TG 
+LAO,Lao People's Democratic Republic,lao people's democratic republic,LY 
+LAO,Laos,laos,JO 
+LBN,Lebanon,lebanon,PY 
+LBR,Liberia,liberia,LA 
+LBY,Libya,libya,PG 
+LCA,Saint Lucia,saint lucia,SV 
+LKA,Sri Lanka,sri lanka,NI 
+LSO,Lesotho,lesotho,ER 
+LTU,Lithuania,lithuania,KG 
+LUX,Luxembourg,luxembourg,DK 
+LVA,Latvia,latvia,SK 
+MAC,"Macao SAR, China","macao sar, china",SL 
+MAC,Macao,macao,FI 
+MAR,Morocco,morocco,NO 
+MDA,Republic of Moldova,republic of moldova,AE 
+,Moldova,moldova,TM 
+MDG,Madagascar,madagascar,CF 
+MDV,Maldives,maldives,SG 
+MEX,Mexico,mexico,GE 
+MKD,The former Yugoslav Republic of Macedonia,the former yugoslav republic of macedonia,IE 
+MKD,Macedonia,macedonia,BA 
+MLI,Mali,mali,CR 
+MLT,Malta,malta,HR 
+MMR,Myanmar,myanmar,MD 
+MNE,Montenegro,montenegro,NZ 
+MNG,Mongolia,mongolia,LB 
+MOZ,Mozambique,mozambique,PR 
+MRT,Mauritania,mauritania,PS 
+MUS,Mauritius,mauritius,LR 
+MWI,Malawi,malawi,UY 
+MYS,Malaysia,malaysia,PA 
+NAM,Namibia,namibia,MR 
+NCL,New Caledonia,new caledonia,MN 
+NER,Niger,niger,CG 
+NGA,Nigeria,nigeria,AL 
+NIC,Nicaragua,nicaragua,AM 
+NLD,Netherlands,netherlands,OM 
+NOR,Norway,norway,LT 
+NPL,Nepal,nepal,JM 
+NZL,New Zealand,new zealand,KW 
+OMN,Oman,oman,LV 
+PAK,Pakistan,pakistan,NA 
+PAN,Panama,panama,MK 
+PER,Peru,peru,BW 
+PHL,Philippines,philippines,SI 
+PNG,Papua New Guinea,papua new guinea,LS 
+POL,Poland,poland,XK 
+PRK,Democratic People's Republic of Korea,democratic people's republic of korea,GM 
+PRK,North Korea,north korea,GW 
+PRT,Portugal,portugal,GA 
+PRY,Paraguay,paraguay,SZ 
+PSE,Occupied Palestinian Territory,occupied palestinian territory,MU 
+PYF,French Polynesia,french polynesia,EE 
+QAT,Qatar,qatar,TT 
+ROU,Romania,romania,TL 
+RUS,Russian Federation,russian federation,CY 
+,Russia,russia,GQ 
+RWA,Rwanda,rwanda,FJ 
+SAU,Saudi Arabia,saudi arabia,QA 
+SDN,Sudan,sudan,RE 
+SEN,Senegal,senegal,KM 
+SGP,Singapore,singapore,GY 
+SLB,Solomon Islands,solomon islands,DJ 
+SLE,Sierra Leone,sierra leone,BH 
+SLV,El Salvador,el salvador,BT 
+SOM,Somalia,somalia,ME 
+SRB,Serbia,serbia,SB 
+SSD,South Sudan,south sudan,CV 
+STP,Sao Tome and Principe,sao tome and principe,LU 
+SUR,Suriname,suriname,SR 
+SVK,Slovakia,slovakia,MO 
+SVN,Slovenia,slovenia,MT 
+SWE,Sweden,sweden,MV 
+SWZ,Swaziland,swaziland,BN 
+SYC,Seychelles,seychelles,BZ 
+SYR,Syrian Arab Republic,syrian arab republic,IS 
+,Syria,syria,BS 
+TCD,Chad,chad,BB 
+TGO,Togo,togo,EH 
+THA,Thailand,thailand,PF 
+TJK,Tajikistan,tajikistan,VU 
+TKM,Turkmenistan,turkmenistan,NC 
+TLS,Timor-Leste,timor-leste,WS 
+TON,Tonga,tonga,ST 
+TTO,Trinidad and Tobago,trinidad and tobago,LC 
+TUN,Tunisia,tunisia,GU 
+TUR,Turkey,turkey,YT 
+TUV,Tuvalu,tuvalu,CW 
+TWN,Taiwan,taiwan,AN 
+TZA,United Republic of Tanzania,united republic of tanzania,TO 
+,Tanzania,tanzania,VI 
+UGA,Uganda,uganda,GD 
+UKR,Ukraine,ukraine,FM 
+URY,Uruguay,uruguay,VC 
+USA,United States of America,united states of america,KI 
+,America,america,JE 
+UZB,Uzbekistan,uzbekistan,SC 
+VCT,Saint Vincent and the Grenadines,saint vincent and the grenadines,AG 
+VEN,Venezuela,venezuela,AD 
+VNM,Viet Nam,viet nam,IM 
+,Vietnam,vietnam,DM 
+VUT,Vanuatu,vanuatu,AW 
+YEM,Yemen,yemen,MH 
+ZAF,South Africa,south africa,BM 
+ZMB,Zambia,zambia,GG 
+ZWE,Zimbabwe,zimbabwe,AS 
+,,,GL 
+,,,MP 
+,,,KN 
+,,,FO 
+,,,KY 
+,,,SX 
+,,,MF 
+,,,LI 
+,,,MC 
+,,,SM 
+,,,GI 
+,,,VG 
+,,,CK 
+,,,TC 
+,,,PW 
+,,,WF 
+,,,AI 
+,,,TV 
+,,,NR 
+,,,MS 
+,,,BL 
+,,,SH 
+,,,PM 
+,,,IO 
+,,,FK 
+,,,SJ 
+,,,NU 
+,,,CX 
+,,,TK 
+,,,VA 
+,,,CC 
+,,,PN 
+,,,AQ 

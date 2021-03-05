@@ -26,18 +26,18 @@ def read_file(filename, cb):
 
 setup(
     name='geotime_classify',
-    version='0.2.5',
+    version='0.4.5',
     license='LGPL-3.0-or-later',
-    description='Catagorizes spatial and temporal columns in csv files. Can standardize data formats to iso1860',
+    description='Categorizes spatial and temporal columns for csv files. Standardizes date columns for transformations',
     long_description=long_description,
     long_description_content_type='text/markdown',
     author='Kyle Marsh',
     author_email='kyle@jataware.com',
     url='https://github.com/jataware/geotime_classify',
-    packages=find_packages('src'),
-    package_dir={'': 'src'},
-    py_modules=[splitext(basename(path))[0] for path in glob('src/*.py')],
-    include_package_data=True,
+    packages=find_packages(),
+    package_dir={'geotime_classify': 'geotime_classify'},
+    package_data={'geotime_classify': ['models/*','datasets/*']},
+    # include_package_data=True,
     zip_safe=False,
 
     classifiers=[

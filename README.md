@@ -141,7 +141,7 @@ The workflow consists of four main sections.
 
 Workflow overview
 
-![Alt text](training_model/images/GeoTime_ClassifyWorkflow.png?raw=true "Workflows")
+![Alt text](geotime_classify/training_model/images/GeoTime_ClassifyWorkflow.png?raw=true "Workflows")
 
 
 ## Geotime Classify Model
@@ -165,7 +165,7 @@ To do this, we collected example data from Faker along with additional locally g
 After a few iterations the model was performing well enough with accuracy hovering around 91 percent with 57 categories.
 Confusion Matrix:
 
-  ![Alt text](training_model/images/confusionMatrix.png?raw=true "Confusion Matrix")
+  ![Alt text](geotime_classify/training_model/images/confusionMatrix.png?raw=true "Confusion Matrix")
 
 Now the model was able to ingest a string and categorize it into one the 57 categories. 
 
