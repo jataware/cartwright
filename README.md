@@ -47,8 +47,8 @@ Now we have our GeoTimeClassify class instantiated we can use the functions avai
 ### geotime_classify.predictions(path)
 This returns the geotime_classify model predictions for each of the columns in the csv. 
 
-    preds=geotime.predictions('pathtocsv')
-    print(preds)
+    predictions=GeoTimeClass.predictions('pathtocsv')
+    print(predictions)
 
 You should see an array with a dict for each column. The keys in each dict are 
 1. **'column'**: which is the name of the column in the csv you provided,
@@ -63,7 +63,8 @@ You should see an array with a dict for each column. The keys in each dict are
   The next function is ***columns_classified***. This function returns an array that classifies each column in our csv by using a combination of the predictions from the LSTM model along with validation code for each classification. 
   
 
-    c_classified=geotime.columns_classified('pathtocsv')
+    c_classified=GeoTimeClass.columns_classified('pathtocsv')
+    print(c_classified)
 
   Possible information returned for each column are:
   1. **'column'**:Column name in csv
@@ -114,7 +115,8 @@ You should see an array with a dict for each column. The keys in each dict are
 
 Lastly, there is ***add_iso8601_columns***. This function returns a dataframe with added columns for each column that was classified as 'Date'. Each new date column will be named iso8601_*.  * will be replaced with the index of the original column. Formats should be set to 'default' unless you want the output to be in a different valid format. An example might be '%B %d, %Y'.
 
-        df=geotime.add_iso8601_columns('pathtocsv', formats='default')
+        df=GeoTimeClass.add_iso8601_columns('pathtocsv', formats='default')
+        df
 
 This function would return Dataframe 1 as Datframe 2
 
