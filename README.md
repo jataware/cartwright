@@ -111,6 +111,62 @@ You should see an array with a dict for each column. The keys in each dict are
     "ISO_code",  
     "Results",  
 ]
+   
+For the classification data there are a set number of possible classifications after the validation code. dayFirst can be 'True' or 'False'.
+Possible classifciation options: 
+1. "Category": "None"
+2. "Category": "Continent"
+3. "Category": "Country Name"
+4. "Category": "State Name"
+5. "Category": "City Name"
+6. "Category": "ISO3"
+7. "Category": "ISO2"
+8. "Category": "Unknown code"
+9. "Category": "Proper Noun"
+10. "Category": "Number"
+11. "Category": "Number/Geo"
+12. "Category": "Geo", "type": "Longitude (number)"
+13. "Category": "Geo", "type": "Latitude (number)"
+14. "Category": "Year"
+15. "Category": "Day Number"
+16. "Category": "Day Name"
+17. "Category": "Month Number"
+18. "Category": "Month Name"
+19. "Category": "Unknown Date"
+20. "Category": "Date", "Format": "ydd", "Parser": "arrow"
+21. "Category": "Date", "Format": "y-MM", "Parser": "arrow"
+22. "Category": "Date", "Format": "y/MM", "Parser": "arrow"
+23. "Category": "Date", "Format": "y.MM", "Parser": "arrow"
+24. "Category": "Date",  "Format": "iso8601",  "Parser": "Util",  "DayFirst": dayFirst
+25. "Category": "Date",  "Format": "MM-dd-y",  "Parser": "Util",  "DayFirst": dayFirst
+26. "Category": "Date",  "Format": "MM-dd-y",  "Parser": "Util",  "DayFirst": dayFirst
+27. "Category": "Date",  "Format": "MM_dd_y",  "Parser": "Util",  "DayFirst": dayFirst,
+28. "Category": "Date",  "Format": "MM_dd_yy",  "Parser": "Util",  "DayFirst": dayFirst
+29. "Category": "Date",  "Format": "MM/dd/y",  "Parser": "Util",  "DayFirst": dayFirst
+30. "Category": "Date",  "Format": "MM/dd/yy",  "Parser": "Util",  "DayFirst": dayFirst
+31. "Category": "Date",  "Format": "MM.dd.y",  "Parser": "Util",  "DayFirst": dayFirst
+32. "Category": "Date",  "Format": "MM.dd.yy",  "Parser": "Util",  "DayFirst": dayFirst
+33. "Category": "Date",  "Format": "d-MM-y",  "Parser": "Util",  "DayFirst": dayFirst
+34. "Category": "Date",  "Format": "d-MM-yy",  "Parser": "Util",  "DayFirst": dayFirst
+35. "Category": "Date",  "Format": "d_MM_y",  "Parser": "Util",  "DayFirst": dayFirst
+36. "Category": "Date",  "Format": "d_MM_yy",  "Parser": "Util",  "DayFirst": dayFirst
+37. "Category": "Date",  "Format": "d/MM/y",  "Parser": "Util",  "DayFirst": dayFirst
+38. "Category": "Date",  "Format": "d/MM/yy",  "Parser": "Util",  "DayFirst": dayFirst
+39. "Category": "Date",  "Format": "d.MM.y",  "Parser": "Util",  "DayFirst": dayFirst
+40. "Category": "Date",  "Format": "d.MM.yy",  "Parser": "Util",  "DayFirst": dayFirst
+41. "Category": "Date",  "Format": "y_MM_dd",  "Parser": "Util",  "DayFirst": dayFirst
+42. "Category": "Date",  "Format": "y.MM.dd",  "Parser": "Util",  "DayFirst": dayFirst
+43. "Category": "Date",  "Format": "y-MM-dd",  "Parser": "Util",  "DayFirst": dayFirst
+44. "Category": "Date",  "Format": "y/MM/dd",  "Parser": "Util",  "DayFirst": dayFirst,
+45. "Category": "Date", "Format": "dd LLLL y", "Parser": "Util"
+46. "Category": "Date", "Format": "dd LLLL yy", "Parser": "Util"
+47. "Category": "Date",  "Format": "EEEE, LLLL dd,yy",  "Parser": "Util"
+48. "Category": "Date", "Format": "LLLL dd, y", "Parser": "Util"
+49. "Category": "Date",  "Format": "EEEE, LLLL dd,yy HH:mm:ss",  "Parser": "Util"
+50. "Category": "Date", "Format": "MM/dd/yy HH:mm"
+51. "Category": "Boolean"
+
+
  ### geotime_classify.add_iso8601_columns(path, formats='default')
 
 Lastly, there is ***add_iso8601_columns***. This function returns a dataframe with added columns for each column that was classified as 'Date'. Each new date column will be named iso8601_*.  * will be replaced with the index of the original column. Formats should be set to 'default' unless you want the output to be in a different valid format. An example might be '%B %d, %Y'.

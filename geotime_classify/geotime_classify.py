@@ -130,6 +130,7 @@ class GeoTimeClassify:
         self.cont_lookup = pd.read_csv(pkg_resources.resource_stream(__name__, 'datasets/continent_code.csv'),
                                         encoding='latin-1')
         self.cont_lookup = np.asarray(self.cont_lookup["continent_name"])
+        self.FakeData= pd.read_csv(pkg_resources.resource_stream(__name__,'datasets/Fake_data.csv'), encoding='latin-1')
 
         self.day_of_week = [
             "Monday",
@@ -713,7 +714,7 @@ class GeoTimeClassify:
 
                 return {"Category": "ISO2"}
             else:
-                return {"Category": "Unknown code"}
+                return {"Category": "Unknown Code"}
 
         def continent_f(values):
             print("start continent lookup")
@@ -805,7 +806,7 @@ class GeoTimeClassify:
 
             if np.count_nonzero(bool_array) >= (len(values) * 0.85):
 
-                return {"Category": "Boolian"}
+                return {"Category": "Boolean"}
             else:
                 return {"Category": "None"}
 
@@ -822,7 +823,7 @@ class GeoTimeClassify:
 
             if np.count_nonzero(bool_array) >= (len(values) * .85):
 
-                return {'Category': 'Boolian'}
+                return {'Category': 'Boolean'}
             else:
                 return {'Category': 'None'}
 
@@ -912,7 +913,7 @@ class GeoTimeClassify:
                     "Category": "Date",
                     "Format": "iso8601",
                     "Parser": "Util",
-                    "DayFirst": dayFirst,
+                    "DayFirst": dayFirst
                 }
             else:
                 return {"Category": "Unknown Date Format"}
@@ -924,7 +925,7 @@ class GeoTimeClassify:
                     "Category": "Date",
                     "Format": "MM-dd-y",
                     "Parser": "Util",
-                    "DayFirst": dayFirst,
+                    "DayFirst": dayFirst
                 }
             else:
                 return {"Category": "Unknown Date"}
@@ -936,7 +937,7 @@ class GeoTimeClassify:
                     "Category": "Date",
                     "Format": "MM-dd-y",
                     "Parser": "Util",
-                    "DayFirst": dayFirst,
+                    "DayFirst": dayFirst
                 }
             else:
                 return {"Category": "Unknown Date"}
@@ -1469,3 +1470,5 @@ class GeoTimeClassify:
 
         return output_col
 
+    def get_Fake_Data(self):
+        return self.FakeData
