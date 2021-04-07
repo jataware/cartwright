@@ -1821,4 +1821,3 @@ class GeoTimeClassify:
 
     def get_Fake_Data(self):
         return self.FakeData
-

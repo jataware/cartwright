@@ -1,3 +1,9 @@
+## 0.5.3 (2021-04-07)
+  - Fifty Third release on PyPI.
+## 0.5.2 (2021-04-07)
+  - Fifty Second release on PyPI.
+## 0.5.1 (2021-04-07)
+  - Fifty First release on PyPI.
 ## 0.5.0 (2021-03-05)
   - Fiftieth release on PyPI.
 ## 0.4.9 (2021-03-05)
