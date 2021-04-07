@@ -479,7 +479,6 @@ class GeoTimeClassify:
         return seq_tensor.transpose(0, 1), target_tensor, seq_lengths
 
     def evaluate_test_set(self, test):
-        # print("test", test)
         y_pred = list()
         all_predictionsforValue = []
 
@@ -542,7 +541,7 @@ class GeoTimeClassify:
         return self.cont_lookup
 
     def predictions(self, path_to_csv):
-        print('LSTM')
+        print('Start LSTM predictions ...')
 
         class LSTMClassifier(nn.Module):
             def __init__(self, vocab_size, embedding_dim, hidden_dim, output_size):
@@ -626,7 +625,7 @@ class GeoTimeClassify:
             return {"Category": "None"}
 
         def city_f( values):
-            print("start city lookup")
+            print("Start city validation ...")
             country_match_bool = []
             for city in values:
                 try:
@@ -645,7 +644,7 @@ class GeoTimeClassify:
                 return {"Category": "Proper Noun"}
 
         def state_f(values):
-            print("start state lookup")
+            print("Start state validation ...")
             country_match_bool = []
 
             for state in values:
@@ -658,12 +657,12 @@ class GeoTimeClassify:
             if np.count_nonzero(country_match_bool) >= (len(values) * 0.40):
                 return {"Category": "State Name"}
             else:
-                print("Starting fuzzy match on cities...")
+                print("Start cities validation ...")
                 return city_f(values)
 
         def country_f(values):
 
-            print("start country lookup")
+            print("Start country validation ...")
             country_match_bool = []
 
 
@@ -680,7 +679,7 @@ class GeoTimeClassify:
                 return state_f(values)
 
         def country_iso3(values):
-            print("start iso3 lookup")
+            print("Start iso3 validation ...")
             ISO_in_lookup = []
 
             for iso in values:
@@ -698,7 +697,7 @@ class GeoTimeClassify:
                 return country_iso2(values)
 
         def country_iso2(values):
-            print("start iso2 lookup")
+            print("Start iso2 validation ...")
             ISO2_in_lookup = []
             for iso in values:
                 for cc in iso2_lookup:
@@ -717,7 +716,7 @@ class GeoTimeClassify:
                 return {"Category": "Unknown Code"}
 
         def continent_f(values):
-            print("start continent lookup")
+            print("Start continent validation ...")
             cont_in_lookup = []
 
             for cont in values:
@@ -736,7 +735,7 @@ class GeoTimeClassify:
                 return {"Category": "Proper Noun"}
 
         def geo_f(values):
-            print("start geo test")
+            print("Start geo validation ...")
             geo_valid = []
             percent_array = []
             for geo in values:
@@ -748,7 +747,6 @@ class GeoTimeClassify:
                                 percent_array.append("true")
 
                         else:
-                            print("lng", geo)
                             geo_valid.append("lng")
                     else:
                         geo_valid.append("failed")
@@ -770,7 +768,7 @@ class GeoTimeClassify:
                 return {"Category": "Number"}
 
         def year_f(values):
-            print("start year test")
+            print("Start year validation ...")
             year_values_valid = []
             years_failed = []
             strange_year = []
@@ -794,7 +792,7 @@ class GeoTimeClassify:
                 return {"Category": "Year"}
 
         def bool_f(values):
-            print("start boolian test")
+            print("Start boolean validation ...")
             bool_arr = ["true", "false", "T", "F"]
             bool_array = []
             for bools in values:
@@ -811,7 +809,7 @@ class GeoTimeClassify:
                 return {"Category": "None"}
 
         def bool_letter_f(values):
-            print('start boolian letter test')
+            print('Start boolean validation ...')
             bool_arr = ['t', 'f', 'T', 'F']
             bool_array = []
             for bools in values:
@@ -827,23 +825,32 @@ class GeoTimeClassify:
             else:
                 return {'Category': 'None'}
 
-        def dayFirstCheck(Values, seperator):
-
-            for date in Values:
+        def dayFirstCheck(values, separator, shortYear, yearLoc):
+            # only works for 4 number year
+            for date in values:
                 try:
-                    arr = date.split(seperator)
-                    if len(arr[0]) == 4:
-                        if int(arr[1]) > 12:
-                            return True
+                    arr = date.split(separator)
+                    if shortYear == True:
+                        if yearLoc==0:
+                            if int(arr[1]) > 12:
+                                return True
+                        else:
+                            if int(arr[0]) > 12:
+                                return True
+
                     else:
-                        if int(arr[0]) > 12:
-                            return True
+                        if len(arr[0]) == 4:
+                            if int(arr[1]) > 12:
+                                return True
+                        else:
+                            if int(arr[0]) > 12:
+                                return True
                 except:
-                    print("error occured")
+                    print("error occurred")
 
             return False
 
-        def date_arrow(values, seperator):
+        def date_arrow(values, separator):
             utils_array = []
             for date in values:
                 try:
@@ -858,37 +865,62 @@ class GeoTimeClassify:
             return utils_array
 
         def date_arrow_1(values):
-            array_valid = date_arrow(values, seperator="none")
+            array_valid = date_arrow(values, separator="none")
             if len(array_valid) > len(values) * 0.85:
                 return {"Category": "Date", "Format": "ydd", "Parser": "arrow"}
             else:
                 return {"Category": "Unknown Date"}
 
         def date_arrow_2(values):
-            array_valid = date_arrow(values, seperator="none")
-            if len(array_valid) > len(values) * 0.85:
-                return {"Category": "Date", "Format": "y-MM", "Parser": "arrow"}
+            # array_valid = date_arrow(values, separator="-")
+            monthFormat = month_MMorM(values, separator='-', loc=1)
+            allMonthVals=[]
+            for val in values:
+                monthval=val.split('-')[1]
+                allMonthVals.append(monthval)
+            validMonth=month_day_f(allMonthVals)
+            if validMonth["Category"]=="Month Number":
+                return {"Category": "Date", "Format": "y-" + monthFormat, "Parser": "arrow"}
             else:
                 return {"Category": "Unknown Date"}
 
         def date_arrow_3(values):
-            array_valid = date_arrow(values, seperator="none")
+            array_valid = date_arrow(values, separator="/" )
+            monthFormat = month_MMorM(values, separator='/', loc=1)
+            allMonthVals = []
+            for val in values:
+                monthval = val.split('/')[1]
+                allMonthVals.append(monthval)
+            validMonth = month_day_f(allMonthVals)
             if len(array_valid) > len(values) * 0.85:
-                return {"Category": "Date", "Format": "y/MM", "Parser": "arrow"}
+                return {"Category": "Date", "Format": "y/"+monthFormat, "Parser": "arrow"}
+            elif monthFormat == 'M' and validMonth['Category']=="Month Number":
+                return {"Category": "Date", "Format": "y/" + monthFormat, "Parser": "arrow"}
             else:
                 return {"Category": "Unknown Date"}
 
         def date_arrow_4(values):
-            array_valid = date_arrow(values, seperator="none")
+            array_valid = date_arrow(values, separator=".")
+            monthFormat = month_MMorM(values, separator='.', loc=1)
+            allMonthVals = []
+            for val in values:
+                monthval = val.split('.')[1]
+                allMonthVals.append(monthval)
+
+            validMonth = month_day_f(allMonthVals)
+
             if len(array_valid) > len(values) * 0.85:
-                return {"Category": "Date", "Format": "y.MM", "Parser": "arrow"}
+                return {"Category": "Date", "Format": "y."+monthFormat, "Parser": "arrow"}
+            elif validMonth['Category']=='Month Number':
+                return {"Category": "Date", "Format": "y."+monthFormat, "Parser": "arrow"}
             else:
                 return {"Category": "Unknown Date"}
 
-        def date_util(values, seperator):
+        def date_util(values, separator, shortyear, yearloc):
+
             util_dates = []
-            if seperator != "none":
-                dayFirst = dayFirstCheck(values, seperator)
+            if separator != "none":
+                dayFirst = dayFirstCheck(values, separator, shortYear=shortyear, yearLoc=yearloc)
             else:
                 dayFirst = False
 
@@ -899,15 +931,32 @@ class GeoTimeClassify:
                     if isinstance(dateUtil, datetime.date):
                         util_dates.append({"value": date, "standard": dateUtil})
                     else:
-                        print("failed")
+                        pass
                 except Exception as e:
                     print(e)
 
             return util_dates, dayFirst
 
+        def day_ddOrd(values, separator, loc):
+            dayFormat='d'
+            for d in values:
+                d_value=d.split(separator)[loc]
+                if d_value[0]=='0':
+                    dayFormat='dd'
+            return dayFormat
+
+        def month_MMorM(values, separator, loc):
+            monthFormat = 'M'
+            for d in values:
+                d_value = d.split(separator)[loc]
+                if d_value[0] == '0':
+                    monthFormat = 'MM'
+            return monthFormat
+
+
         # currently can't handle yyyy-dd-mm HH:mm:ss
         def iso_time(values):
-            array_valid, dayFirst = date_util(values, seperator="none")
+            array_valid, dayFirst = date_util(values, separator="none",shortyear=False, yearloc=None)
             if len(array_valid) > len(values) * 0.85:
                 return {
                     "Category": "Date",
@@ -919,59 +968,128 @@ class GeoTimeClassify:
                 return {"Category": "Unknown Date Format"}
 
         def date_util_1(values):
-            array_valid, dayFirst = date_util(values, seperator="-")
+            array_valid, dayFirst = date_util(values, separator="-",shortyear=False, yearloc=None)
+            if dayFirst == 'True':
+                dayFormat=day_ddOrd(values,separator='-', loc=0)
+                monthFormat=month_MMorM(values, separator='-' ,loc=1)
+            else:
+                dayFormat=day_ddOrd(values, separator='-', loc=1)
+                monthFormat=month_MMorM(values, separator='-' ,loc=0)
+
             if len(array_valid) > len(values) * 0.85:
-                return {
-                    "Category": "Date",
-                    "Format": "MM-dd-y",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst
-                }
+                if dayFirst==True:
+                    return {
+                        "Category": "Date",
+                        "Format": dayFormat + "-" + monthFormat + "-y",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst
+                    }
+                else:
+
+                    return {
+                        "Category": "Date",
+                        "Format": monthFormat+"-"+dayFormat+"-y",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst
+                    }
             else:
                 return {"Category": "Unknown Date"}
 
         def date_util_2(values):
-            array_valid, dayFirst = date_util(values, seperator="-")
+            array_valid, dayFirst = date_util(values, separator="-",shortyear=False, yearloc=None)
+            if dayFirst == 'True':
+                dayFormat = day_ddOrd(values, separator='-', loc=0)
+                monthFormat = month_MMorM(values, separator='-', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='-', loc=1)
+                monthFormat = month_MMorM(values, separator='-', loc=0)
+
             if len(array_valid) > len(values) * 0.85:
-                return {
-                    "Category": "Date",
-                    "Format": "MM-dd-y",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst
-                }
+                if dayFirst is True:
+                    return {
+                        "Category": "Date",
+                        "Format":  dayFormat+ "-" + monthFormat + "-y",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst
+                        }
+                else:
+                    return {
+                        "Category": "Date",
+                        "Format": monthFormat + "-" + dayFormat + "-y",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst
+                    }
             else:
                 return {"Category": "Unknown Date"}
 
         def date_util_3(values):
-            array_valid, dayFirst = date_util(values, seperator="_")
-            if len(array_valid) > len(values) * 0.85:
-                return {
+            array_valid, dayFirst = date_util(values, separator="_", shortyear=False, yearloc=None)
+            if dayFirst == True:
+                dayFormat = day_ddOrd(values, separator='_', loc=0)
+                monthFormat = month_MMorM(values, separator='_', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='_', loc=1)
+                monthFormat = month_MMorM(values, separator='_', loc=0)
+
+            if dayFirst is True:
+                return  {
                     "Category": "Date",
-                    "Format": "MM_dd_y",
+                    "Format": dayFormat+"_"+ monthFormat+"_y",
                     "Parser": "Util",
                     "DayFirst": dayFirst,
                 }
             else:
-                return {"Category": "Unknown Date"}
+                return {
+                    "Category": "Date",
+                    "Format": monthFormat+"_"+ dayFormat+"_y",
+                    "Parser": "Util",
+                    "DayFirst": dayFirst,
+                }
+
 
         def date_util_4(values):
-            array_valid, dayFirst = date_util(values, seperator="_")
-            if len(array_valid) > len(values) * 0.85:
+            array_valid, dayFirst = date_util(values, separator="_", shortyear=True, yearloc=2)
+            if dayFirst == True:
+                dayFormat = day_ddOrd(values, separator='_', loc=0)
+                monthFormat = month_MMorM(values, separator='_', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='_', loc=1)
+                monthFormat = month_MMorM(values, separator='_', loc=0)
+            if dayFirst == True:
                 return {
                     "Category": "Date",
-                    "Format": "MM_dd_yy",
+                    "Format": dayFormat + "_" + monthFormat + "_yy",
                     "Parser": "Util",
                     "DayFirst": dayFirst,
                 }
             else:
-                return {"Category": "Unknown Date"}
+                return {
+                "Category": "Date",
+                "Format": monthFormat + "_" + dayFormat + "_yy",
+                "Parser": "Util",
+                "DayFirst": dayFirst,
+                }
 
         def date_util_5(values):
-            array_valid, dayFirst = date_util(values, seperator="/")
+            array_valid, dayFirst = date_util(values, separator="/",shortyear=False, yearloc=None)
+            if dayFirst == True:
+                dayFormat = day_ddOrd(values, separator='/', loc=0)
+                monthFormat = month_MMorM(values, separator='/', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='/', loc=1)
+                monthFormat = month_MMorM(values, separator='/', loc=0)
             if len(array_valid) > len(values) * 0.85:
+                if dayFirst == True:
+                    return {
+                        "Category": "Date",
+
+                        "Format": dayFormat + "/" + monthFormat + "/y",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
                 return {
                     "Category": "Date",
-                    "Format": "MM/dd/y",
+                    "Format": monthFormat + "/" + dayFormat + "/y",
                     "Parser": "Util",
                     "DayFirst": dayFirst,
                 }
@@ -979,231 +1097,454 @@ class GeoTimeClassify:
                 return {"Category": "Unknown Date"}
 
         def date_util_6(values):
-            array_valid, dayFirst = date_util(values, seperator="/")
+            array_valid, dayFirst = date_util(values, separator="/",shortyear=True, yearloc=2)
+            if dayFirst == True:
+                dayFormat = day_ddOrd(values, separator='/', loc=0)
+                monthFormat = month_MMorM(values, separator='/', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='/', loc=1)
+                monthFormat = month_MMorM(values, separator='/', loc=0)
             if len(array_valid) > len(values) * 0.85:
-                return {
-                    "Category": "Date",
-                    "Format": "MM/dd/yy",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst,
-                }
+                if dayFirst == True:
+                    return {
+                        "Category": "Date",
+                        "Format": dayFormat + "/" + monthFormat + "/yy",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
+
+                else:
+                    return {
+                        "Category": "Date",
+                        "Format": monthFormat + "/" + dayFormat + "/yy",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                        }
             else:
                 return {"Category": "Unknown Date"}
 
         def date_util_7(values):
-            array_valid, dayFirst = date_util(values, seperator=".")
+            array_valid, dayFirst = date_util(values, separator=".", shortyear=False, yearloc=None)
+            if dayFirst == True:
+                dayFormat = day_ddOrd(values, separator='.', loc=0)
+                monthFormat = month_MMorM(values, separator='.', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='.', loc=1)
+                monthFormat = month_MMorM(values, separator='.', loc=0)
             if len(array_valid) > len(values) * 0.85:
-                return {
-                    "Category": "Date",
-                    "Format": "MM.dd.y",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst,
-                }
+                if dayFirst == True:
+
+                    return {
+                        "Category": "Date",
+                        "Format":  dayFormat + "." + monthFormat + ".y",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
+                else:
+                    return {
+                        "Category": "Date",
+                        "Format": monthFormat + "." + dayFormat + ".y",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
             else:
                 return {"Category": "Unknown Date"}
 
         def date_util_8(values):
-            array_valid, dayFirst = date_util(values, seperator=".")
+            array_valid, dayFirst = date_util(values, separator=".",shortyear=True, yearloc=2)
+            if dayFirst == True:
+                dayFormat = day_ddOrd(values, separator='.', loc=0)
+                monthFormat = month_MMorM(values, separator='.', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='.', loc=1)
+                monthFormat = month_MMorM(values, separator='.', loc=0)
             if len(array_valid) > len(values) * 0.85:
-                return {
-                    "Category": "Date",
-                    "Format": "MM.dd.yy",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst,
-                }
+                if dayFirst == True:
+                    return {
+                        "Category": "Date",
+                        "Format":  dayFormat + "." + monthFormat + ".yy",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
+                else:
+                    return {
+                        "Category": "Date",
+                        "Format": monthFormat + "." + dayFormat + ".yy",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
             else:
                 return {"Category": "Unknown Date"}
 
         def date_util_9(values):
-            array_valid, dayFirst = date_util(values, seperator="-")
+            array_valid, dayFirst = date_util(values, separator="-", shortyear=False, yearloc=None)
+            if dayFirst == True:
+                dayFormat = day_ddOrd(values, separator='-', loc=0)
+                monthFormat = month_MMorM(values, separator='-', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='-', loc=1)
+                monthFormat = month_MMorM(values, separator='-', loc=0)
             if len(array_valid) > len(values) * 0.85:
-                return {
-                    "Category": "Date",
-                    "Format": "d-MM-y",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst,
-                }
+                if dayFirst == True:
+                    return {
+                        "Category": "Date",
+                        "Format": dayFormat+"-" + monthFormat + "-y",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
+                else:
+                    return {
+                            "Category": "Date",
+                            "Format": monthFormat+"-" + dayFormat + "-y",
+                            "Parser": "Util",
+                            "DayFirst": dayFirst,
+                    }
             else:
                 return {"Category": "Unknown Date"}
 
         def date_util_10(values):
-            array_valid, dayFirst = date_util(values, seperator="-")
+            array_valid, dayFirst = date_util(values, separator="-", shortyear=True, yearloc=2)
+            if dayFirst == True:
+                dayFormat = day_ddOrd(values, separator='-', loc=0)
+                monthFormat = month_MMorM(values, separator='-', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='-', loc=1)
+                monthFormat = month_MMorM(values, separator='-', loc=0)
             if len(array_valid) > len(values) * 0.85:
-                return {
-                    "Category": "Date",
-                    "Format": "d-MM-yy",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst,
-                }
+                if dayFormat == True:
+                    return {
+                        "Category": "Date",
+                        "Format": dayFormat + "-" + monthFormat+"-yy",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
+                else:
+                    return {
+                        "Category": "Date",
+                        "Format": monthFormat + "-" + dayFormat + "-yy",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
             else:
                 return {"Category": "Unknown Date"}
 
         def date_util_11(values):
-            array_valid, dayFirst = date_util(values, seperator="_")
-            if len(array_valid) > len(values) * 0.85:
+            array_valid, dayFirst = date_util(values, separator="_",shortyear=False, yearloc=None)
+            if dayFirst == True:
+                dayFormat = day_ddOrd(values, separator='_', loc=0)
+                monthFormat = month_MMorM(values, separator='_', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='_', loc=1)
+                monthFormat = month_MMorM(values, separator='_', loc=0)
+
+            if dayFirst == True:
+
                 return {
                     "Category": "Date",
-                    "Format": "d_MM_y",
+                    "Format": dayFormat +"_"+monthFormat+"_y",
                     "Parser": "Util",
                     "DayFirst": dayFirst,
                 }
             else:
-                return {"Category": "Unknown Date"}
+                return {
+                    "Category": "Date",
+                    "Format": monthFormat +"_"+dayFormat+"_y",
+                    "Parser": "Util",
+                    "DayFirst": dayFirst,
+                }
+
 
         def date_util_12(values):
-            array_valid, dayFirst = date_util(values, seperator="_")
-            if len(array_valid) > len(values) * 0.85:
+            array_valid, dayFirst = date_util(values, separator="_",shortyear=True, yearloc=2)
+            if dayFirst == True:
+                dayFormat = day_ddOrd(values, separator='_', loc=0)
+                monthFormat = month_MMorM(values, separator='_', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='_', loc=1)
+                monthFormat = month_MMorM(values, separator='_', loc=0)
+
+            if dayFirst == True:
+
                 return {
                     "Category": "Date",
-                    "Format": "d_MM_yy",
+                    "Format": dayFormat + "_" + monthFormat + "_yy",
                     "Parser": "Util",
                     "DayFirst": dayFirst,
                 }
             else:
-                return {"Category": "Unknown Date"}
-
-        def date_util_13(values):
-            array_valid, dayFirst = date_util(values, seperator="/")
-            if len(array_valid) > len(values) * 0.85:
                 return {
                     "Category": "Date",
-                    "Format": "d/MM/y",
+                    "Format": monthFormat + "_" + dayFormat + "_yy",
                     "Parser": "Util",
                     "DayFirst": dayFirst,
-                }
+                    }
+
+        def date_util_13(values):
+            array_valid, dayFirst = date_util(values, separator="/",shortyear=False, yearloc=None)
+            if dayFirst == True:
+                dayFormat = day_ddOrd(values, separator='/', loc=0)
+                monthFormat = month_MMorM(values, separator='/', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='/', loc=1)
+                monthFormat = month_MMorM(values, separator='/', loc=0)
+            if len(array_valid) > len(values) * 0.85:
+                if dayFirst == True:
+
+                    return {
+                        "Category": "Date",
+                        "Format": dayFormat+'/'+monthFormat+'/'+"/y",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
+                else:
+                    return {
+                        "Category": "Date",
+                        "Format": monthFormat+'/'+dayFormat+'/'+"/y",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
             else:
                 return {"Category": "Unknown Date"}
 
         def date_util_14(values):
 
-            array_valid, dayFirst = date_util(values, seperator="/")
+            array_valid, dayFirst = date_util(values, separator="/",shortyear=True, yearloc=2)
+            if dayFirst == True:
+                dayFormat = day_ddOrd(values, separator='/', loc=0)
+                monthFormat = month_MMorM(values, separator='/', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='/', loc=1)
+                monthFormat = month_MMorM(values, separator='/', loc=0)
             if len(array_valid) > len(values) * 0.85:
-                return {
-                    "Category": "Date",
-                    "Format": "d/MM/yy",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst,
-                }
+                if dayFirst == True:
+
+                    return {
+                        "Category": "Date",
+                        "Format": dayFormat + '/' + monthFormat  + "/yy",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
+                else:
+                    return {
+                        "Category": "Date",
+                        "Format": monthFormat + '/' + dayFormat + "/yy",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
             else:
                 return {"Category": "Unknown Date"}
 
         def date_util_15(values):
-            array_valid, dayFirst = date_util(values, seperator=".")
+            array_valid, dayFirst = date_util(values, separator=".",shortyear=False, yearloc=None)
+            if dayFirst == True:
+                dayFormat = day_ddOrd(values, separator='.', loc=0)
+                monthFormat = month_MMorM(values, separator='.', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='.', loc=1)
+                monthFormat = month_MMorM(values, separator='.', loc=0)
             if len(array_valid) > len(values) * 0.85:
-                return {
-                    "Category": "Date",
-                    "Format": "d.MM.y",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst,
-                }
+                if dayFirst == True:
+
+                    return {
+                        "Category": "Date",
+                        "Format": dayFormat+'.'+monthFormat+".y",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
+                else:
+                    return {
+                        "Category": "Date",
+                        "Format": monthFormat + '.' + dayFormat + ".y",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
+
             else:
                 return {"Category": "Unknown Date"}
 
         def date_util_16(values):
-            array_valid, dayFirst = date_util(values, seperator=".")
+            array_valid, dayFirst = date_util(values, separator=".",shortyear=True, yearloc=2)
+            if dayFirst == True:
+                dayFormat = day_ddOrd(values, separator='.', loc=0)
+                monthFormat = month_MMorM(values, separator='.', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='.', loc=1)
+                monthFormat = month_MMorM(values, separator='.', loc=0)
             if len(array_valid) > len(values) * 0.85:
-                return {
-                    "Category": "Date",
-                    "Format": "d.MM.yy",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst,
-                }
+                if dayFirst == True:
+
+                    return {
+                        "Category": "Date",
+                        "Format": dayFormat + '.' + monthFormat + ".yy",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
+                else:
+                    return {
+                        "Category": "Date",
+                        "Format": monthFormat + '.' + dayFormat + ".yy",
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
             else:
                 return {"Category": "Unknown Date"}
 
         def date_util_17(values):
-            array_valid, dayFirst = date_util(values, seperator="_")
-            if len(array_valid) > len(values) * 0.85:
+            array_valid, dayFirst = date_util(values, separator="_",shortyear=False, yearloc=None)
+            if dayFirst == True:
+                dayFormat = day_ddOrd(values, separator='_', loc=1)
+                monthFormat = month_MMorM(values, separator='_', loc=2)
+            else:
+                dayFormat = day_ddOrd(values, separator='_', loc=2)
+                monthFormat = month_MMorM(values, separator='_', loc=1)
+
+            if dayFirst == True:
+
                 return {
                     "Category": "Date",
-                    "Format": "y_MM_dd",
+                    "Format": "y_"+ dayFormat+"_"+monthFormat,
                     "Parser": "Util",
                     "DayFirst": dayFirst,
                 }
             else:
-                return {"Category": "Unknown Date"}
-
-        def date_util_18(values):
-            array_valid, dayFirst = date_util(values, seperator=".")
-            if len(array_valid) > len(values) * 0.85:
                 return {
                     "Category": "Date",
-                    "Format": "y.MM.dd",
+                    "Format": "y_" + monthFormat + "_" + dayFormat,
                     "Parser": "Util",
                     "DayFirst": dayFirst,
                 }
+
+        def date_util_18(values):
+            array_valid, dayFirst = date_util(values, separator=".",shortyear=False, yearloc=None)
+            if dayFirst == True:
+                dayFormat = day_ddOrd(values, separator='.', loc=1)
+                monthFormat = month_MMorM(values, separator='.', loc=2)
+            else:
+                dayFormat = day_ddOrd(values, separator='.', loc=2)
+                monthFormat = month_MMorM(values, separator='.', loc=1)
+            if len(array_valid) > len(values) * 0.85:
+                if dayFirst == True:
+
+                    return {
+                        "Category": "Date",
+                        "Format": "y."+dayFormat+"."+monthFormat,
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
+                else:
+                    return {
+                        "Category": "Date",
+                        "Format": "y."+monthFormat+"."+dayFormat,
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
             else:
                 return {"Category": "Unknown Date"}
 
         def date_util_19(values):
-            array_valid, dayFirst = date_util(values, seperator="-")
+            array_valid, dayFirst = date_util(values, separator="-",shortyear=False, yearloc=None)
+            if dayFirst == True:
+                dayFormat = day_ddOrd(values, separator='-', loc=1)
+                monthFormat = month_MMorM(values, separator='-', loc=2)
+            else:
+                dayFormat = day_ddOrd(values, separator='-', loc=2)
+                monthFormat = month_MMorM(values, separator='-', loc=1)
             if len(array_valid) > len(values) * 0.85:
-                return {
-                    "Category": "Date",
-                    "Format": "y-MM-dd",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst,
-                }
+                if dayFirst == True:
+
+                    return {
+                        "Category": "Date",
+                        "Format": "y-" + dayFormat+"-"+monthFormat,
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
+                else:
+                    return {
+                        "Category": "Date",
+                        "Format": "y-" + monthFormat + "-" + dayFormat,
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
             else:
                 return {"Category": "Unknown Date"}
 
         def date_util_20(values):
-            array_valid, dayFirst = date_util(values, seperator="/")
+            array_valid, dayFirst = date_util(values, separator="/",shortyear=False, yearloc=None)
+            if dayFirst == True:
+                dayFormat = day_ddOrd(values, separator='/', loc=1)
+                monthFormat = month_MMorM(values, separator='/', loc=2)
+            else:
+                dayFormat = day_ddOrd(values, separator='/', loc=2)
+                monthFormat = month_MMorM(values, separator='/', loc=1)
             if len(array_valid) > len(values) * 0.85:
-                return {
-                    "Category": "Date",
-                    "Format": "y/MM/dd",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst,
-                }
+                if dayFirst == True:
+
+                    return {
+                        "Category": "Date",
+                        "Format": "y/"+dayFormat+"/"+monthFormat,
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
+                else:
+                    return {
+                        "Category": "Date",
+                        "Format": "y/" + monthFormat + "/" + dayFormat,
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
             else:
                 return {"Category": "Unknown Date"}
 
         def date_long_1(values):
             #              #  01 April 2008
-            array_valid, dayFirst = date_util(values, seperator="none")
+            array_valid, dayFirst = date_util(values, separator="none",shortyear=False, yearloc=None)
+            dayFormat = day_ddOrd(values, separator=' ', loc=0)
             if len(array_valid) > len(values) * 0.85:
-                return {"Category": "Date", "Format": "dd LLLL y", "Parser": "Util"}
+                return {"Category": "Date", "Format": dayFormat+" LLLL y", "Parser": "Util"}
             else:
                 return {"Category": "Unknown Date"}
 
         def date_long_2(values):
-            array_valid, dayFirst = date_util(values, seperator="none")
+            array_valid, dayFirst = date_util(values, separator="none",shortyear=False, yearloc=None)
+            dayFormat = day_ddOrd(values, separator=' ', loc=0)
             if len(array_valid) > len(values) * 0.85:
                 #                 02 April 20
                 #                    dd/LLLL/yy
-                return {"Category": "Date", "Format": "dd LLLL yy", "Parser": "Util"}
+                return {"Category": "Date", "Format": dayFormat+" LLLL yy", "Parser": "Util"}
             else:
                 return {"Category": "Unknown Date"}
 
         def date_long_3(values):
-            array_valid, dayFirst = date_util(values, seperator="none")
+            array_valid, dayFirst = date_util(values, separator="none",shortyear=False, yearloc=None)
+            dayFormat = day_ddOrd(values, separator=' ', loc=2)
             if len(array_valid) > len(values) * 0.85:
                 return {
                     "Category": "Date",
-                    "Format": "EEEE, LLLL dd,yy",
+                    "Format": "EEEE, LLLL "+dayFormat+",yy",
                     "Parser": "Util",
                 }
             else:
                 return {"Category": "Unknown Date"}
 
         def date_long_4(values):
-            array_valid, dayFirst = date_util(values, seperator="none")
+            array_valid, dayFirst = date_util(values, separator="none",shortyear=False, yearloc=None)
+            dayFormat = day_ddOrd(values, separator=' ', loc=1)
             if len(array_valid) > len(values) * 0.85:
                 #                 April 10, 2008
                 #                 LLLL dd, y
-                return {"Category": "Date", "Format": "LLLL dd, y", "Parser": "Util"}
+                return {"Category": "Date", "Format": "LLLL "+dayFormat+", y", "Parser": "Util"}
             else:
                 return {"Category": "Unknown Date"}
 
         def date_long_5(values):
-            array_valid, dayFirst = date_util(values, seperator="none")
+            array_valid, dayFirst = date_util(values, separator="none",shortyear=False, yearloc=None)
+            dayFormat = day_ddOrd(values, separator=' ', loc=2)
             if len(array_valid) > len(values) * 0.85:
                 #  Thursday, April 10, 2008 6:30:00 AM
                 #                 EEEE, LLLL dd,yy HH:mm:ss
                 return {
                     "Category": "Date",
-                    "Format": "EEEE, LLLL dd,yy HH:mm:ss",
+                    "Format": "EEEE, LLLL "+dayFormat+",yy HH:mm:ss",
                     "Parser": "Util",
                 }
             else:
@@ -1211,11 +1552,21 @@ class GeoTimeClassify:
 
         def date_long_6(values):
 
-            array_valid, dayFirst = date_util(values, seperator="none")
+            array_valid, dayFirst = date_util(values, separator="none",shortyear=False, yearloc=None)
+            if dayFirst == True:
+                dayFormat = day_ddOrd(values, separator='/', loc=0)
+                monthFormat = month_MMorM(values, separator='/', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='/', loc=1)
+                monthFormat = month_MMorM(values, separator='/', loc=0)
+
             if len(array_valid) > len(values) * 0.85:
+                if dayFirst == True:
+                    return {"Category": "Date", "Format": dayFormat+"/"+monthFormat+"/yy HH:mm"}
                 #              03/23/21 01:55 PM
                 #                 MM/dd/yy HH:mm
-                return {"Category": "Date", "Format": "MM/dd/yy HH:mm"}
+                else:
+                    return {"Category": "Date", "Format":monthFormat+"/"+dayFormat+"/yy HH:mm"}
             else:
                 return {"Category": "Unknown Date"}
 
@@ -1231,7 +1582,7 @@ class GeoTimeClassify:
                         else:
                             month_day_results.append("failed")
                     else:
-                        print("not a valid digit")
+                        print("Not a valid digit")
                 except Exception as e:
                     print(e)
 
@@ -1245,7 +1596,7 @@ class GeoTimeClassify:
                 return {"Category": "None"}
 
         def month_name_f(values):
-            print("start month lookup")
+            print("Start month validation ...")
             month_array_valid = []
             for month in values:
                 for m in self.month_of_year:
@@ -1262,7 +1613,7 @@ class GeoTimeClassify:
                 return day_name_f(values)
 
         def day_name_f(values):
-            print("start day lookup")
+            print("Start day validation ...")
             day_array_valid = []
             for day in values:
                 for d in self.day_of_week:
@@ -1421,9 +1772,7 @@ class GeoTimeClassify:
 
                     new_column = 'ISO_8601_' + str(i)
                     if 'DayFirst' in out['classification'][0]:
-
                         dayFirst = out['classification'][0]['DayFirst']
-                        print('dayFirst', dayFirst)
                     else:
                         dayFirst = False
                     if formats != 'default':
@@ -1472,3 +1821,5 @@ class GeoTimeClassify:
 
     def get_Fake_Data(self):
         return self.FakeData
+
+
