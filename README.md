@@ -15,12 +15,7 @@ This model is a recurrent neural network that uses LSTM to learn text classifica
 ## Pip install geotime classify
 First you need to install numpy, scipy, pandas, joblib, pip, torch and torchvision.
 
-    pip install numpy 
-    pip install scipy
-    pip install pandas
-    pip install joblib
-    pip install torch
-    pip install torchvision
+    pip install -r requirements.txt
 
   or 
 
