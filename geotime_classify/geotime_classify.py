@@ -110,8 +110,8 @@ class PaddedTensorDataset(Dataset):
 
 class GeoTimeClassify:
     def __init__(self, number_of_samples):
-        self.model = LSTMClassifier(vocab_size=89, embedding_dim=128, hidden_dim=32, output_size=58)
-        self.model.load_state_dict(torch.load(pkg_resources.resource_stream(__name__, 'models/LSTM_RNN_Geotime_Classify_v_0.07_dict.pth')))
+        self.model = LSTMClassifier(vocab_size=89, embedding_dim=128, hidden_dim=32, output_size=60)
+        self.model.load_state_dict(torch.load(pkg_resources.resource_stream(__name__, 'models/LSTM_RNN_Geotime_Classify_v_0.08_dict.pth')))
         self.model.eval()
         self.number_of_random_samples = number_of_samples
         #       prediction tensors with the best match being less than predictionLimit will not be returned
@@ -227,7 +227,9 @@ class GeoTimeClassify:
                 "date_long_dmonthy": 54,
                 "city_suffix": 55,
                 "month_name": 56,
-                "boolean_letter":57
+                "boolean_letter":57,
+                'date_%Y-%m-%d %H:%M:%S': 58,
+                'unix_time': 59
             },
         )
         self.n_categories = len(self.tag2id)
@@ -1495,6 +1497,54 @@ class GeoTimeClassify:
             else:
                 return {"Category": "Unknown Date"}
 
+        def date_util_21(values):
+            array_valid, dayFirst = date_util(values, separator="-", shortyear=False, yearloc=0)
+            print('valid array', array_valid)
+            if dayFirst == True:
+                dayFormat = day_ddOrd(values, separator='-', loc=1)
+                monthFormat = month_MMorM(values, separator='-', loc=2)
+            else:
+                dayFormat = day_ddOrd(values, separator='-', loc=2)
+                monthFormat = month_MMorM(values, separator='-', loc=1)
+            if len(array_valid) > len(values) * 0.85:
+                if dayFirst == True:
+
+                    return {
+                        "Category": "Date",
+                        "Format": "y-" + dayFormat + "-" + monthFormat +' %H%M%S',
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
+                else:
+                    return {
+                        "Category": "Date",
+                        "Format": "y-" + monthFormat + "-" + dayFormat+ ' %H%M%S',
+                        "Parser": "Util",
+                        "DayFirst": dayFirst,
+                    }
+            else:
+                return {"Category": "Unknown Date"}
+
+        def date_util_22(values):
+            array_valid = []
+            print('valid array', array_valid)
+            for v in values:
+                try:
+                    if int(v) < -5364601438 or int(v) > 4102506000:
+                        array_valid.append('failed')
+                    elif len(v) <= 13:
+                        array_valid.append('valid')
+                    else:
+                        array_valid.append('failed')
+                except Exception as e:
+                    array_valid.append('failed')
+                    print(e)
+
+            if 'failed' in array_valid:
+                return {"Category": "Unknown Date"}
+            else:
+                return {"Category": "Date", "Format": '%S', "Parser": "Util"}
+
         def date_long_1(values):
             #              #  01 April 2008
             array_valid, dayFirst = date_util(values, separator="none",shortyear=False, yearloc=None)
@@ -1684,6 +1734,8 @@ class GeoTimeClassify:
                 "date_%Y.%m.%d": date_util_18,
                 "date_%Y-%m-%d": date_util_19,
                 "date_%Y/%m/%d": date_util_20,
+                "date_%Y-%m-%d %H:%M:%S": date_util_21,
+                'unix_time': date_util_22,
                 "date_long_dmonthY": date_long_1,
                 "date_long_dmonthy": date_long_2,
                 "date_long_dmdy": date_long_3,
@@ -1821,3 +1873,4 @@ class GeoTimeClassify:
 
     def get_Fake_Data(self):
         return self.FakeData
+
