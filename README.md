@@ -30,7 +30,7 @@ First you need to install numpy, scipy, pandas, joblib, pip, torch and torchvisi
     
 Now you can pip install the geotime_classify repo. To pip install this repo use:
 
-    pip install geotime-classify==0.5.3
+    pip install geotime-classify==0.5.4
  
  
 Once it is installed you can instantiate the geotime_classify with the number of random samples (n) you want to take from each column of your csv. To take 100 samples from each column run. In most cases more samples of each column will result is more accurate classifications, however it will increase the time of processing. 
@@ -152,7 +152,9 @@ Possible classifciation options:
 41. "Category": "Date",  "Format": "y_MM_dd",  "Parser": "Util",  "DayFirst": dayFirst
 42. "Category": "Date",  "Format": "y.MM.dd",  "Parser": "Util",  "DayFirst": dayFirst
 43. "Category": "Date",  "Format": "y-MM-dd",  "Parser": "Util",  "DayFirst": dayFirst
-44. "Category": "Date",  "Format": "y/MM/dd",  "Parser": "Util",  "DayFirst": dayFirst,
+44. "Category": "Date",  "Format": "y/MM/dd",  "Parser": "Util",  "DayFirst": dayFirst
+45. "Category": "Date",  "Format": "y-MM-dd %H%M%S", "Parser": "Util",  "DayFirst": dayFirst
+46. "Category": "Date", "Format": '%S', "Parser": "Util"    
 45. "Category": "Date", "Format": "dd LLLL y", "Parser": "Util"
 46. "Category": "Date", "Format": "dd LLLL yy", "Parser": "Util"
 47. "Category": "Date",  "Format": "EEEE, LLLL dd,yy",  "Parser": "Util"
