@@ -108,6 +108,7 @@ You should see an array with a dict for each column. The keys in each dict are
 ]
    
 For the classification data there are a set number of possible classifications after the validation code. dayFirst can be 'True' or 'False'.
+The 'format' of a date classification are created using this reference sheet: https://strftime.org/ . 
 Possible classifciation options: 
 1. "category": "None"
 2. "category": "geo", "subcategory":"continent"
