@@ -30,7 +30,7 @@ First you need to install numpy, scipy, pandas, joblib, pip, torch and torchvisi
     
 Now you can pip install the geotime_classify repo. To pip install this repo use:
 
-    pip install geotime-classify==0.5.4
+    pip install geotime-classify==0.5.5
  
  
 Once it is installed you can instantiate the geotime_classify with the number of random samples (n) you want to take from each column of your csv. To take 100 samples from each column run. In most cases more samples of each column will result is more accurate classifications, however it will increase the time of processing. 
@@ -109,59 +109,23 @@ You should see an array with a dict for each column. The keys in each dict are
    
 For the classification data there are a set number of possible classifications after the validation code. dayFirst can be 'True' or 'False'.
 Possible classifciation options: 
-1. "Category": "None"
-2. "Category": "Continent"
-3. "Category": "Country Name"
-4. "Category": "State Name"
-5. "Category": "City Name"
-6. "Category": "ISO3"
-7. "Category": "ISO2"
-8. "Category": "Unknown code"
-9. "Category": "Proper Noun"
-10. "Category": "Number"
-11. "Category": "Number/Geo"
-12. "Category": "Geo", "type": "Longitude (number)"
-13. "Category": "Geo", "type": "Latitude (number)"
-14. "Category": "Year"
-15. "Category": "Day Number"
-16. "Category": "Day Name"
-17. "Category": "Month Number"
-18. "Category": "Month Name"
-19. "Category": "Unknown Date"
-20. "Category": "Date", "Format": "ydd", "Parser": "arrow"
-21. "Category": "Date", "Format": "y-MM", "Parser": "arrow"
-22. "Category": "Date", "Format": "y/MM", "Parser": "arrow"
-23. "Category": "Date", "Format": "y.MM", "Parser": "arrow"
-24. "Category": "Date",  "Format": "iso8601",  "Parser": "Util",  "DayFirst": dayFirst
-25. "Category": "Date",  "Format": "MM-dd-y",  "Parser": "Util",  "DayFirst": dayFirst
-26. "Category": "Date",  "Format": "MM-dd-y",  "Parser": "Util",  "DayFirst": dayFirst
-27. "Category": "Date",  "Format": "MM_dd_y",  "Parser": "Util",  "DayFirst": dayFirst,
-28. "Category": "Date",  "Format": "MM_dd_yy",  "Parser": "Util",  "DayFirst": dayFirst
-29. "Category": "Date",  "Format": "MM/dd/y",  "Parser": "Util",  "DayFirst": dayFirst
-30. "Category": "Date",  "Format": "MM/dd/yy",  "Parser": "Util",  "DayFirst": dayFirst
-31. "Category": "Date",  "Format": "MM.dd.y",  "Parser": "Util",  "DayFirst": dayFirst
-32. "Category": "Date",  "Format": "MM.dd.yy",  "Parser": "Util",  "DayFirst": dayFirst
-33. "Category": "Date",  "Format": "d-MM-y",  "Parser": "Util",  "DayFirst": dayFirst
-34. "Category": "Date",  "Format": "d-MM-yy",  "Parser": "Util",  "DayFirst": dayFirst
-35. "Category": "Date",  "Format": "d_MM_y",  "Parser": "Util",  "DayFirst": dayFirst
-36. "Category": "Date",  "Format": "d_MM_yy",  "Parser": "Util",  "DayFirst": dayFirst
-37. "Category": "Date",  "Format": "d/MM/y",  "Parser": "Util",  "DayFirst": dayFirst
-38. "Category": "Date",  "Format": "d/MM/yy",  "Parser": "Util",  "DayFirst": dayFirst
-39. "Category": "Date",  "Format": "d.MM.y",  "Parser": "Util",  "DayFirst": dayFirst
-40. "Category": "Date",  "Format": "d.MM.yy",  "Parser": "Util",  "DayFirst": dayFirst
-41. "Category": "Date",  "Format": "y_MM_dd",  "Parser": "Util",  "DayFirst": dayFirst
-42. "Category": "Date",  "Format": "y.MM.dd",  "Parser": "Util",  "DayFirst": dayFirst
-43. "Category": "Date",  "Format": "y-MM-dd",  "Parser": "Util",  "DayFirst": dayFirst
-44. "Category": "Date",  "Format": "y/MM/dd",  "Parser": "Util",  "DayFirst": dayFirst
-45. "Category": "Date",  "Format": "y-MM-dd %H%M%S", "Parser": "Util",  "DayFirst": dayFirst
-46. "Category": "Date", "Format": '%S', "Parser": "Util"    
-45. "Category": "Date", "Format": "dd LLLL y", "Parser": "Util"
-46. "Category": "Date", "Format": "dd LLLL yy", "Parser": "Util"
-47. "Category": "Date",  "Format": "EEEE, LLLL dd,yy",  "Parser": "Util"
-48. "Category": "Date", "Format": "LLLL dd, y", "Parser": "Util"
-49. "Category": "Date",  "Format": "EEEE, LLLL dd,yy HH:mm:ss",  "Parser": "Util"
-50. "Category": "Date", "Format": "MM/dd/yy HH:mm"
-51. "Category": "Boolean"
+1. "category": "None"
+2. "category": "geo", "subcategory":"continent"
+3. "category": "geo", "subcategory":"country name"
+4. "category": "geo", "subcategory":"state name"
+5. "category": "geo", "subcategory":"city name"
+6. "category": "geo", "subcategory":"ISO3"
+7. "category": "geo", "subcategory":"ISO2"
+8. "category": "unknown code"
+9. "category": "proper noun"
+10. "category": "number"
+11. "category": "number/geo" , "subcategory": "Unknown-mostly between -1 and 1"
+12. "category": "geo", "subcategory": "longitude"
+13. "category": "geo", "subcategory": "latitude"
+19. "category": "unknown date" , "subcategory": None
+14. "category": "time", "subcategory": "date", "format": format, "Parser": "Util",  "DayFirst": dayFirst
+14. "category": "time", "subcategory": "date", "format": format, "Parser": "arrow",  "DayFirst": dayFirst
+51. "category": "Boolean"
 
 
  ### geotime_classify.add_iso8601_columns(path, formats='default')

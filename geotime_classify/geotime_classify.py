@@ -3,7 +3,6 @@ from __future__ import unicode_literals, print_function, division
 
 import os
 
-
 import torch
 import torch.autograd as autograd
 from torch.autograd import Variable
@@ -16,7 +15,6 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 from collections import defaultdict
 from collections import Counter
-
 
 # Kyle's attempt
 import pandas as pd
@@ -37,6 +35,7 @@ import fuzzywuzzy
 import pkgutil
 import csv
 import pkg_resources
+
 
 # Need to have the class of the model in local memory to load a saved model in pytorch
 class LSTMClassifier(nn.Module):
@@ -110,8 +109,9 @@ class PaddedTensorDataset(Dataset):
 
 class GeoTimeClassify:
     def __init__(self, number_of_samples):
-        self.model = LSTMClassifier(vocab_size=89, embedding_dim=128, hidden_dim=32, output_size=60)
-        self.model.load_state_dict(torch.load(pkg_resources.resource_stream(__name__, 'models/LSTM_RNN_Geotime_Classify_v_0.08_dict.pth')))
+        self.model = LSTMClassifier(vocab_size=89, embedding_dim=128, hidden_dim=32, output_size=71)
+        self.model.load_state_dict(
+            torch.load(pkg_resources.resource_stream(__name__, 'models/LSTM_RNN_Geotime_Classify_v_0.09_dict.pth')))
         self.model.eval()
         self.number_of_random_samples = number_of_samples
         #       prediction tensors with the best match being less than predictionLimit will not be returned
@@ -119,18 +119,19 @@ class GeoTimeClassify:
         self.country_lookup = pd.read_csv(pkg_resources.resource_stream(__name__, 'datasets/country.csv'),
                                           encoding='latin-1')
         self.city_lookup = pd.read_csv(pkg_resources.resource_stream(__name__, 'datasets/city.csv'),
-                                          encoding='latin-1')
+                                       encoding='latin-1')
         self.city_lookup = np.asarray(self.city_lookup["city"])
         self.state_lookup = pd.read_csv(pkg_resources.resource_stream(__name__, 'datasets/NA_states_provinces.csv'),
-                                       encoding='latin-1')
+                                        encoding='latin-1')
         self.state_lookup = np.asarray(self.state_lookup["state_name"])
         self.country_name = np.asarray(self.country_lookup["country_name"])
         self.iso3_lookup = np.asarray(self.country_lookup["Alpha-3_Code"])
-        self.iso2_lookup =np.asarray(self.country_lookup["Alpha-2_Code"])
+        self.iso2_lookup = np.asarray(self.country_lookup["Alpha-2_Code"])
         self.cont_lookup = pd.read_csv(pkg_resources.resource_stream(__name__, 'datasets/continent_code.csv'),
-                                        encoding='latin-1')
+                                       encoding='latin-1')
         self.cont_lookup = np.asarray(self.cont_lookup["continent_name"])
-        self.FakeData= pd.read_csv(pkg_resources.resource_stream(__name__,'datasets/Fake_data.csv'), encoding='latin-1')
+        self.FakeData = pd.read_csv(pkg_resources.resource_stream(__name__, 'datasets/Fake_data.csv'),
+                                    encoding='latin-1')
 
         self.day_of_week = [
             "Monday",
@@ -227,9 +228,20 @@ class GeoTimeClassify:
                 "date_long_dmonthy": 54,
                 "city_suffix": 55,
                 "month_name": 56,
-                "boolean_letter":57,
+                "boolean_letter": 57,
                 'date_%Y-%m-%d %H:%M:%S': 58,
-                'unix_time': 59
+                'date_%Y/%m/%d %H:%M:%S': 59,
+                'date_%Y_%m_%d %H:%M:%S': 60,
+                'date_%Y.%m.%d %H:%M:%S': 61,
+                'date_%m-%d-%Y %H:%M:%S': 62,
+                'date_%m/%d/%Y %H:%M:%S': 63,
+                'date_%m_%d_%Y %H:%M:%S': 64,
+                'date_%m.%d.%Y %H:%M:%S': 65,
+                'date_%d-%m-%Y %H:%M:%S': 66,
+                'date_%d/%m/%Y %H:%M:%S': 67,
+                'date_%d_%m_%Y %H:%M:%S': 68,
+                'date_%d.%m.%Y %H:%M:%S': 69,
+                'unix_time': 70
             },
         )
         self.n_categories = len(self.tag2id)
@@ -409,8 +421,6 @@ class GeoTimeClassify:
             },
         )
 
-
-
     class PaddedTensorDataset(Dataset):
         #     """Dataset wrapping data, target and length tensors.
 
@@ -587,11 +597,11 @@ class GeoTimeClassify:
         # self.model = torch.load(self.cwd + '/geotime_classify/models/LSTM_RNN_Geotime_Classify_v_0.07.pth')
         column_value_object = self.get_arrayOfValues_df(df)
         self.column_value_object = column_value_object
-        predictionList= []
+        predictionList = []
         for column in column_value_object:
             try:
                 all_predictions = self.evaluate_test_set(
-                     column_value_object[column]
+                    column_value_object[column]
                 )
                 avg_predictions = self.averaged_predictions(all_predictions)
                 predictionList.append(
@@ -617,16 +627,17 @@ class GeoTimeClassify:
 
     # map function to model prediction category
     def assign_heuristic_function(self, predictions):
-        c_lookup=self.city_lookup
-        state_lookup=self.state_lookup
-        country_lookup=self.country_name
-        iso3_lookup=self.iso3_lookup
-        iso2_lookup=self.iso2_lookup
-        cont_lookup=self.cont_lookup
-        def none_f(values):
-            return {"Category": "None"}
+        c_lookup = self.city_lookup
+        state_lookup = self.state_lookup
+        country_lookup = self.country_name
+        iso3_lookup = self.iso3_lookup
+        iso2_lookup = self.iso2_lookup
+        cont_lookup = self.cont_lookup
 
-        def city_f( values):
+        def none_f(values):
+            return build_return_standard_object(category='None', subcategory=None)
+
+        def city_f(values):
             print("Start city validation ...")
             country_match_bool = []
             for city in values:
@@ -641,9 +652,9 @@ class GeoTimeClassify:
                     print(e)
 
             if np.count_nonzero(country_match_bool) >= (len(values) * 0.30):
-                return {"Category": "City Name"}
+                return build_return_standard_object(category='geo', subcategory='city name', match_type='LSTM')
             else:
-                return {"Category": "Proper Noun"}
+                return build_return_standard_object(category='proper noun', subcategory=None, match_type=None)
 
         def state_f(values):
             print("Start state validation ...")
@@ -655,9 +666,8 @@ class GeoTimeClassify:
                         country_match_bool.append(self.fuzzyMatch(state, c, ratio=85))
                     except Exception as e:
                         print(e)
-
             if np.count_nonzero(country_match_bool) >= (len(values) * 0.40):
-                return {"Category": "State Name"}
+                return build_return_standard_object(category='geo', subcategory='state name', match_type='LSTM')
             else:
                 print("Start cities validation ...")
                 return city_f(values)
@@ -667,7 +677,6 @@ class GeoTimeClassify:
             print("Start country validation ...")
             country_match_bool = []
 
-
             for country in values:
                 for c in country_lookup:
                     try:
@@ -676,7 +685,7 @@ class GeoTimeClassify:
                         print(e)
 
             if np.count_nonzero(country_match_bool) >= (len(values) * 0.40):
-                return {"Category": "Country Name"}
+                return build_return_standard_object(category='geo', subcategory='country name', match_type='LSTM')
             else:
                 return state_f(values)
 
@@ -694,7 +703,7 @@ class GeoTimeClassify:
                         print(e)
 
             if np.count_nonzero(ISO_in_lookup) >= (len(values) * 0.65):
-                return {"Category": "ISO3"}
+                return build_return_standard_object(category='geo', subcategory='ISO3',match_type='LSTM')
             else:
                 return country_iso2(values)
 
@@ -713,9 +722,9 @@ class GeoTimeClassify:
 
             if np.count_nonzero(ISO2_in_lookup) >= (len(values) * 0.65):
 
-                return {"Category": "ISO2"}
+                return build_return_standard_object(category='geo', subcategory='ISO2', match_type='LSTM')
             else:
-                return {"Category": "Unknown Code"}
+                return build_return_standard_object(category='unknown code', subcategory=None, match_type=None)
 
         def continent_f(values):
             print("Start continent validation ...")
@@ -732,9 +741,9 @@ class GeoTimeClassify:
 
             if np.count_nonzero(cont_in_lookup) >= (len(values) * 0.65):
 
-                return {"Category": "Continent"}
+                return build_return_standard_object(category='geo', subcategory='continent',match_type='LSTM')
             else:
-                return {"Category": "Proper Noun"}
+                return build_return_standard_object(category='proper noun', subcategory=None, match_type=None)
 
         def geo_f(values):
             print("Start geo validation ...")
@@ -742,10 +751,10 @@ class GeoTimeClassify:
             percent_array = []
             for geo in values:
                 try:
-                    if float(geo) <= 180 and float(geo) >= -180:
-                        if float(geo) <= 90 and float(geo) >= -90:
+                    if 180 >= float(geo) >= -180:
+                        if 90 >= float(geo) >= -90:
                             geo_valid.append("latlng")
-                            if float(geo) <= 1 and float(geo) >= -1:
+                            if 1 >= float(geo) >= -1:
                                 percent_array.append("true")
 
                         else:
@@ -756,18 +765,15 @@ class GeoTimeClassify:
                     print(e)
 
             if "failed" in geo_valid:
-                return {"Category": "Number"}
+                return build_return_standard_object(category='number', subcategory=None, match_type=None)
             elif len(percent_array) >= len(values) * 0.95:
-                return {
-                    "Category": "Number/Geo",
-                    "type": "Unknown-mostly between -1 and 1",
-                }
+                return build_return_standard_object(category='number/geo', subcategory="Unknown-mostly between -1 and 1", match_type='LSTM')
             elif "lng" in geo_valid:
-                return {"Category": "Geo", "type": "Longitude (number)"}
+                return build_return_standard_object(category='geo', subcategory="longitude", match_type='LSTM')
             elif "latlng" in geo_valid:
-                return {"Category": "Geo", "type": "Latitude (number)"}
+                return build_return_standard_object(category='geo', subcategory="latitude", match_type='LSTM')
             else:
-                return {"Category": "Number"}
+                return build_return_standard_object(category='number', subcategory=None, match_type=None)
 
         def year_f(values):
             print("Start year validation ...")
@@ -777,7 +783,7 @@ class GeoTimeClassify:
             for year in values:
                 try:
                     if str.isdigit(str(year)):
-                        if int(year) > 1300 and int(year) < 2500:
+                        if 1300 < int(year) < 2500:
                             year_values_valid.append("True")
                         else:
                             strange_year.append("Maybe")
@@ -787,11 +793,11 @@ class GeoTimeClassify:
                     print(e)
 
             if len(years_failed) > len(values) * 0.15:
-                return {"Category": "None"}
+                return build_return_standard_object(category='None', subcategory=None, match_type=None)
             elif len(strange_year) > len(values) * 15:
-                return {"Category": "None"}
+                return  build_return_standard_object(category='None', subcategory=None, match_type=None)
             elif len(year_values_valid) > len(values) * 0.75:
-                return {"Category": "Year"}
+                return build_return_object(format="%Y", util=None, dayFirst=None)
 
         def bool_f(values):
             print("Start boolean validation ...")
@@ -806,9 +812,9 @@ class GeoTimeClassify:
 
             if np.count_nonzero(bool_array) >= (len(values) * 0.85):
 
-                return {"Category": "Boolean"}
+                return  build_return_standard_object(category='Boolean', subcategory=None, match_type='LSTM')
             else:
-                return {"Category": "None"}
+                return build_return_standard_object(category='None', subcategory=None, match_type=None)
 
         def bool_letter_f(values):
             print('Start boolean validation ...')
@@ -823,23 +829,30 @@ class GeoTimeClassify:
 
             if np.count_nonzero(bool_array) >= (len(values) * .85):
 
-                return {'Category': 'Boolean'}
+                return build_return_standard_object(category='Boolean', subcategory=None, match_type='LSTM')
             else:
-                return {'Category': 'None'}
+                return build_return_standard_object(category='None', subcategory=None, match_type=None)
+
+        def build_return_object(format, util, dayFirst):
+            return {'category': 'time', 'subcategory': 'date', 'format': format,
+                    "match_type": ['LSTM'], "Parser": "Util", "DayFirst": dayFirst}
+
+        def build_return_standard_object(category, subcategory, match_type):
+            return {'category': category, 'subcategory': subcategory, 'format': None,
+                    "match_type": [match_type], "Parser": None, "DayFirst": None}
 
         def dayFirstCheck(values, separator, shortYear, yearLoc):
             # only works for 4 number year
             for date in values:
                 try:
                     arr = date.split(separator)
-                    if shortYear == True:
-                        if yearLoc==0:
+                    if shortYear:
+                        if yearLoc == 0:
                             if int(arr[1]) > 12:
                                 return True
                         else:
                             if int(arr[0]) > 12:
                                 return True
-
                     else:
                         if len(arr[0]) == 4:
                             if int(arr[1]) > 12:
@@ -847,8 +860,8 @@ class GeoTimeClassify:
                         else:
                             if int(arr[0]) > 12:
                                 return True
-                except:
-                    print("error occurred")
+                except Exception as e:
+                    print("error occurred", e)
 
             return False
 
@@ -869,25 +882,27 @@ class GeoTimeClassify:
         def date_arrow_1(values):
             array_valid = date_arrow(values, separator="none")
             if len(array_valid) > len(values) * 0.85:
-                return {"Category": "Date", "Format": "ydd", "Parser": "arrow"}
+                return build_return_object(format="%Y%d", util='arrow', dayFirst=None)
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_arrow_2(values):
             # array_valid = date_arrow(values, separator="-")
             monthFormat = month_MMorM(values, separator='-', loc=1)
-            allMonthVals=[]
+            print('mon form---------------------', monthFormat)
+            allMonthVals = []
             for val in values:
-                monthval=val.split('-')[1]
+                monthval = val.split('-')[1]
                 allMonthVals.append(monthval)
-            validMonth=month_day_f(allMonthVals)
-            if validMonth["Category"]=="Month Number":
-                return {"Category": "Date", "Format": "y-" + monthFormat, "Parser": "arrow"}
+            validMonth = month_day_f(allMonthVals)
+            print('val mont ---!!!', validMonth)
+            if validMonth["subcategory"] == "date" and validMonth["format"] == "%m"  or validMonth["subcategory"] ==  'date' and validMonth['format']=="%-m" :
+                return build_return_object(format="%Y-" + monthFormat, util='arrow', dayFirst=None)
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_arrow_3(values):
-            array_valid = date_arrow(values, separator="/" )
+            array_valid = date_arrow(values, separator="/")
             monthFormat = month_MMorM(values, separator='/', loc=1)
             allMonthVals = []
             for val in values:
@@ -895,11 +910,12 @@ class GeoTimeClassify:
                 allMonthVals.append(monthval)
             validMonth = month_day_f(allMonthVals)
             if len(array_valid) > len(values) * 0.85:
-                return {"Category": "Date", "Format": "y/"+monthFormat, "Parser": "arrow"}
-            elif monthFormat == 'M' and validMonth['Category']=="Month Number":
-                return {"Category": "Date", "Format": "y/" + monthFormat, "Parser": "arrow"}
+                return build_return_object(format="%Y/" + monthFormat, util='arrow', dayFirst=None)
+            elif validMonth["subcategory"] == 'date' and validMonth['format']=="%m"  or validMonth['subcategory'] == 'date' and validMonth['format']=='%-m':
+                return build_return_object(format="%Y/" + monthFormat, util='arrow', dayFirst=None)
+
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_arrow_4(values):
             array_valid = date_arrow(values, separator=".")
@@ -911,12 +927,14 @@ class GeoTimeClassify:
 
             validMonth = month_day_f(allMonthVals)
 
-            if len(array_valid) > len(values) * 0.85:
-                return {"Category": "Date", "Format": "y."+monthFormat, "Parser": "arrow"}
-            elif validMonth['Category']=='Month Number':
-                return {"Category": "Date", "Format": "y."+monthFormat, "Parser": "arrow"}
+            if len(array_valid) > len(values) * 0.75:
+                return build_return_object(format="%Y." + monthFormat, util='arrow', dayFirst=None)
+
+            elif validMonth['subcategory'] == 'date' and validMonth['format']=='%m' or validMonth['subcategory'] == 'date' and validMonth['format']== '%-m':
+                return build_return_object(format="%Y." + monthFormat, util='arrow', dayFirst=None)
+
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util(values, separator, shortyear, yearloc):
 
@@ -940,66 +958,87 @@ class GeoTimeClassify:
             return util_dates, dayFirst
 
         def day_ddOrd(values, separator, loc):
-            dayFormat='d'
+            dayFormat = '%-d'
             for d in values:
-                d_value=d.split(separator)[loc]
-                if d_value[0]=='0':
-                    dayFormat='dd'
+                if separator is None:
+                    if d[0] == '0':
+                        dayFormat = '%d'
+                else:
+                    d_value = d.split(separator)[loc]
+                    if d_value[0] == '0':
+                        dayFormat = '%d'
             return dayFormat
 
         def month_MMorM(values, separator, loc):
-            monthFormat = 'M'
+            monthFormat = '%-m'
             for d in values:
-                d_value = d.split(separator)[loc]
-                if d_value[0] == '0':
-                    monthFormat = 'MM'
+                if separator is None:
+                    if d[0] == '0':
+                        monthFormat = '%m'
+                else:
+                    d_value = d.split(separator)[loc]
+                    if d_value[0] == '0':
+                        monthFormat = '%m'
             return monthFormat
 
+        def hour_hOrH(values,separator, loc_hms):
+            hourFormat = '%-H'
+            for d in values:
+
+                if separator is None:
+                    if d[0] == '0':
+                        hourFormat = '%H'
+                else:
+                    hms = d.split(' ')[-1]
+                    hms = hms.split(separator)[loc_hms]
+
+                    if hms[0] == '0':
+                        hourFormat = '%H'
+            return hourFormat
+
+        def minute_mOrM(values,separator, loc_hms):
+            minuteFormat = '%-M'
+            for d in values:
+                if separator is None:
+                    if d[0] == '0':
+                        minuteFormat = '%M'
+                else:
+                    hms = d.split(' ')[-1]
+                    hms = hms.split(separator)[loc_hms]
+                    if hms[0] == '0':
+                        minuteFormat = '%M'
+            return minuteFormat
+
+        def second_sOrS(values, separator, loc_hms):
+            secondFormat = '%-S'
+            for d in values:
+                if separator is None:
+                    if d[0] == '0':
+                        secondFormat = '%S'
+                else:
+                    hms = d.split(' ')[-1]
+                    hms = hms.split(separator)[loc_hms]
+                    if hms[0] == '0':
+                        secondFormat = '%S'
+            return secondFormat
 
         # currently can't handle yyyy-dd-mm HH:mm:ss
         def iso_time(values):
-            array_valid, dayFirst = date_util(values, separator="none",shortyear=False, yearloc=None)
+            array_valid, dayFirst = date_util(values, separator="none", shortyear=False, yearloc=None)
+
             if len(array_valid) > len(values) * 0.85:
-                return {
-                    "Category": "Date",
-                    "Format": "iso8601",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst
-                }
+                # '1996-03-20T07:46:39'
+                # '1998-08-15T08:43:22'
+                # '1972-10-03T05:52:26'
+                # '1987-08-15T09:51:25'
+                return build_return_object(format="%Y-%m-%dT%H%M%S", util='Util', dayFirst=dayFirst)
+
             else:
-                return {"Category": "Unknown Date Format"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_1(values):
-            array_valid, dayFirst = date_util(values, separator="-",shortyear=False, yearloc=None)
-            if dayFirst == 'True':
-                dayFormat=day_ddOrd(values,separator='-', loc=0)
-                monthFormat=month_MMorM(values, separator='-' ,loc=1)
-            else:
-                dayFormat=day_ddOrd(values, separator='-', loc=1)
-                monthFormat=month_MMorM(values, separator='-' ,loc=0)
-
-            if len(array_valid) > len(values) * 0.85:
-                if dayFirst==True:
-                    return {
-                        "Category": "Date",
-                        "Format": dayFormat + "-" + monthFormat + "-y",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst
-                    }
-                else:
-
-                    return {
-                        "Category": "Date",
-                        "Format": monthFormat+"-"+dayFormat+"-y",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst
-                    }
-            else:
-                return {"Category": "Unknown Date"}
-
-        def date_util_2(values):
-            array_valid, dayFirst = date_util(values, separator="-",shortyear=False, yearloc=None)
-            if dayFirst == 'True':
+            array_valid, dayFirst = date_util(values, separator="-", shortyear=False, yearloc=None)
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='-', loc=0)
                 monthFormat = month_MMorM(values, separator='-', loc=1)
             else:
@@ -1007,527 +1046,644 @@ class GeoTimeClassify:
                 monthFormat = month_MMorM(values, separator='-', loc=0)
 
             if len(array_valid) > len(values) * 0.85:
-                if dayFirst is True:
-                    return {
-                        "Category": "Date",
-                        "Format":  dayFormat+ "-" + monthFormat + "-y",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst
-                        }
+                if dayFirst:
+                    return build_return_object(format=dayFormat + "-" + monthFormat + "-%Y", util='Util',
+                                               dayFirst=dayFirst)
+
                 else:
-                    return {
-                        "Category": "Date",
-                        "Format": monthFormat + "-" + dayFormat + "-y",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst
-                    }
+                    return build_return_object(format=monthFormat + "-" + dayFormat + "-%Y", util='Util',
+                                               dayFirst=dayFirst)
+
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+
+        def date_util_2(values):
+            array_valid, dayFirst = date_util(values, separator="-", shortyear=False, yearloc=None)
+            if dayFirst:
+                dayFormat = day_ddOrd(values, separator='-', loc=0)
+                monthFormat = month_MMorM(values, separator='-', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='-', loc=1)
+                monthFormat = month_MMorM(values, separator='-', loc=0)
+
+            if len(array_valid) > len(values) * 0.85:
+                if dayFirst:
+                    return build_return_object(format=dayFormat + "-" + monthFormat + "-%Y", util='Util',
+                                               dayFirst=dayFirst)
+
+                else:
+                    return build_return_object(format=monthFormat + "-" + dayFormat + "-%Y", util='Util',
+                                               dayFirst=dayFirst)
+
+            else:
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_3(values):
             array_valid, dayFirst = date_util(values, separator="_", shortyear=False, yearloc=None)
-            if dayFirst == True:
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='_', loc=0)
                 monthFormat = month_MMorM(values, separator='_', loc=1)
             else:
                 dayFormat = day_ddOrd(values, separator='_', loc=1)
                 monthFormat = month_MMorM(values, separator='_', loc=0)
 
-            if dayFirst is True:
-                return  {
-                    "Category": "Date",
-                    "Format": dayFormat+"_"+ monthFormat+"_y",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst,
-                }
-            else:
-                return {
-                    "Category": "Date",
-                    "Format": monthFormat+"_"+ dayFormat+"_y",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst,
-                }
+            if dayFirst:
+                return build_return_object(format=dayFormat + "_" + monthFormat + "_%Y", util='Util', dayFirst=dayFirst)
 
+            else:
+                return build_return_object(format=monthFormat + "_" + dayFormat + "_%Y", util='Util', dayFirst=dayFirst)
 
         def date_util_4(values):
             array_valid, dayFirst = date_util(values, separator="_", shortyear=True, yearloc=2)
-            if dayFirst == True:
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='_', loc=0)
                 monthFormat = month_MMorM(values, separator='_', loc=1)
             else:
                 dayFormat = day_ddOrd(values, separator='_', loc=1)
                 monthFormat = month_MMorM(values, separator='_', loc=0)
-            if dayFirst == True:
-                return {
-                    "Category": "Date",
-                    "Format": dayFormat + "_" + monthFormat + "_yy",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst,
-                }
+            if dayFirst:
+                return build_return_object(format=dayFormat + "_" + monthFormat + "_%y", util='Util', dayFirst=dayFirst)
+
             else:
-                return {
-                "Category": "Date",
-                "Format": monthFormat + "_" + dayFormat + "_yy",
-                "Parser": "Util",
-                "DayFirst": dayFirst,
-                }
+                return build_return_object(format=monthFormat + "_" + dayFormat + "_%y", util='Util', dayFirst=dayFirst)
 
         def date_util_5(values):
-            array_valid, dayFirst = date_util(values, separator="/",shortyear=False, yearloc=None)
-            if dayFirst == True:
+            array_valid, dayFirst = date_util(values, separator="/", shortyear=False, yearloc=None)
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='/', loc=0)
                 monthFormat = month_MMorM(values, separator='/', loc=1)
             else:
                 dayFormat = day_ddOrd(values, separator='/', loc=1)
                 monthFormat = month_MMorM(values, separator='/', loc=0)
-            if len(array_valid) > len(values) * 0.85:
-                if dayFirst == True:
-                    return {
-                        "Category": "Date",
 
-                        "Format": dayFormat + "/" + monthFormat + "/y",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
-                return {
-                    "Category": "Date",
-                    "Format": monthFormat + "/" + dayFormat + "/y",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst,
-                }
+            if len(array_valid) > len(values) * 0.85:
+                if dayFirst:
+                    return build_return_object(format=dayFormat + "/" + monthFormat + "/%Y", util='Util',
+                                               dayFirst=dayFirst)
+                else:
+                    return build_return_object(format=monthFormat + "/" + dayFormat + "/%Y", util='Util',
+                                               dayFirst=dayFirst)
+
             else:
-                return {"Category": "Unknown Date"}
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_6(values):
-            array_valid, dayFirst = date_util(values, separator="/",shortyear=True, yearloc=2)
-            if dayFirst == True:
+            array_valid, dayFirst = date_util(values, separator="/", shortyear=True, yearloc=2)
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='/', loc=0)
                 monthFormat = month_MMorM(values, separator='/', loc=1)
             else:
                 dayFormat = day_ddOrd(values, separator='/', loc=1)
                 monthFormat = month_MMorM(values, separator='/', loc=0)
             if len(array_valid) > len(values) * 0.85:
-                if dayFirst == True:
-                    return {
-                        "Category": "Date",
-                        "Format": dayFormat + "/" + monthFormat + "/yy",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
+                if dayFirst:
+                    return build_return_object(format=dayFormat + "/" + monthFormat + "/%y", util='Util',
+                                               dayFirst=dayFirst)
 
                 else:
-                    return {
-                        "Category": "Date",
-                        "Format": monthFormat + "/" + dayFormat + "/yy",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                        }
+                    return build_return_object(format=monthFormat + "/" + dayFormat + "/%y", util='Util',
+                                               dayFirst=dayFirst)
+
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_7(values):
             array_valid, dayFirst = date_util(values, separator=".", shortyear=False, yearloc=None)
-            if dayFirst == True:
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='.', loc=0)
                 monthFormat = month_MMorM(values, separator='.', loc=1)
             else:
                 dayFormat = day_ddOrd(values, separator='.', loc=1)
                 monthFormat = month_MMorM(values, separator='.', loc=0)
             if len(array_valid) > len(values) * 0.85:
-                if dayFirst == True:
+                if dayFirst:
 
-                    return {
-                        "Category": "Date",
-                        "Format":  dayFormat + "." + monthFormat + ".y",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
+                    return build_return_object(format=dayFormat + "." + monthFormat + ".%Y", util='Util',
+                                               dayFirst=dayFirst)
+
                 else:
-                    return {
-                        "Category": "Date",
-                        "Format": monthFormat + "." + dayFormat + ".y",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
+                    return build_return_object(format=monthFormat + "." + dayFormat + ".%Y", util='Util',
+                                               dayFirst=dayFirst)
+
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_8(values):
-            array_valid, dayFirst = date_util(values, separator=".",shortyear=True, yearloc=2)
-            if dayFirst == True:
+            array_valid, dayFirst = date_util(values, separator=".", shortyear=True, yearloc=2)
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='.', loc=0)
                 monthFormat = month_MMorM(values, separator='.', loc=1)
             else:
                 dayFormat = day_ddOrd(values, separator='.', loc=1)
                 monthFormat = month_MMorM(values, separator='.', loc=0)
             if len(array_valid) > len(values) * 0.85:
-                if dayFirst == True:
-                    return {
-                        "Category": "Date",
-                        "Format":  dayFormat + "." + monthFormat + ".yy",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
+                if dayFirst:
+                    return build_return_object(format=dayFormat + "." + monthFormat + ".%y", util='Util',
+                                               dayFirst=dayFirst)
+
                 else:
-                    return {
-                        "Category": "Date",
-                        "Format": monthFormat + "." + dayFormat + ".yy",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
+                    return build_return_object(format=monthFormat + "." + dayFormat + ".%y", util='Util',
+                                               dayFirst=dayFirst)
+
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_9(values):
             array_valid, dayFirst = date_util(values, separator="-", shortyear=False, yearloc=None)
-            if dayFirst == True:
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='-', loc=0)
                 monthFormat = month_MMorM(values, separator='-', loc=1)
             else:
                 dayFormat = day_ddOrd(values, separator='-', loc=1)
                 monthFormat = month_MMorM(values, separator='-', loc=0)
             if len(array_valid) > len(values) * 0.85:
-                if dayFirst == True:
-                    return {
-                        "Category": "Date",
-                        "Format": dayFormat+"-" + monthFormat + "-y",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
+                if dayFirst:
+                    return build_return_object(format=dayFormat + "-" + monthFormat + "-%Y", util='Util',
+                                               dayFirst=dayFirst)
+
                 else:
-                    return {
-                            "Category": "Date",
-                            "Format": monthFormat+"-" + dayFormat + "-y",
-                            "Parser": "Util",
-                            "DayFirst": dayFirst,
-                    }
+                    return build_return_object(format=monthFormat + "-" + dayFormat + "-%Y", util='Util',
+                                               dayFirst=dayFirst)
+
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_10(values):
             array_valid, dayFirst = date_util(values, separator="-", shortyear=True, yearloc=2)
-            if dayFirst == True:
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='-', loc=0)
                 monthFormat = month_MMorM(values, separator='-', loc=1)
             else:
                 dayFormat = day_ddOrd(values, separator='-', loc=1)
                 monthFormat = month_MMorM(values, separator='-', loc=0)
             if len(array_valid) > len(values) * 0.85:
-                if dayFormat == True:
-                    return {
-                        "Category": "Date",
-                        "Format": dayFormat + "-" + monthFormat+"-yy",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
+                if dayFormat:
+                    return build_return_object(format=dayFormat + "-" + monthFormat + "-%y", util='Util',
+                                               dayFirst=dayFirst)
+
                 else:
-                    return {
-                        "Category": "Date",
-                        "Format": monthFormat + "-" + dayFormat + "-yy",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
+                    return build_return_object(format=monthFormat + "-" + dayFormat + "-%y", util='Util',
+                                               dayFirst=dayFirst)
+
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_11(values):
-            array_valid, dayFirst = date_util(values, separator="_",shortyear=False, yearloc=None)
-            if dayFirst == True:
+            array_valid, dayFirst = date_util(values, separator="_", shortyear=False, yearloc=None)
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='_', loc=0)
                 monthFormat = month_MMorM(values, separator='_', loc=1)
             else:
                 dayFormat = day_ddOrd(values, separator='_', loc=1)
                 monthFormat = month_MMorM(values, separator='_', loc=0)
 
-            if dayFirst == True:
+            if dayFirst:
 
-                return {
-                    "Category": "Date",
-                    "Format": dayFormat +"_"+monthFormat+"_y",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst,
-                }
+                return build_return_object(format=dayFormat + "_" + monthFormat + "_%Y", util='Util', dayFirst=dayFirst)
+
             else:
-                return {
-                    "Category": "Date",
-                    "Format": monthFormat +"_"+dayFormat+"_y",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst,
-                }
-
+                return build_return_object(format=monthFormat + "_" + dayFormat + "_%Y", util='Util', dayFirst=dayFirst)
 
         def date_util_12(values):
-            array_valid, dayFirst = date_util(values, separator="_",shortyear=True, yearloc=2)
-            if dayFirst == True:
+            array_valid, dayFirst = date_util(values, separator="_", shortyear=True, yearloc=2)
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='_', loc=0)
                 monthFormat = month_MMorM(values, separator='_', loc=1)
             else:
                 dayFormat = day_ddOrd(values, separator='_', loc=1)
                 monthFormat = month_MMorM(values, separator='_', loc=0)
 
-            if dayFirst == True:
+            if dayFirst:
 
-                return {
-                    "Category": "Date",
-                    "Format": dayFormat + "_" + monthFormat + "_yy",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst,
-                }
+                return build_return_object(format=dayFormat + "_" + monthFormat + "_%y", util='Util', dayFirst=dayFirst)
+
             else:
-                return {
-                    "Category": "Date",
-                    "Format": monthFormat + "_" + dayFormat + "_yy",
-                    "Parser": "Util",
-                    "DayFirst": dayFirst,
-                    }
+                return build_return_object(format=monthFormat + "_" + dayFormat + "_%y", util='Util', dayFirst=dayFirst)
 
         def date_util_13(values):
-            array_valid, dayFirst = date_util(values, separator="/",shortyear=False, yearloc=None)
-            if dayFirst == True:
+            array_valid, dayFirst = date_util(values, separator="/", shortyear=False, yearloc=None)
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='/', loc=0)
                 monthFormat = month_MMorM(values, separator='/', loc=1)
             else:
                 dayFormat = day_ddOrd(values, separator='/', loc=1)
                 monthFormat = month_MMorM(values, separator='/', loc=0)
             if len(array_valid) > len(values) * 0.85:
-                if dayFirst == True:
+                if dayFirst:
 
-                    return {
-                        "Category": "Date",
-                        "Format": dayFormat+'/'+monthFormat+'/'+"/y",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
+                    return build_return_object(format=dayFormat + '/' + monthFormat + '/' + "/%Y", util='Util',
+                                               dayFirst=dayFirst)
+
                 else:
-                    return {
-                        "Category": "Date",
-                        "Format": monthFormat+'/'+dayFormat+'/'+"/y",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
+                    return build_return_object(format=monthFormat + '/' + dayFormat + '/' + "/%Y", util='Util',
+                                               dayFirst=dayFirst)
+
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_14(values):
 
-            array_valid, dayFirst = date_util(values, separator="/",shortyear=True, yearloc=2)
-            if dayFirst == True:
+            array_valid, dayFirst = date_util(values, separator="/", shortyear=True, yearloc=2)
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='/', loc=0)
                 monthFormat = month_MMorM(values, separator='/', loc=1)
             else:
                 dayFormat = day_ddOrd(values, separator='/', loc=1)
                 monthFormat = month_MMorM(values, separator='/', loc=0)
             if len(array_valid) > len(values) * 0.85:
-                if dayFirst == True:
+                if dayFirst:
 
-                    return {
-                        "Category": "Date",
-                        "Format": dayFormat + '/' + monthFormat  + "/yy",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
+                    return build_return_object(format=dayFormat + '/' + monthFormat + "/%y", util='Util',
+                                               dayFirst=dayFirst)
+
                 else:
-                    return {
-                        "Category": "Date",
-                        "Format": monthFormat + '/' + dayFormat + "/yy",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
+                    return build_return_object(format=monthFormat + '/' + dayFormat + "/%y", util='Util',
+                                               dayFirst=dayFirst)
+
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_15(values):
-            array_valid, dayFirst = date_util(values, separator=".",shortyear=False, yearloc=None)
-            if dayFirst == True:
+            array_valid, dayFirst = date_util(values, separator=".", shortyear=False, yearloc=None)
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='.', loc=0)
                 monthFormat = month_MMorM(values, separator='.', loc=1)
             else:
                 dayFormat = day_ddOrd(values, separator='.', loc=1)
                 monthFormat = month_MMorM(values, separator='.', loc=0)
             if len(array_valid) > len(values) * 0.85:
-                if dayFirst == True:
+                if dayFirst:
 
-                    return {
-                        "Category": "Date",
-                        "Format": dayFormat+'.'+monthFormat+".y",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
+                    return build_return_object(format=dayFormat + '.' + monthFormat + ".%Y", util='Util',
+                                               dayFirst=dayFirst)
+
                 else:
-                    return {
-                        "Category": "Date",
-                        "Format": monthFormat + '.' + dayFormat + ".y",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
+                    return build_return_object(format=monthFormat + '.' + dayFormat + ".%Y", util='Util',
+                                               dayFirst=dayFirst)
+
 
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_16(values):
-            array_valid, dayFirst = date_util(values, separator=".",shortyear=True, yearloc=2)
-            if dayFirst == True:
+            array_valid, dayFirst = date_util(values, separator=".", shortyear=True, yearloc=2)
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='.', loc=0)
                 monthFormat = month_MMorM(values, separator='.', loc=1)
             else:
                 dayFormat = day_ddOrd(values, separator='.', loc=1)
                 monthFormat = month_MMorM(values, separator='.', loc=0)
             if len(array_valid) > len(values) * 0.85:
-                if dayFirst == True:
+                if dayFirst:
 
-                    return {
-                        "Category": "Date",
-                        "Format": dayFormat + '.' + monthFormat + ".yy",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
+                    # return {'category': 'time', 'subcategory': 'date',
+                    # 'format': dayFormat + '.' + monthFormat + ".%y",
+                    #         "match_type": ['LSTM'], "Parser": "Util", "DayFirst": dayFirst}
+                    return build_return_object(format=dayFormat + '.' + monthFormat + ".%y", util='Util',
+                                               dayFirst=dayFirst)
+
                 else:
-                    return {
-                        "Category": "Date",
-                        "Format": monthFormat + '.' + dayFormat + ".yy",
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
+                    # return {'category': 'time', 'subcategory': 'date',
+                    # 'format': monthFormat + '.' + dayFormat + ".%y",
+                    # "match_type": ['LSTM'], "Parser": "Util", "DayFirst": dayFirst}
+                    return build_return_object(format=monthFormat + '.' + dayFormat + ".%y", util='Util',
+                                               dayFirst=dayFirst)
+
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_17(values):
-            array_valid, dayFirst = date_util(values, separator="_",shortyear=False, yearloc=None)
-            if dayFirst == True:
+            array_valid, dayFirst = date_util(values, separator="_", shortyear=False, yearloc=None)
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='_', loc=1)
                 monthFormat = month_MMorM(values, separator='_', loc=2)
             else:
                 dayFormat = day_ddOrd(values, separator='_', loc=2)
                 monthFormat = month_MMorM(values, separator='_', loc=1)
 
-            if dayFirst == True:
+            if dayFirst:
+                #    return {'category': 'time', 'subcategory': 'date', 'format': "%Y_"+ dayFormat+"_"+monthFormat,
+                # "match_type": ['LSTM'], "Parser": "Util", "DayFirst": dayFirst}
+                return build_return_object(format="%Y_" + dayFormat + "_" + monthFormat, util='Util', dayFirst=dayFirst)
 
-                return {
-                    "Category": "Date",
-                    "Format": "y_"+ dayFormat+"_"+monthFormat,
-                    "Parser": "Util",
-                    "DayFirst": dayFirst,
-                }
             else:
-                return {
-                    "Category": "Date",
-                    "Format": "y_" + monthFormat + "_" + dayFormat,
-                    "Parser": "Util",
-                    "DayFirst": dayFirst,
-                }
+                return build_return_object(format="%Y_" + monthFormat + "_" + dayFormat, util='Util', dayFirst=dayFirst)
+
+            #    return {'category': 'time', 'subcategory': 'date', 'format': "%Y_" + monthFormat + "_" + dayFormat,
+            # "match_type": ['LSTM'], "Parser": "Util", "DayFirst": dayFirst}
 
         def date_util_18(values):
-            array_valid, dayFirst = date_util(values, separator=".",shortyear=False, yearloc=None)
-            if dayFirst == True:
+            array_valid, dayFirst = date_util(values, separator=".", shortyear=False, yearloc=None)
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='.', loc=1)
                 monthFormat = month_MMorM(values, separator='.', loc=2)
             else:
                 dayFormat = day_ddOrd(values, separator='.', loc=2)
                 monthFormat = month_MMorM(values, separator='.', loc=1)
             if len(array_valid) > len(values) * 0.85:
-                if dayFirst == True:
+                if dayFirst:
+                    #    return  {'category': 'time', 'subcategory': 'date', 'format': "%Y."+dayFormat+"."+monthFormat,
+                    # "match_type": ['LSTM'], "Parser": "Util", "DayFirst": dayFirst}
+                    return build_return_object(format="%Y." + dayFormat + "." + monthFormat, util='Util',
+                                               dayFirst=dayFirst)
 
-                    return {
-                        "Category": "Date",
-                        "Format": "y."+dayFormat+"."+monthFormat,
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
                 else:
-                    return {
-                        "Category": "Date",
-                        "Format": "y."+monthFormat+"."+dayFormat,
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
+                    return build_return_object(format="%Y." + monthFormat + "." + dayFormat, util='Util',
+                                               dayFirst=dayFirst)
+
+                #    return  {'category': 'time', 'subcategory': 'date', 'format': "%Y."+monthFormat+"."+dayFormat,
+                # "match_type": ['LSTM'], "Parser": "Util", "DayFirst": dayFirst}
+
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_19(values):
-            array_valid, dayFirst = date_util(values, separator="-",shortyear=False, yearloc=None)
-            if dayFirst == True:
+            array_valid, dayFirst = date_util(values, separator="-", shortyear=False, yearloc=None)
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='-', loc=1)
                 monthFormat = month_MMorM(values, separator='-', loc=2)
             else:
                 dayFormat = day_ddOrd(values, separator='-', loc=2)
                 monthFormat = month_MMorM(values, separator='-', loc=1)
             if len(array_valid) > len(values) * 0.85:
-                if dayFirst == True:
+                if dayFirst:
+                    #    return {'category': 'time', 'subcategory': 'date',
+                    #    'format': "%Y-" + dayFormat+"-"+monthFormat,
+                    # "match_type": ['LSTM'], "Parser": "Util", "DayFirst": dayFirst}
+                    return build_return_object(format="%Y-" + dayFormat + "-" + monthFormat, util='Util',
+                                               dayFirst=dayFirst)
 
-                    return {
-                        "Category": "Date",
-                        "Format": "y-" + dayFormat+"-"+monthFormat,
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
                 else:
-                    return {
-                        "Category": "Date",
-                        "Format": "y-" + monthFormat + "-" + dayFormat,
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
+                    return build_return_object(format="%Y-" + monthFormat + "-" + dayFormat, util='Util',
+                                               dayFirst=dayFirst)
+
+                #    return  {'category': 'time', 'subcategory': 'date',
+                #    'format': "%Y-" + monthFormat + "-" + dayFormat,
+                # "match_type": ['LSTM'], "Parser": "Util", "DayFirst": dayFirst}
+
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_20(values):
-            array_valid, dayFirst = date_util(values, separator="/",shortyear=False, yearloc=None)
-            if dayFirst == True:
+            array_valid, dayFirst = date_util(values, separator="/", shortyear=False, yearloc=None)
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='/', loc=1)
                 monthFormat = month_MMorM(values, separator='/', loc=2)
             else:
                 dayFormat = day_ddOrd(values, separator='/', loc=2)
                 monthFormat = month_MMorM(values, separator='/', loc=1)
             if len(array_valid) > len(values) * 0.85:
-                if dayFirst == True:
+                if dayFirst:
+                    # return  {'category': 'time', 'subcategory': 'date',
+                    # 'format': "%Y/"+dayFormat+"/"+monthFormat, "match_type": ['LSTM'],
+                    # "Parser": "Util", "DayFirst": dayFirst}
+                    return build_return_object(format="%Y/" + dayFormat + "/" + monthFormat, util='Util',
+                                               dayFirst=dayFirst)
 
-                    return {
-                        "Category": "Date",
-                        "Format": "y/"+dayFormat+"/"+monthFormat,
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
                 else:
-                    return {
-                        "Category": "Date",
-                        "Format": "y/" + monthFormat + "/" + dayFormat,
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
+                    return build_return_object(format="%Y/" + monthFormat + "/" + dayFormat, util='Util',
+                                               dayFirst=dayFirst)
+
+                    # return  {'category': 'time', 'subcategory': 'date',
+                    # 'format': "%Y/" + monthFormat + "/" + dayFormat, "match_type": ['LSTM'],
+                    # "Parser": "Util", "DayFirst": dayFirst}
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_21(values):
             array_valid, dayFirst = date_util(values, separator="-", shortyear=False, yearloc=0)
-            print('valid array', array_valid)
-            if dayFirst == True:
+
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='-', loc=1)
                 monthFormat = month_MMorM(values, separator='-', loc=2)
             else:
                 dayFormat = day_ddOrd(values, separator='-', loc=2)
                 monthFormat = month_MMorM(values, separator='-', loc=1)
+            # hour min sec format
+            hourFormat= hour_hOrH(values, separator=':', loc_hms=0)
+            minFormat = minute_mOrM(values, separator=':',loc_hms=1)
+            secFormat = second_sOrS(values, separator=':', loc_hms=2)
             if len(array_valid) > len(values) * 0.85:
-                if dayFirst == True:
+                if dayFirst:
+                    # return {'category': 'time', 'subcategory': 'date',
+                    # 'format': "%Y-" + dayFormat + "-" + monthFormat +' %H%M%S', "match_type": ['LSTM'],
+                    # "Parser": "Util", "DayFirst": dayFirst}
+                    return build_return_object(format="%Y-" + dayFormat + "-" + monthFormat + ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
+                                               dayFirst=dayFirst)
 
-                    return {
-                        "Category": "Date",
-                        "Format": "y-" + dayFormat + "-" + monthFormat +' %H%M%S',
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
                 else:
-                    return {
-                        "Category": "Date",
-                        "Format": "y-" + monthFormat + "-" + dayFormat+ ' %H%M%S',
-                        "Parser": "Util",
-                        "DayFirst": dayFirst,
-                    }
+                    #    return {'category': 'time', 'subcategory': 'date',
+                    #    'format':"%Y-" + monthFormat + "-" + dayFormat+ ' %H%M%S', "match_type": ['LSTM'],
+                    # "Parser": "Util",  "DayFirst": dayFirst}
+                    return build_return_object(format="%Y-" + monthFormat + "-" + dayFormat + ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
+                                               dayFirst=dayFirst)
+
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+
+        def date_util_23(values):
+            array_valid, dayFirst = date_util(values, separator="/", shortyear=False, yearloc=0)
+            if dayFirst:
+                dayFormat = day_ddOrd(values, separator='/', loc=1)
+                monthFormat = month_MMorM(values, separator='/', loc=2)
+            else:
+                dayFormat = day_ddOrd(values, separator='/', loc=2)
+                monthFormat = month_MMorM(values, separator='/', loc=1)
+            hourFormat = hour_hOrH(values, separator=':', loc_hms=0)
+            minFormat = minute_mOrM(values, separator=':', loc_hms=1)
+            secFormat = second_sOrS(values, separator=':', loc_hms=2)
+            if len(array_valid) > len(values) * 0.85:
+                if dayFirst:
+                    # return {'category': 'time', 'subcategory': 'date',
+                    # 'format': "%Y-" + dayFormat + "-" + monthFormat +' %H%M%S', "match_type": ['LSTM'],
+                    # "Parser": "Util", "DayFirst": dayFirst}
+                    return build_return_object(format="%Y/" + dayFormat + "/" + monthFormat + ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
+                                               dayFirst=dayFirst)
+
+                else:
+                    #    return {'category': 'time', 'subcategory': 'date',
+                    #    'format':"%Y-" + monthFormat + "-" + dayFormat+ ' %H%M%S', "match_type": ['LSTM'],
+                    # "Parser": "Util",  "DayFirst": dayFirst}
+                    return build_return_object(format="%Y/" + monthFormat + "/" + dayFormat + ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
+                                               dayFirst=dayFirst)
+
+            else:
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+
+        def date_util_24(values):
+            array_valid, dayFirst = date_util(values, separator="_", shortyear=False, yearloc=0)
+            if dayFirst:
+                dayFormat = day_ddOrd(values, separator='_', loc=1)
+                monthFormat = month_MMorM(values, separator='_', loc=2)
+            else:
+                dayFormat = day_ddOrd(values, separator='_', loc=2)
+                monthFormat = month_MMorM(values, separator='_', loc=1)
+
+            hourFormat = hour_hOrH(values, separator=':', loc_hms=0)
+            minFormat = minute_mOrM(values, separator=':', loc_hms=1)
+            secFormat = second_sOrS(values, separator=':', loc_hms=2)
+            if dayFirst:
+                # return {'category': 'time', 'subcategory': 'date',
+                # 'format': "%Y-" + dayFormat + "-" + monthFormat +' %H%M%S', "match_type": ['LSTM'],
+                # "Parser": "Util", "DayFirst": dayFirst}
+                return build_return_object(format="%Y_" + dayFormat + "_" + monthFormat + ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
+                                           dayFirst=dayFirst)
+
+            else:
+                #    return {'category': 'time', 'subcategory': 'date',
+                #    'format':"%Y-" + monthFormat + "-" + dayFormat+ ' %H%M%S', "match_type": ['LSTM'],
+                # "Parser": "Util",  "DayFirst": dayFirst}
+                return build_return_object(format="%Y_" + monthFormat + "_" + dayFormat + ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
+                                           dayFirst=dayFirst)
+
+
+        def date_util_25(values):
+            array_valid, dayFirst = date_util(values, separator=".", shortyear=False, yearloc=0)
+            if dayFirst:
+                dayFormat = day_ddOrd(values, separator='.', loc=1)
+                monthFormat = month_MMorM(values, separator='.', loc=2)
+            else:
+                dayFormat = day_ddOrd(values, separator='.', loc=2)
+                monthFormat = month_MMorM(values, separator='.', loc=1)
+
+            hourFormat = hour_hOrH(values, separator=':', loc_hms=0)
+            minFormat = minute_mOrM(values, separator=':', loc_hms=1)
+            secFormat = second_sOrS(values, separator=':', loc_hms=2)
+            if len(array_valid) > len(values) * 0.85:
+                if dayFirst:
+                    # return {'category': 'time', 'subcategory': 'date',
+                    # 'format': "%Y-" + dayFormat + "-" + monthFormat +' %H%M%S', "match_type": ['LSTM'],
+                    # "Parser": "Util", "DayFirst": dayFirst}
+                    return build_return_object(format="%Y." + dayFormat + "." + monthFormat +  ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
+                                               dayFirst=dayFirst)
+
+                else:
+                    #    return {'category': 'time', 'subcategory': 'date',
+                    #    'format':"%Y-" + monthFormat + "-" + dayFormat+ ' %H%M%S', "match_type": ['LSTM'],
+                    # "Parser": "Util",  "DayFirst": dayFirst}
+                    return build_return_object(format="%Y." + monthFormat + "." + dayFormat +  ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
+                                               dayFirst=dayFirst)
+
+            else:
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+
+        def date_util_26(values):
+            array_valid, dayFirst = date_util(values, separator="-", shortyear=False, yearloc=2)
+            if dayFirst:
+                dayFormat = day_ddOrd(values, separator='-', loc=0)
+                monthFormat = month_MMorM(values, separator='-', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='-', loc=1)
+                monthFormat = month_MMorM(values, separator='-', loc=0)
+
+            hourFormat = hour_hOrH(values, separator=':', loc_hms=0)
+            minFormat = minute_mOrM(values, separator=':', loc_hms=1)
+            secFormat = second_sOrS(values, separator=':', loc_hms=2)
+            if len(array_valid) > len(values) * 0.85:
+                if dayFirst:
+                    # return {'category': 'time', 'subcategory': 'date',
+                    # 'format': "%Y-" + dayFormat + "-" + monthFormat +' %H%M%S', "match_type": ['LSTM'],
+                    # "Parser": "Util", "DayFirst": dayFirst}
+                    return build_return_object(format=dayFormat + "-" + monthFormat + '-%Y'+ ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
+                                               dayFirst=dayFirst)
+
+                else:
+                    #    return {'category': 'time', 'subcategory': 'date',
+                    #    'format':"%Y-" + monthFormat + "-" + dayFormat+ ' %H%M%S', "match_type": ['LSTM'],
+                    # "Parser": "Util",  "DayFirst": dayFirst}
+                    return build_return_object(format= monthFormat + "-" + dayFormat + '-%Y'+ ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
+                                               dayFirst=dayFirst)
+
+            else:
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+
+        def date_util_27(values):
+            array_valid, dayFirst = date_util(values, separator="/", shortyear=False, yearloc=2)
+            if dayFirst:
+                dayFormat = day_ddOrd(values, separator='/', loc=0)
+                monthFormat = month_MMorM(values, separator='/', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='/', loc=1)
+                monthFormat = month_MMorM(values, separator='/', loc=0)
+            hourFormat = hour_hOrH(values, separator=':', loc_hms=0)
+            minFormat = minute_mOrM(values, separator=':', loc_hms=1)
+            secFormat = second_sOrS(values, separator=':', loc_hms=2)
+            if len(array_valid) > len(values) * 0.85:
+                if dayFirst:
+                    # return {'category': 'time', 'subcategory': 'date',
+                    # 'format': "%Y-" + dayFormat + "-" + monthFormat +' %H%M%S', "match_type": ['LSTM'],
+                    # "Parser": "Util", "DayFirst": dayFirst}
+                    return build_return_object(format=dayFormat + "/" + monthFormat + '/%Y'+' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
+                                               dayFirst=dayFirst)
+
+                else:
+                    #    return {'category': 'time', 'subcategory': 'date',
+                    #    'format':"%Y-" + monthFormat + "-" + dayFormat+ ' %H%M%S', "match_type": ['LSTM'],
+                    # "Parser": "Util",  "DayFirst": dayFirst}
+                    return build_return_object(format= monthFormat + "/" + dayFormat + '/%Y'+' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
+                                               dayFirst=dayFirst)
+
+            else:
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+        def date_util_28(values):
+            array_valid, dayFirst = date_util(values, separator="_", shortyear=False, yearloc=2)
+            print('dayf', dayFirst)
+            if dayFirst:
+                dayFormat = day_ddOrd(values, separator='_', loc=0)
+                monthFormat = month_MMorM(values, separator='_', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='_', loc=1)
+                monthFormat = month_MMorM(values, separator='_', loc=0)
+            hourFormat = hour_hOrH(values, separator=':', loc_hms=0)
+            minFormat = minute_mOrM(values, separator=':', loc_hms=1)
+            secFormat = second_sOrS(values, separator=':', loc_hms=2)
+            if dayFirst:
+                # return {'category': 'time', 'subcategory': 'date',
+                # 'format': "%Y-" + dayFormat + "-" + monthFormat +' %H%M%S', "match_type": ['LSTM'],
+                # "Parser": "Util", "DayFirst": dayFirst}
+                return build_return_object(format=dayFormat + "_" + monthFormat + '_%Y' +' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
+                                           dayFirst=dayFirst)
+
+            else:
+                #    return {'category': 'time', 'subcategory': 'date',
+                #    'format':"%Y-" + monthFormat + "-" + dayFormat+ ' %H%M%S', "match_type": ['LSTM'],
+                # "Parser": "Util",  "DayFirst": dayFirst}
+                return build_return_object(format= monthFormat + "_" + dayFormat + '_%Y'+' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
+                                           dayFirst=dayFirst)
+
+
+        def date_util_29(values):
+            array_valid, dayFirst = date_util(values, separator=".", shortyear=False, yearloc=2)
+            if dayFirst:
+                dayFormat = day_ddOrd(values, separator='.', loc=0)
+                monthFormat = month_MMorM(values, separator='.', loc=1)
+            else:
+                dayFormat = day_ddOrd(values, separator='.', loc=1)
+                monthFormat = month_MMorM(values, separator='.', loc=0)
+            hourFormat = hour_hOrH(values, separator=':', loc_hms=0)
+            minFormat = minute_mOrM(values, separator=':', loc_hms=1)
+            secFormat = second_sOrS(values, separator=':', loc_hms=2)
+            if len(array_valid) > len(values) * 0.85:
+                if dayFirst:
+                    # return {'category': 'time', 'subcategory': 'date',
+                    # 'format': "%Y-" + dayFormat + "-" + monthFormat +' %H%M%S', "match_type": ['LSTM'],
+                    # "Parser": "Util", "DayFirst": dayFirst}
+                    return build_return_object(format=dayFormat + "." + monthFormat + '.%Y' + ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
+                                               dayFirst=dayFirst)
+
+                else:
+                    #    return {'category': 'time', 'subcategory': 'date',
+                    #    'format':"%Y-" + monthFormat + "-" + dayFormat+ ' %H%M%S', "match_type": ['LSTM'],
+                    # "Parser": "Util",  "DayFirst": dayFirst}
+                    return build_return_object(format= monthFormat + "." + dayFormat + '.%Y' + ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
+                                               dayFirst=dayFirst)
+
+            else:
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+
 
         def date_util_22(values):
             array_valid = []
-            print('valid array', array_valid)
             for v in values:
                 try:
                     if int(v) < -5364601438 or int(v) > 4102506000:
@@ -1541,69 +1697,83 @@ class GeoTimeClassify:
                     print(e)
 
             if 'failed' in array_valid:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
             else:
-                return {"Category": "Date", "Format": '%S', "Parser": "Util"}
+                return build_return_object(format='Unix Timestamp', util=None, dayFirst=None)
+
+                # return {'category': 'time', 'subcategory': 'date', 'format': 'Unix Timestamp',
+                # "match_type": ['LSTM'],
+                #         "Parser": "Util"}
 
         def date_long_1(values):
             #              #  01 April 2008
-            array_valid, dayFirst = date_util(values, separator="none",shortyear=False, yearloc=None)
+            array_valid, dayFirst = date_util(values, separator="none", shortyear=False, yearloc=None)
             dayFormat = day_ddOrd(values, separator=' ', loc=0)
             if len(array_valid) > len(values) * 0.85:
-                return {"Category": "Date", "Format": dayFormat+" LLLL y", "Parser": "Util"}
+                return build_return_object(format=dayFormat + " %B %Y", util=None, dayFirst=None)
+
+                # return {'category': 'time', 'subcategory': 'date', 'format':dayFormat+" %B %Y",
+                # "match_type": ['LSTM'],  "Parser": "Util"}
+
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_long_2(values):
-            array_valid, dayFirst = date_util(values, separator="none",shortyear=False, yearloc=None)
+            array_valid, dayFirst = date_util(values, separator="none", shortyear=False, yearloc=None)
             dayFormat = day_ddOrd(values, separator=' ', loc=0)
             if len(array_valid) > len(values) * 0.85:
                 #                 02 April 20
                 #                    dd/LLLL/yy
-                return {"Category": "Date", "Format": dayFormat+" LLLL yy", "Parser": "Util"}
+                return build_return_object(format=dayFormat + " %B %y", util=None, dayFirst=None)
+
+                # return  {'category': 'time', 'subcategory': 'date', 'format': dayFormat+" %B %y",
+                # "match_type": ['LSTM'], "Parser": "Util"}
+
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_long_3(values):
-            array_valid, dayFirst = date_util(values, separator="none",shortyear=False, yearloc=None)
+            array_valid, dayFirst = date_util(values, separator="none", shortyear=False, yearloc=None)
             dayFormat = day_ddOrd(values, separator=' ', loc=2)
             if len(array_valid) > len(values) * 0.85:
-                return {
-                    "Category": "Date",
-                    "Format": "EEEE, LLLL "+dayFormat+",yy",
-                    "Parser": "Util",
-                }
+                return build_return_object(format="%A, %B " + dayFormat + ",%y", util=None, dayFirst=None)
+                # return  {'category': 'time', 'subcategory': 'date', 'format': "%A, %B "+dayFormat+",%y",
+                # "match_type": ['LSTM'], "Parser": "Util"}
+
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_long_4(values):
-            array_valid, dayFirst = date_util(values, separator="none",shortyear=False, yearloc=None)
+            array_valid, dayFirst = date_util(values, separator="none", shortyear=False, yearloc=None)
             dayFormat = day_ddOrd(values, separator=' ', loc=1)
             if len(array_valid) > len(values) * 0.85:
                 #                 April 10, 2008
                 #                 LLLL dd, y
-                return {"Category": "Date", "Format": "LLLL "+dayFormat+", y", "Parser": "Util"}
+                return build_return_object(format="%B " + dayFormat + ", %Y", util=None, dayFirst=None)
+
+                # return  {'category': 'time', 'subcategory': 'date', 'format':"%B "+dayFormat+", %Y" ,
+                # "match_type": ['LSTM'], "Parser": "Util"}
+
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_long_5(values):
-            array_valid, dayFirst = date_util(values, separator="none",shortyear=False, yearloc=None)
+            array_valid, dayFirst = date_util(values, separator="none", shortyear=False, yearloc=None)
             dayFormat = day_ddOrd(values, separator=' ', loc=2)
             if len(array_valid) > len(values) * 0.85:
                 #  Thursday, April 10, 2008 6:30:00 AM
                 #                 EEEE, LLLL dd,yy HH:mm:ss
-                return {
-                    "Category": "Date",
-                    "Format": "EEEE, LLLL "+dayFormat+",yy HH:mm:ss",
-                    "Parser": "Util",
-                }
+
+                return build_return_object(format="%A, %B " + dayFormat + ",%y HH:mm:ss", util=None, dayFirst=None)
+                # return {'category': 'time', 'subcategory': 'date','format': "%A, %B "+dayFormat+",%y HH:mm:ss",
+                # "match_type": ['LSTM'],"Parser": "Util"}
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_long_6(values):
 
-            array_valid, dayFirst = date_util(values, separator="none",shortyear=False, yearloc=None)
-            if dayFirst == True:
+            array_valid, dayFirst = date_util(values, separator="none", shortyear=False, yearloc=None)
+            if dayFirst:
                 dayFormat = day_ddOrd(values, separator='/', loc=0)
                 monthFormat = month_MMorM(values, separator='/', loc=1)
             else:
@@ -1611,23 +1781,29 @@ class GeoTimeClassify:
                 monthFormat = month_MMorM(values, separator='/', loc=0)
 
             if len(array_valid) > len(values) * 0.85:
-                if dayFirst == True:
-                    return {"Category": "Date", "Format": dayFormat+"/"+monthFormat+"/yy HH:mm"}
+                if dayFirst:
+                    # return {'category': 'time', 'subcategory': 'date',
+                    #         'format': dayFormat + "/" + monthFormat + "/%y HH:mm", "match_type": ['LSTM']}
+                    return build_return_object(format=dayFormat + "/" + monthFormat + "/%y HH:mm", util=None,
+                                               dayFirst=None)
+
                 #              03/23/21 01:55 PM
                 #                 MM/dd/yy HH:mm
                 else:
-                    return {"Category": "Date", "Format":monthFormat+"/"+dayFormat+"/yy HH:mm"}
+                    return build_return_object(format=monthFormat + "/" + dayFormat + "/%y HH:mm", util=None,
+                                               dayFirst=None)
+                    # return {'category': 'time', 'subcategory': 'date', 'format':monthFormat+"/"+dayFormat+"/%y HH:mm", "match_type": ['LSTM'] }
             else:
-                return {"Category": "Unknown Date"}
+                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def month_day_f(values):
             month_day_results = []
             for i, md in enumerate(values):
                 try:
                     if str.isdigit(md):
-                        if int(md) <= 12 and int(md) >= 1:
+                        if 12 >= int(md) >= 1:
                             month_day_results.append("month_day")
-                        elif int(md) > 12 and int(md) <= 31:
+                        elif 12 < int(md) <= 31:
                             month_day_results.append("day")
                         else:
                             month_day_results.append("failed")
@@ -1637,13 +1813,16 @@ class GeoTimeClassify:
                     print(e)
 
             if "failed" in month_day_results:
-                return {"Category": "None"}
+                return  build_return_standard_object(category='None', subcategory=None, match_type=None)
             elif "day" in month_day_results:
-                return {"Category": "Day Number"}
+                # return {'category': 'time', 'subcategory': 'date', 'format':day_ddOrd(values, separator=None, loc=None), "match_type": ['LSTM'] }
+                return build_return_object(format=day_ddOrd(values, separator=None, loc=None), util=None, dayFirst=None)
             elif "month_day" in month_day_results:
-                return {"Category": "Month Number"}
+                # return {'category': 'time', 'subcategory': 'date', 'format':month_MMorM(values, separator=None, loc=None), "match_type": ['LSTM'] }
+                return build_return_object(format=month_MMorM(values, separator=None, loc=None), util=None,
+                                           dayFirst=None)
             else:
-                return {"Category": "None"}
+                return build_return_standard_object(category='None', subcategory=None, match_type=None)
 
         def month_name_f(values):
             print("Start month validation ...")
@@ -1658,7 +1837,8 @@ class GeoTimeClassify:
                         print(e)
 
             if np.count_nonzero(month_array_valid) >= (len(values) * 0.65):
-                return {"Category": "Month Name"}
+                # return {'category': 'time', 'subcategory': 'date', 'format':'%B', "match_type": ['LSTM'] }
+                return build_return_object('%B', util=None, dayFirst=None)
             else:
                 return day_name_f(values)
 
@@ -1675,9 +1855,11 @@ class GeoTimeClassify:
                         print(e)
 
             if np.count_nonzero(day_array_valid) >= (len(values) * 0.65):
-                return {"Category": "Day Name"}
+
+                # return {'category': 'time', 'subcategory': 'date', 'format':'%A', "match_type": ['LSTM'] }
+                return build_return_object('%A', util=None, dayFirst=None)
             else:
-                return {"Category": "None"}
+                return build_return_standard_object(category='None', subcategory=None, match_type=None)
 
         functionlist = defaultdict(
             int,
@@ -1735,6 +1917,17 @@ class GeoTimeClassify:
                 "date_%Y-%m-%d": date_util_19,
                 "date_%Y/%m/%d": date_util_20,
                 "date_%Y-%m-%d %H:%M:%S": date_util_21,
+                'date_%Y/%m/%d %H:%M:%S': date_util_23,
+                'date_%Y_%m_%d %H:%M:%S': date_util_24,
+                'date_%Y.%m.%d %H:%M:%S': date_util_25,
+                'date_%m-%d-%Y %H:%M:%S': date_util_26,
+                'date_%m/%d/%Y %H:%M:%S': date_util_27,
+                'date_%m_%d_%Y %H:%M:%S': date_util_28,
+                'date_%m.%d.%Y %H:%M:%S': date_util_29,
+                'date_%d-%m-%Y %H:%M:%S': date_util_26,
+                'date_%d/%m/%Y %H:%M:%S': date_util_27,
+                'date_%d_%m_%Y %H:%M:%S': date_util_28,
+                'date_%d.%m.%Y %H:%M:%S': date_util_29,
                 'unix_time': date_util_22,
                 "date_long_dmonthY": date_long_1,
                 "date_long_dmonthy": date_long_2,
@@ -1746,21 +1939,19 @@ class GeoTimeClassify:
         )
         final_column_classification = []
 
+        def add_obj(obj, add_obj):
+
+            for property in add_obj:
+                print(property)
+                obj[property] = add_obj[property]
+            return obj
+
         for pred in predictions:
 
-            fun = []
-            try:
-                fun.append(
-                    functionlist[pred["avg_predictions"]["averaged_top_category"]](
-                        self.column_value_object[pred["column"]]
-                    )
-                )
-            except Exception as e:
-                print(e)
-
             final_column_classification.append(
-                {"column": pred["column"], "classification": fun}
-            )
+                add_obj({"column": pred["column"]}, functionlist[pred["avg_predictions"]["averaged_top_category"]](
+                        self.column_value_object[pred["column"]]
+                    ) ))
 
         return final_column_classification
 
@@ -1807,6 +1998,8 @@ class GeoTimeClassify:
             for cc in words_to_check:
                 try:
                     if self.fuzzyMatch(str(pred["column"]), str(cc), 85):
+                        print('slkdfjsalkdjflkajf',predictions[i]['match_type'])
+                        predictions[i]['match_type'].append('fuzzy')
                         predictions[i]["fuzzyColumn"] = cc
                     else:
                         pass
@@ -1819,14 +2012,15 @@ class GeoTimeClassify:
         for i, out in enumerate(fuzzyOutput):
             try:
                 #             print(out['classification'][0]['Category'])
-                if out['classification'][0]['Category'] == 'Date' or out['fuzzyColumn'] == 'Date' or out[
-                    'fuzzyColumn'] == 'Timestamp' or out['fuzzyColumn'] == 'Datetime':
-
+                if out['subcategory'] == 'date' or out['fuzzyColumn'] == 'Date' or out['fuzzyColumn'] == 'Timestamp' or out['fuzzyColumn'] == 'Datetime':
                     new_column = 'ISO_8601_' + str(i)
-                    if 'DayFirst' in out['classification'][0]:
-                        dayFirst = out['classification'][0]['DayFirst']
+                    print('new c', new_column)
+                    if 'DayFirst' in out:
+                        if out['DayFirst'] is not None:
+                            dayFirst = out['DayFirst']
                     else:
                         dayFirst = False
+                    print('datfirs', dayFirst)
                     if formats != 'default':
 
                         df = df.assign(
@@ -1841,7 +2035,6 @@ class GeoTimeClassify:
                         )
             except Exception as e:
                 print(e)
-
         return df
 
     def standard_dateColumn(self, fuzzyOutput, columnName):
@@ -1864,13 +2057,15 @@ class GeoTimeClassify:
         return output_fuz
 
     def add_iso8601_columns(self, path, formats):
-        preds = self.predictions( path_to_csv=path)
+        preds = self.predictions(path_to_csv=path)
         output = self.assign_heuristic_function(preds)
         output_fuz = self.fuzzymatchColumns(output)
+        print('output fuz', output_fuz)
         output_col = self.standard_dateColumns(output_fuz, formats)
 
         return output_col
 
     def get_Fake_Data(self):
         return self.FakeData
+
 
