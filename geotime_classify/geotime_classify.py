@@ -635,7 +635,7 @@ class GeoTimeClassify:
         cont_lookup = self.cont_lookup
 
         def none_f(values):
-            return build_return_standard_object(category='None', subcategory=None)
+            return build_return_standard_object(category='None', subcategory=None, match_type=None)
 
         def city_f(values):
             print("Start city validation ...")
