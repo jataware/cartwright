@@ -625,6 +625,11 @@ class GeoTimeClassify:
         if Ratio > ratio:
             return True
 
+    def fuzzyRatio(self, word1, word2, ratio=95):
+        Ratio = fuzz.ratio(word1.lower(), word2.lower())
+        if Ratio > ratio:
+            return True, Ratio
+
     # map function to model prediction category
     def assign_heuristic_function(self, predictions):
         c_lookup = self.city_lookup
@@ -960,25 +965,31 @@ class GeoTimeClassify:
         def day_ddOrd(values, separator, loc):
             dayFormat = '%-d'
             for d in values:
-                if separator is None:
-                    if d[0] == '0':
-                        dayFormat = '%d'
-                else:
-                    d_value = d.split(separator)[loc]
-                    if d_value[0] == '0':
-                        dayFormat = '%d'
+                try:
+                    if separator is None:
+                        if d[0] == '0':
+                            dayFormat = '%d'
+                    else:
+                        d_value = d.split(separator)[loc]
+                        if d_value[0] == '0':
+                            dayFormat = '%d'
+                except Exception as e:
+                    print(e)
             return dayFormat
 
         def month_MMorM(values, separator, loc):
             monthFormat = '%-m'
             for d in values:
-                if separator is None:
-                    if d[0] == '0':
-                        monthFormat = '%m'
-                else:
-                    d_value = d.split(separator)[loc]
-                    if d_value[0] == '0':
-                        monthFormat = '%m'
+                try:
+                    if separator is None:
+                        if d[0] == '0':
+                            monthFormat = '%m'
+                    else:
+                        d_value = d.split(separator)[loc]
+                        if d_value[0] == '0':
+                            monthFormat = '%m'
+                except Exception as e:
+                    print(e)
             return monthFormat
 
         def hour_hOrH(values,separator, loc_hms):
@@ -1947,7 +1958,6 @@ class GeoTimeClassify:
             return obj
 
         for pred in predictions:
-
             final_column_classification.append(
                 add_obj({"column": pred["column"]}, functionlist[pred["avg_predictions"]["averaged_top_category"]](
                         self.column_value_object[pred["column"]]
@@ -1958,53 +1968,76 @@ class GeoTimeClassify:
     def fuzzymatchColumns(self, classifications):
         predictions = classifications
         words_to_check = [
-            "Date",
-            "Datetime",
-            "Timestamp",
-            "Epoch",
-            "Time",
-            "Year",
-            "Month",
-            "Lat",
-            "Latitude",
-            "lng",
-            "Longitude",
-            "Geo",
-            "Coordinates",
-            "Location",
-            "location",
-            "West",
-            "South",
-            "East",
-            "North",
-            "Country",
-            "CountryName",
-            "CC",
-            "CountryCode",
-            "State",
-            "City",
-            "Town",
-            "Region",
-            "Province",
-            "Territory",
-            "Address",
-            "ISO2",
-            "ISO3",
-            "ISO_code",
-            "Results",
+            {"Date":"Date"},
+            {"Datetime":"Datetime"},
+            {"Timestamp":"Timestamp"},
+            {"Epoch":"Epoch"},
+            {"Time":"Time"},
+            {"Year":"Year"},
+            {"Month":"Month"},
+            {"Lat":"Latitude"},
+            {"Latitude":"Latitude"},
+            {"lng":"Latitude"},
+            {"lon":"Longitude"},
+            {"long":"Longitude"},
+            {"Longitude":"Longitude"},
+            {"Geo":"Geo"},
+            {"Coordinates":"Coordinates"},
+            {"Location":"Location"},
+            {"West":"West"},
+            {"South":"South"},
+            {"East":"East"},
+            {"North":"North"},
+            {"Country":"Country"},
+            {"CountryName":"CountryName"},
+            {"CC":"CC"},
+            {"CountryCode":"CountryCode"},
+            {"State":"State"},
+            {"City":"City"},
+            {"Town":"Town"},
+            {"Region": "Region"},
+            {"Province": "Province"},
+            {"Territory": "Territory"},
+            {"Address":"Address"},
+            {"ISO2":"ISO2"},
+            {"ISO3": "ISO3"},
+            {"ISO_code":"ISO_code"},
+            {"Results": "Results"},
         ]
 
         for i, pred in enumerate(predictions):
-            for cc in words_to_check:
+            for y, keyValue in enumerate(words_to_check):
                 try:
-                    if self.fuzzyMatch(str(pred["column"]), str(cc), 85):
-                        print('slkdfjsalkdjflkajf',predictions[i]['match_type'])
-                        predictions[i]['match_type'].append('fuzzy')
-                        predictions[i]["fuzzyColumn"] = cc
-                    else:
-                        pass
+                  for key in keyValue:
+                      if self.fuzzyMatch(str(pred["column"]), str(key), 85):
+                            print('key',key)
+                            T, ratio = self.fuzzyRatio(str(pred["column"]), str(key),85)
+                            print('Ratio', ratio)
+                            predictions[i]['match_type'].append('fuzzy')
+                            predictions[i]["fuzzyColumn"]=[]
+                            predictions[i]["fuzzyColumn"].append({"matchedKey":str(key), "fuzzyCategory":words_to_check[y][key], "ratio":ratio})
+                      else:
+                            pass
                 except Exception as e:
                     print(e)
+
+        for pred2 in predictions:
+            try:
+                if len(pred2["fuzzyColumn"])>1:
+                    ind = 0
+                    for i, fmatch in pred2['fuzzyColumn']:
+
+                        bestRatio=0
+                        if fmatch["ratio"]>bestRatio:
+                            bestRatio=fmatch["ratio"]
+                            print(bestRatio)
+                            ind=i
+                    pred2['fuzzyColumn']=pred2['fuzzyColumn'][ind]
+                else:
+                    pred2['fuzzyColumn']=pred2['fuzzyColumn'][0]
+            except Exception as e:
+                print(e)
+
         return predictions
 
     def standard_dateColumns(self, fuzzyOutput, formats='default'):
@@ -2012,15 +2045,13 @@ class GeoTimeClassify:
         for i, out in enumerate(fuzzyOutput):
             try:
                 #             print(out['classification'][0]['Category'])
-                if out['subcategory'] == 'date' or out['fuzzyColumn'] == 'Date' or out['fuzzyColumn'] == 'Timestamp' or out['fuzzyColumn'] == 'Datetime':
+                if out['subcategory'] == 'date' or out['fuzzyColumn']["fuzzyCategory"] == 'Date' or out['fuzzyColumn']["fuzzyCategory"] == 'Timestamp' or out['fuzzyColumn']["fuzzyCategory"] == 'Datetime':
                     new_column = 'ISO_8601_' + str(i)
-                    print('new c', new_column)
                     if 'DayFirst' in out:
                         if out['DayFirst'] is not None:
                             dayFirst = out['DayFirst']
                     else:
                         dayFirst = False
-                    print('datfirs', dayFirst)
                     if formats != 'default':
 
                         df = df.assign(
@@ -2060,12 +2091,10 @@ class GeoTimeClassify:
         preds = self.predictions(path_to_csv=path)
         output = self.assign_heuristic_function(preds)
         output_fuz = self.fuzzymatchColumns(output)
-        print('output fuz', output_fuz)
         output_col = self.standard_dateColumns(output_fuz, formats)
 
         return output_col
 
     def get_Fake_Data(self):
         return self.FakeData
-
 

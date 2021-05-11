@@ -1,3 +1,5 @@
+## 0.5.7 (2021-04-15)
+  - Fifty Seventh release on PyPI.
 ## 0.5.6 (2021-04-15)
   - Fifty Six release on PyPI.
 ## 0.5.5 (2021-04-13)
