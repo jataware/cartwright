@@ -26,7 +26,7 @@ def read_file(filename, cb):
 
 setup(
     name='geotime_classify',
-    version='0.5.7',
+    version='0.6.0',
     license='LGPL-3.0-or-later',
     description='Categorizes spatial and temporal columns for csv files. Standardizes date columns for transformations',
     long_description=long_description,

@@ -30,7 +30,7 @@ First you need to install numpy, scipy, pandas, joblib, pip, torch and torchvisi
     
 Now you can pip install the geotime_classify repo. To pip install this repo use:
 
-    pip install geotime-classify==0.5.6
+    pip install geotime-classify
  
  
 Once it is installed you can instantiate the geotime_classify with the number of random samples (n) you want to take from each column of your csv. To take 100 samples from each column run. In most cases more samples of each column will result is more accurate classifications, however it will increase the time of processing. 
@@ -129,36 +129,12 @@ Possible classifciation options:
 51. "category": "Boolean"
 
 
- ### geotime_classify.add_iso8601_columns(path, formats='default')
-
-Lastly, there is ***add_iso8601_columns***. This function returns a dataframe with added columns for each column that was classified as 'Date'. Each new date column will be named iso8601_*.  * will be replaced with the index of the original column. Formats should be set to 'default' unless you want the output to be in a different valid format. An example might be '%B %d, %Y'.
-
-        df=GeoTimeClass.add_iso8601_columns('pathtocsv', formats='default')
-        df
-
-This function would return Dataframe 1 as Datframe 2
-
-Dataframe 1
-
- index | Date | Feature 
---|--|--
-| 1 | July, 8th 2020 | 1 |
-| 2 | July, 9th 2020 | 2 |
-
-Dataframe 2.
-
- index | Date | Feature | iso8601_1 
---|--|--|--
-| 1 | July, 8th 2020 | 1 | 2020-07-08 |
-| 2 | July, 9th 2020 | 2 | 2020-07-09 |
- 
-
 ## Under the hood
 The workflow consists of four main sections. 
 1. Geotime Classify Model
 2. Heuristic Functions
 3. Column Header Fuzzy Match
-4. Date standardization 
+
 
 Workflow overview
 
@@ -194,11 +170,7 @@ Now the model was able to ingest a string and categorize it into one the 57 cate
 The heuristic functions ingest the prediction classifications from the model along with the original data for  validation tests. If the data passes the test associated with the classification the final classification is made and returned. If it failed it will return 'None' or 'Unknown Date' if the model classified the column as a date. If addition information is needed for future transformation of the data these functions try to capture that. For example if a column is classified as a Date the function will try validate the format and return it along with the classification.
 
 ## Column Header Fuzzy Match
-This is the most simple part of the workflow. For each column header we try to match that string to a word of interest. If there is a high match ratio the code returns the word of interest. For more info you can see Fuzzywuzzy docs [here](https://pypi.org/project/fuzzywuzzy/).  
-
-## Date Standardization
-This is a big challenge, but pairing the model classification along with pre-built libraries like [arrow](https://arrow.readthedocs.io/en/latest/) and [dateutil](https://dateutil.readthedocs.io/en/stable/index.html) this functionality works on most common date formats. The key to using these libraries to standardize dates is knowing the format the date is currently in to transform it. For this the geotime_classify model is able to classify the date format well enough to know which library to use for parsing. For certain classifications a heuristic function is use to determine if day comes before month in the current format. If day does come first that is passed to the parser which then can correctly transforms the date. Once the date is in a standardized form you can transform it again to any valid format you want. This functionality is exposed by the *add_iso8601_columns* function, where you can pass any valid date format to the formats parameter. 
-
+This is the most simple part of the workflow. For each column header we try to match that string to a word of interest. If there is a high match ratio the code returns the word of interest. For more info you can see Fuzzywuzzy docs [here](https://pypi.org/project/fuzzywuzzy/).
 
 
 ## Retraining geotime_classify with github repo

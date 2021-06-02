@@ -35,6 +35,32 @@ import fuzzywuzzy
 import pkgutil
 import csv
 import pkg_resources
+from pydantic import BaseModel, constr, Field
+from typing import List, Optional
+
+
+class fuzzyColumn(BaseModel):
+    matchedKey: str = Field(default=None)
+    fuzzyCategory: str = Field(default=None)
+    ratio: int = Field(default=None)
+
+
+class Classification(BaseModel):
+    column: str = None
+    category: str = None
+    subcategory: str = None
+    format: str = None
+    match_type: List = []
+    Parser: str = None
+    DayFirst: bool = None
+    fuzzyColumn: Optional[fuzzyColumn]
+
+
+class Classifications(BaseModel):
+    classifications: List[Classification]
+
+
+
 
 
 # Need to have the class of the model in local memory to load a saved model in pytorch
@@ -514,17 +540,19 @@ class GeoTimeClassify:
         df = pd.read_csv(path)
         return df
 
-    def get_arrayOfValues_df(self, df):
+
+
+    def get_arrayOfValues_df_enhanced(self, df, index_remove):
         column_value_object = {}
 
-        for column in df.columns:
-            guesses = []
+        for i, column in enumerate(df.columns):
             column_value_object[column] = []
-            for _ in range(1, self.number_of_random_samples):
-                random_values = str(np.random.choice(df[column]))
-                random_col = column
-                column_value_object[column].append(random_values)
-
+            if i in index_remove:
+                pass
+            else:
+                for _ in range(1, self.number_of_random_samples):
+                    random_values = str(np.random.choice(df[column].dropna()))
+                    column_value_object[column].append(random_values)
         return column_value_object
 
     def averaged_predictions(self, all_predictions):
@@ -552,7 +580,9 @@ class GeoTimeClassify:
     def return_data(self):
         return self.cont_lookup
 
-    def predictions(self, path_to_csv):
+
+
+    def predictions_enhanced(self, df, index_remove):
         print('Start LSTM predictions ...')
 
         class LSTMClassifier(nn.Module):
@@ -579,44 +609,47 @@ class GeoTimeClassify:
 
             def forward(self, batch, lengths):
                 self.hidden = self.init_hidden(batch.size(-1))
-
                 embeds = self.embedding(batch)
                 packed_input = pack_padded_sequence(embeds, lengths)
                 outputs, (ht, ct) = self.lstm(packed_input, self.hidden)
-                # ht is the last hidden state of the sequences
-                # ht = (1 x batch_size x hidden_dim)
-                # ht[-1] = (batch_size x hidden_dim)
                 output = self.dropout_layer(ht[-1])
                 output = self.hidden2out(output)
                 output = self.softmax(output)
 
                 return output
 
-        df = self.read_in_csv(path=path_to_csv)
-
-        # self.model = torch.load(self.cwd + '/geotime_classify/models/LSTM_RNN_Geotime_Classify_v_0.07.pth')
-        column_value_object = self.get_arrayOfValues_df(df)
+        column_value_object = self.get_arrayOfValues_df_enhanced(df, index_remove)
         self.column_value_object = column_value_object
         predictionList = []
-        for column in column_value_object:
-            try:
-                all_predictions = self.evaluate_test_set(
-                    column_value_object[column]
-                )
-                avg_predictions = self.averaged_predictions(all_predictions)
+        for i, column in enumerate(column_value_object):
+            if i in index_remove:
                 predictionList.append(
                     {
                         "column": column,
-                        "values": column_value_object[column],
-                        "avg_predictions": avg_predictions,
-                        "model_predictions": all_predictions,
+                        "values": "Skipped",
+                        "avg_predictions": "Skipped",
+                        "model_predictions": "Skipped",
                     }
                 )
-            except Exception as e:
-                print(e)
+            else:
 
-        self.predictionList = predictionList
-        return self.predictionList
+                try:
+                    all_predictions = self.evaluate_test_set(
+                        column_value_object[column]
+                    )
+                    avg_predictions = self.averaged_predictions(all_predictions)
+                    predictionList.append(
+                        {
+                            "column": column,
+                            "values": column_value_object[column],
+                            "avg_predictions": avg_predictions,
+                            "model_predictions": all_predictions,
+                        }
+                    )
+                except Exception as e:
+                    print(e)
+
+        return predictionList
 
     # match two words return true based on ratio
     def fuzzyMatch(self, word1, word2, ratio=95):
@@ -630,8 +663,7 @@ class GeoTimeClassify:
         if Ratio > ratio:
             return True, Ratio
 
-    # map function to model prediction category
-    def assign_heuristic_function(self, predictions):
+    def assign_heuristic_function_enhanced(self, predictions, fuzzyMatched):
         c_lookup = self.city_lookup
         state_lookup = self.state_lookup
         country_lookup = self.country_name
@@ -639,57 +671,112 @@ class GeoTimeClassify:
         iso2_lookup = self.iso2_lookup
         cont_lookup = self.cont_lookup
 
+        def build_return_object(format, util, dayFirst):
+            return {'category': 'time', 'subcategory': 'date', 'format': format,
+                    "match_type": ['LSTM'], "Parser": "Util", "DayFirst": dayFirst}
+
+        def build_return_standard_object(category, subcategory, match_type):
+            return {'category': category, 'subcategory': subcategory, 'format': None,
+                    "match_type": [match_type], "Parser": None, "DayFirst": None}
+
+
         def none_f(values):
-            return build_return_standard_object(category='None', subcategory=None, match_type=None)
+            return build_return_standard_object(category=None, subcategory=None, match_type=None)
+
+
+        def Skipped_f(column, fuzzyMatched):
+            category=None
+            subcategory=None
+            match_type=None
+            for match in fuzzyMatched:
+                if column == match['header']:
+                    match_type='fuzzy'
+                    category="geo"
+                    subcategory=match['value']
+
+            return {'category': category, 'subcategory': subcategory, 'format': None,
+                    "match_type": [match_type], "Parser": None, "DayFirst": None}
 
         def city_f(values):
             print("Start city validation ...")
-            country_match_bool = []
-            for city in values:
+            city_match_bool = []
+            if len(values) < 40:
+                subsample = 5
+            else:
+                # subsample = int(round(.2*len(values),0))
+                subsample = 5
+
+            print(subsample)
+            count =0
+            passed=0
+            while passed < 2 and not count >= subsample:
+                count += 1
                 try:
                     match = fuzzywuzzy.process.extractOne(
-                        city, c_lookup, scorer=fuzz.token_sort_ratio
+                        random.choice(values), c_lookup, scorer=fuzz.token_sort_ratio
                     )
                     if match is not None:
-                        if match[1] > 85:
-                            country_match_bool.append(True)
+                        if match[1] > 90:
+                            city_match_bool.append(True)
+                            passed += 1
                 except Exception as e:
                     print(e)
 
-            if np.count_nonzero(country_match_bool) >= (len(values) * 0.30):
+            # print("city_match_bool", city_match_bool)
+            if np.count_nonzero(city_match_bool) >= 2:
+                print('city validated')
                 return build_return_standard_object(category='geo', subcategory='city name', match_type='LSTM')
             else:
-                return build_return_standard_object(category='proper noun', subcategory=None, match_type=None)
+                return build_return_standard_object(category=None, subcategory=None, match_type=None)
 
         def state_f(values):
-            print("Start state validation ...")
-            country_match_bool = []
 
-            for state in values:
-                for c in state_lookup:
-                    try:
-                        country_match_bool.append(self.fuzzyMatch(state, c, ratio=85))
-                    except Exception as e:
-                        print(e)
-            if np.count_nonzero(country_match_bool) >= (len(values) * 0.40):
+            print("Start state validation ...")
+            state_match_bool = []
+            subsample=len(values)
+            count = 0
+            passed = 0
+            while passed < 5 and not count >= subsample:
+                count += 1
+                try:
+                    match = fuzzywuzzy.process.extractOne(
+                        values[count], state_lookup, scorer=fuzz.token_sort_ratio
+                    )
+                    if match is not None:
+                        if match[1] > 90:
+                            state_match_bool.append(True)
+                            passed += 1
+                except Exception as e:
+                    print(e)
+
+            if np.count_nonzero(state_match_bool) >= 5:
+                print('state validated')
                 return build_return_standard_object(category='geo', subcategory='state name', match_type='LSTM')
             else:
-                print("Start cities validation ...")
                 return city_f(values)
 
         def country_f(values):
 
             print("Start country validation ...")
             country_match_bool = []
+            subsample = len(values)
+            count = 0
+            passed = 0
+            while passed < 5 and not count >= subsample:
+                count += 1
+                try:
+                    match = fuzzywuzzy.process.extractOne(
+                        values[count], country_lookup, scorer=fuzz.token_sort_ratio
+                    )
+                    if match is not None:
+                        if match[1] > 90:
+                            country_match_bool.append(True)
+                            passed += 1
+                except Exception as e:
+                    print(e)
 
-            for country in values:
-                for c in country_lookup:
-                    try:
-                        country_match_bool.append(self.fuzzyMatch(country, c, ratio=85))
-                    except Exception as e:
-                        print(e)
-
-            if np.count_nonzero(country_match_bool) >= (len(values) * 0.40):
+            if np.count_nonzero(country_match_bool) >= 5:
+                print('country validated')
                 return build_return_standard_object(category='geo', subcategory='country name', match_type='LSTM')
             else:
                 return state_f(values)
@@ -708,7 +795,7 @@ class GeoTimeClassify:
                         print(e)
 
             if np.count_nonzero(ISO_in_lookup) >= (len(values) * 0.65):
-                return build_return_standard_object(category='geo', subcategory='ISO3',match_type='LSTM')
+                return build_return_standard_object(category='geo', subcategory='ISO3', match_type='LSTM')
             else:
                 return country_iso2(values)
 
@@ -729,7 +816,7 @@ class GeoTimeClassify:
 
                 return build_return_standard_object(category='geo', subcategory='ISO2', match_type='LSTM')
             else:
-                return build_return_standard_object(category='unknown code', subcategory=None, match_type=None)
+                return build_return_standard_object(category=None, subcategory=None, match_type=None)
 
         def continent_f(values):
             print("Start continent validation ...")
@@ -746,9 +833,9 @@ class GeoTimeClassify:
 
             if np.count_nonzero(cont_in_lookup) >= (len(values) * 0.65):
 
-                return build_return_standard_object(category='geo', subcategory='continent',match_type='LSTM')
+                return build_return_standard_object(category='geo', subcategory='continent', match_type='LSTM')
             else:
-                return build_return_standard_object(category='proper noun', subcategory=None, match_type=None)
+                return build_return_standard_object(category=None, subcategory=None, match_type=None)
 
         def geo_f(values):
             print("Start geo validation ...")
@@ -770,15 +857,16 @@ class GeoTimeClassify:
                     print(e)
 
             if "failed" in geo_valid:
-                return build_return_standard_object(category='number', subcategory=None, match_type=None)
+                return build_return_standard_object(category=None, subcategory=None, match_type=None)
             elif len(percent_array) >= len(values) * 0.95:
-                return build_return_standard_object(category='number/geo', subcategory="Unknown-mostly between -1 and 1", match_type='LSTM')
+                return build_return_standard_object(category='number/geo',
+                                                    subcategory="Unknown-mostly between -1 and 1", match_type='LSTM')
             elif "lng" in geo_valid:
                 return build_return_standard_object(category='geo', subcategory="longitude", match_type='LSTM')
             elif "latlng" in geo_valid:
                 return build_return_standard_object(category='geo', subcategory="latitude", match_type='LSTM')
             else:
-                return build_return_standard_object(category='number', subcategory=None, match_type=None)
+                return build_return_standard_object(category=None, subcategory=None, match_type=None)
 
         def year_f(values):
             print("Start year validation ...")
@@ -798,9 +886,9 @@ class GeoTimeClassify:
                     print(e)
 
             if len(years_failed) > len(values) * 0.15:
-                return build_return_standard_object(category='None', subcategory=None, match_type=None)
+                return build_return_standard_object(category=None, subcategory=None, match_type=None)
             elif len(strange_year) > len(values) * 15:
-                return  build_return_standard_object(category='None', subcategory=None, match_type=None)
+                return build_return_standard_object(category=None, subcategory=None, match_type=None)
             elif len(year_values_valid) > len(values) * 0.75:
                 return build_return_object(format="%Y", util=None, dayFirst=None)
 
@@ -817,9 +905,9 @@ class GeoTimeClassify:
 
             if np.count_nonzero(bool_array) >= (len(values) * 0.85):
 
-                return  build_return_standard_object(category='Boolean', subcategory=None, match_type='LSTM')
+                return build_return_standard_object(category='Boolean', subcategory=None, match_type='LSTM')
             else:
-                return build_return_standard_object(category='None', subcategory=None, match_type=None)
+                return build_return_standard_object(category=None, subcategory=None, match_type=None)
 
         def bool_letter_f(values):
             print('Start boolean validation ...')
@@ -836,16 +924,108 @@ class GeoTimeClassify:
 
                 return build_return_standard_object(category='Boolean', subcategory=None, match_type='LSTM')
             else:
-                return build_return_standard_object(category='None', subcategory=None, match_type=None)
+                return build_return_standard_object(category=None, subcategory=None, match_type=None)
 
-        def build_return_object(format, util, dayFirst):
-            return {'category': 'time', 'subcategory': 'date', 'format': format,
-                    "match_type": ['LSTM'], "Parser": "Util", "DayFirst": dayFirst}
+        ## Dates ##
 
-        def build_return_standard_object(category, subcategory, match_type):
-            return {'category': category, 'subcategory': subcategory, 'format': None,
-                    "match_type": [match_type], "Parser": None, "DayFirst": None}
+        def date_util(values, separator, shortyear, yearloc):
 
+            util_dates = []
+            if separator != "none":
+                dayFirst = dayFirstCheck(values, separator, shortYear=shortyear, yearLoc=yearloc)
+            else:
+                dayFirst = False
+
+            for date in values:
+                try:
+
+                    dateUtil = dateutil.parser.parse(str(date), dayfirst=dayFirst)
+                    if isinstance(dateUtil, datetime.date):
+                        util_dates.append({"value": date, "standard": dateUtil})
+                    else:
+                        pass
+                except Exception as e:
+                    print(e)
+
+            return util_dates, dayFirst
+
+        # Day format
+        def day_ddOrd(values, separator, loc):
+            dayFormat = '%-d'
+            for d in values:
+                try:
+                    if separator is None:
+                        if d[0] == '0':
+                            dayFormat = '%d'
+                    else:
+                        d_value = d.split(separator)[loc]
+                        if d_value[0] == '0':
+                            dayFormat = '%d'
+                except Exception as e:
+                    print(e)
+            return dayFormat
+
+        # Month Format
+        def month_MMorM(values, separator, loc):
+            monthFormat = '%-m'
+            for d in values:
+                try:
+                    if separator is None:
+                        if d[0] == '0':
+                            monthFormat = '%m'
+                    else:
+                        d_value = d.split(separator)[loc]
+                        if d_value[0] == '0':
+                            monthFormat = '%m'
+                except Exception as e:
+                    print(e)
+            return monthFormat
+
+        # Hour format
+        def hour_hOrH(values, separator, loc_hms):
+            hourFormat = '%-H'
+            for d in values:
+
+                if separator is None:
+                    if d[0] == '0':
+                        hourFormat = '%H'
+                else:
+                    hms = d.split(' ')[-1]
+                    hms = hms.split(separator)[loc_hms]
+
+                    if hms[0] == '0':
+                        hourFormat = '%H'
+            return hourFormat
+
+        # Minute format
+        def minute_mOrM(values, separator, loc_hms):
+            minuteFormat = '%-M'
+            for d in values:
+                if separator is None:
+                    if d[0] == '0':
+                        minuteFormat = '%M'
+                else:
+                    hms = d.split(' ')[-1]
+                    hms = hms.split(separator)[loc_hms]
+                    if hms[0] == '0':
+                        minuteFormat = '%M'
+            return minuteFormat
+
+        # Second format
+        def second_sOrS(values, separator, loc_hms):
+            secondFormat = '%-S'
+            for d in values:
+                if separator is None:
+                    if d[0] == '0':
+                        secondFormat = '%S'
+                else:
+                    hms = d.split(' ')[-1]
+                    hms = hms.split(separator)[loc_hms]
+                    if hms[0] == '0':
+                        secondFormat = '%S'
+            return secondFormat
+
+        # Check if day is first in date
         def dayFirstCheck(values, separator, shortYear, yearLoc):
             # only works for 4 number year
             for date in values:
@@ -870,6 +1050,7 @@ class GeoTimeClassify:
 
             return False
 
+
         def date_arrow(values, separator):
             utils_array = []
             for date in values:
@@ -889,22 +1070,21 @@ class GeoTimeClassify:
             if len(array_valid) > len(values) * 0.85:
                 return build_return_object(format="%Y%d", util='arrow', dayFirst=None)
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_arrow_2(values):
             # array_valid = date_arrow(values, separator="-")
             monthFormat = month_MMorM(values, separator='-', loc=1)
-            print('mon form---------------------', monthFormat)
             allMonthVals = []
             for val in values:
                 monthval = val.split('-')[1]
                 allMonthVals.append(monthval)
             validMonth = month_day_f(allMonthVals)
-            print('val mont ---!!!', validMonth)
-            if validMonth["subcategory"] == "date" and validMonth["format"] == "%m"  or validMonth["subcategory"] ==  'date' and validMonth['format']=="%-m" :
+            if validMonth["subcategory"] == "date" and validMonth["format"] == "%m" or validMonth[
+                "subcategory"] == 'date' and validMonth['format'] == "%-m":
                 return build_return_object(format="%Y-" + monthFormat, util='arrow', dayFirst=None)
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_arrow_3(values):
             array_valid = date_arrow(values, separator="/")
@@ -916,124 +1096,37 @@ class GeoTimeClassify:
             validMonth = month_day_f(allMonthVals)
             if len(array_valid) > len(values) * 0.85:
                 return build_return_object(format="%Y/" + monthFormat, util='arrow', dayFirst=None)
-            elif validMonth["subcategory"] == 'date' and validMonth['format']=="%m"  or validMonth['subcategory'] == 'date' and validMonth['format']=='%-m':
+            elif validMonth["subcategory"] == 'date' and validMonth['format'] == "%m" or validMonth[
+                'subcategory'] == 'date' and validMonth['format'] == '%-m':
                 return build_return_object(format="%Y/" + monthFormat, util='arrow', dayFirst=None)
 
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_arrow_4(values):
             array_valid = date_arrow(values, separator=".")
             monthFormat = month_MMorM(values, separator='.', loc=1)
             allMonthVals = []
             for val in values:
-                monthval = val.split('.')[1]
-                allMonthVals.append(monthval)
+                try:
+                    monthval = val.split('.')[1]
+                    allMonthVals.append(monthval)
+                except Exception as e:
+                    print(e)
 
             validMonth = month_day_f(allMonthVals)
 
             if len(array_valid) > len(values) * 0.75:
                 return build_return_object(format="%Y." + monthFormat, util='arrow', dayFirst=None)
 
-            elif validMonth['subcategory'] == 'date' and validMonth['format']=='%m' or validMonth['subcategory'] == 'date' and validMonth['format']== '%-m':
+            elif validMonth['subcategory'] == 'date' and validMonth['format'] == '%m' or validMonth[
+                'subcategory'] == 'date' and validMonth['format'] == '%-m':
                 return build_return_object(format="%Y." + monthFormat, util='arrow', dayFirst=None)
 
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
-        def date_util(values, separator, shortyear, yearloc):
 
-            util_dates = []
-            if separator != "none":
-                dayFirst = dayFirstCheck(values, separator, shortYear=shortyear, yearLoc=yearloc)
-            else:
-                dayFirst = False
-
-            for date in values:
-                try:
-
-                    dateUtil = dateutil.parser.parse(str(date), dayfirst=dayFirst)
-                    if isinstance(dateUtil, datetime.date):
-                        util_dates.append({"value": date, "standard": dateUtil})
-                    else:
-                        pass
-                except Exception as e:
-                    print(e)
-
-            return util_dates, dayFirst
-
-        def day_ddOrd(values, separator, loc):
-            dayFormat = '%-d'
-            for d in values:
-                try:
-                    if separator is None:
-                        if d[0] == '0':
-                            dayFormat = '%d'
-                    else:
-                        d_value = d.split(separator)[loc]
-                        if d_value[0] == '0':
-                            dayFormat = '%d'
-                except Exception as e:
-                    print(e)
-            return dayFormat
-
-        def month_MMorM(values, separator, loc):
-            monthFormat = '%-m'
-            for d in values:
-                try:
-                    if separator is None:
-                        if d[0] == '0':
-                            monthFormat = '%m'
-                    else:
-                        d_value = d.split(separator)[loc]
-                        if d_value[0] == '0':
-                            monthFormat = '%m'
-                except Exception as e:
-                    print(e)
-            return monthFormat
-
-        def hour_hOrH(values,separator, loc_hms):
-            hourFormat = '%-H'
-            for d in values:
-
-                if separator is None:
-                    if d[0] == '0':
-                        hourFormat = '%H'
-                else:
-                    hms = d.split(' ')[-1]
-                    hms = hms.split(separator)[loc_hms]
-
-                    if hms[0] == '0':
-                        hourFormat = '%H'
-            return hourFormat
-
-        def minute_mOrM(values,separator, loc_hms):
-            minuteFormat = '%-M'
-            for d in values:
-                if separator is None:
-                    if d[0] == '0':
-                        minuteFormat = '%M'
-                else:
-                    hms = d.split(' ')[-1]
-                    hms = hms.split(separator)[loc_hms]
-                    if hms[0] == '0':
-                        minuteFormat = '%M'
-            return minuteFormat
-
-        def second_sOrS(values, separator, loc_hms):
-            secondFormat = '%-S'
-            for d in values:
-                if separator is None:
-                    if d[0] == '0':
-                        secondFormat = '%S'
-                else:
-                    hms = d.split(' ')[-1]
-                    hms = hms.split(separator)[loc_hms]
-                    if hms[0] == '0':
-                        secondFormat = '%S'
-            return secondFormat
-
-        # currently can't handle yyyy-dd-mm HH:mm:ss
         def iso_time(values):
             array_valid, dayFirst = date_util(values, separator="none", shortyear=False, yearloc=None)
 
@@ -1045,7 +1138,7 @@ class GeoTimeClassify:
                 return build_return_object(format="%Y-%m-%dT%H%M%S", util='Util', dayFirst=dayFirst)
 
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_1(values):
             array_valid, dayFirst = date_util(values, separator="-", shortyear=False, yearloc=None)
@@ -1066,7 +1159,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_2(values):
             array_valid, dayFirst = date_util(values, separator="-", shortyear=False, yearloc=None)
@@ -1087,7 +1180,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_3(values):
             array_valid, dayFirst = date_util(values, separator="_", shortyear=False, yearloc=None)
@@ -1156,7 +1249,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_7(values):
             array_valid, dayFirst = date_util(values, separator=".", shortyear=False, yearloc=None)
@@ -1177,7 +1270,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_8(values):
             array_valid, dayFirst = date_util(values, separator=".", shortyear=True, yearloc=2)
@@ -1197,7 +1290,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_9(values):
             array_valid, dayFirst = date_util(values, separator="-", shortyear=False, yearloc=None)
@@ -1217,7 +1310,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_10(values):
             array_valid, dayFirst = date_util(values, separator="-", shortyear=True, yearloc=2)
@@ -1237,7 +1330,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_11(values):
             array_valid, dayFirst = date_util(values, separator="_", shortyear=False, yearloc=None)
@@ -1290,7 +1383,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_14(values):
 
@@ -1312,7 +1405,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_15(values):
             array_valid, dayFirst = date_util(values, separator=".", shortyear=False, yearloc=None)
@@ -1334,7 +1427,7 @@ class GeoTimeClassify:
 
 
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_16(values):
             array_valid, dayFirst = date_util(values, separator=".", shortyear=True, yearloc=2)
@@ -1361,7 +1454,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_17(values):
             array_valid, dayFirst = date_util(values, separator="_", shortyear=False, yearloc=None)
@@ -1393,20 +1486,14 @@ class GeoTimeClassify:
                 monthFormat = month_MMorM(values, separator='.', loc=1)
             if len(array_valid) > len(values) * 0.85:
                 if dayFirst:
-                    #    return  {'category': 'time', 'subcategory': 'date', 'format': "%Y."+dayFormat+"."+monthFormat,
-                    # "match_type": ['LSTM'], "Parser": "Util", "DayFirst": dayFirst}
                     return build_return_object(format="%Y." + dayFormat + "." + monthFormat, util='Util',
                                                dayFirst=dayFirst)
-
                 else:
                     return build_return_object(format="%Y." + monthFormat + "." + dayFormat, util='Util',
                                                dayFirst=dayFirst)
 
-                #    return  {'category': 'time', 'subcategory': 'date', 'format': "%Y."+monthFormat+"."+dayFormat,
-                # "match_type": ['LSTM'], "Parser": "Util", "DayFirst": dayFirst}
-
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_19(values):
             array_valid, dayFirst = date_util(values, separator="-", shortyear=False, yearloc=None)
@@ -1418,9 +1505,7 @@ class GeoTimeClassify:
                 monthFormat = month_MMorM(values, separator='-', loc=1)
             if len(array_valid) > len(values) * 0.85:
                 if dayFirst:
-                    #    return {'category': 'time', 'subcategory': 'date',
-                    #    'format': "%Y-" + dayFormat+"-"+monthFormat,
-                    # "match_type": ['LSTM'], "Parser": "Util", "DayFirst": dayFirst}
+
                     return build_return_object(format="%Y-" + dayFormat + "-" + monthFormat, util='Util',
                                                dayFirst=dayFirst)
 
@@ -1428,12 +1513,8 @@ class GeoTimeClassify:
                     return build_return_object(format="%Y-" + monthFormat + "-" + dayFormat, util='Util',
                                                dayFirst=dayFirst)
 
-                #    return  {'category': 'time', 'subcategory': 'date',
-                #    'format': "%Y-" + monthFormat + "-" + dayFormat,
-                # "match_type": ['LSTM'], "Parser": "Util", "DayFirst": dayFirst}
-
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_20(values):
             array_valid, dayFirst = date_util(values, separator="/", shortyear=False, yearloc=None)
@@ -1445,9 +1526,7 @@ class GeoTimeClassify:
                 monthFormat = month_MMorM(values, separator='/', loc=1)
             if len(array_valid) > len(values) * 0.85:
                 if dayFirst:
-                    # return  {'category': 'time', 'subcategory': 'date',
-                    # 'format': "%Y/"+dayFormat+"/"+monthFormat, "match_type": ['LSTM'],
-                    # "Parser": "Util", "DayFirst": dayFirst}
+
                     return build_return_object(format="%Y/" + dayFormat + "/" + monthFormat, util='Util',
                                                dayFirst=dayFirst)
 
@@ -1455,11 +1534,8 @@ class GeoTimeClassify:
                     return build_return_object(format="%Y/" + monthFormat + "/" + dayFormat, util='Util',
                                                dayFirst=dayFirst)
 
-                    # return  {'category': 'time', 'subcategory': 'date',
-                    # 'format': "%Y/" + monthFormat + "/" + dayFormat, "match_type": ['LSTM'],
-                    # "Parser": "Util", "DayFirst": dayFirst}
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_21(values):
             array_valid, dayFirst = date_util(values, separator="-", shortyear=False, yearloc=0)
@@ -1471,26 +1547,23 @@ class GeoTimeClassify:
                 dayFormat = day_ddOrd(values, separator='-', loc=2)
                 monthFormat = month_MMorM(values, separator='-', loc=1)
             # hour min sec format
-            hourFormat= hour_hOrH(values, separator=':', loc_hms=0)
-            minFormat = minute_mOrM(values, separator=':',loc_hms=1)
+            hourFormat = hour_hOrH(values, separator=':', loc_hms=0)
+            minFormat = minute_mOrM(values, separator=':', loc_hms=1)
             secFormat = second_sOrS(values, separator=':', loc_hms=2)
             if len(array_valid) > len(values) * 0.85:
                 if dayFirst:
-                    # return {'category': 'time', 'subcategory': 'date',
-                    # 'format': "%Y-" + dayFormat + "-" + monthFormat +' %H%M%S', "match_type": ['LSTM'],
-                    # "Parser": "Util", "DayFirst": dayFirst}
-                    return build_return_object(format="%Y-" + dayFormat + "-" + monthFormat + ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
-                                               dayFirst=dayFirst)
-
+                    return build_return_object(
+                        format="%Y-" + dayFormat + "-" + monthFormat + ' ' + hourFormat + ':' + minFormat + ':' + secFormat,
+                        util='Util',
+                        dayFirst=dayFirst)
                 else:
-                    #    return {'category': 'time', 'subcategory': 'date',
-                    #    'format':"%Y-" + monthFormat + "-" + dayFormat+ ' %H%M%S', "match_type": ['LSTM'],
-                    # "Parser": "Util",  "DayFirst": dayFirst}
-                    return build_return_object(format="%Y-" + monthFormat + "-" + dayFormat + ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
-                                               dayFirst=dayFirst)
 
+                    return build_return_object(
+                        format="%Y-" + monthFormat + "-" + dayFormat + ' ' + hourFormat + ':' + minFormat + ':' + secFormat,
+                        util='Util',
+                        dayFirst=dayFirst)
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_23(values):
             array_valid, dayFirst = date_util(values, separator="/", shortyear=False, yearloc=0)
@@ -1505,21 +1578,17 @@ class GeoTimeClassify:
             secFormat = second_sOrS(values, separator=':', loc_hms=2)
             if len(array_valid) > len(values) * 0.85:
                 if dayFirst:
-                    # return {'category': 'time', 'subcategory': 'date',
-                    # 'format': "%Y-" + dayFormat + "-" + monthFormat +' %H%M%S', "match_type": ['LSTM'],
-                    # "Parser": "Util", "DayFirst": dayFirst}
-                    return build_return_object(format="%Y/" + dayFormat + "/" + monthFormat + ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
-                                               dayFirst=dayFirst)
-
+                    return build_return_object(
+                        format="%Y/" + dayFormat + "/" + monthFormat + ' ' + hourFormat + ':' + minFormat + ':' + secFormat,
+                        util='Util',
+                        dayFirst=dayFirst)
                 else:
-                    #    return {'category': 'time', 'subcategory': 'date',
-                    #    'format':"%Y-" + monthFormat + "-" + dayFormat+ ' %H%M%S', "match_type": ['LSTM'],
-                    # "Parser": "Util",  "DayFirst": dayFirst}
-                    return build_return_object(format="%Y/" + monthFormat + "/" + dayFormat + ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
-                                               dayFirst=dayFirst)
-
+                    return build_return_object(
+                        format="%Y/" + monthFormat + "/" + dayFormat + ' ' + hourFormat + ':' + minFormat + ':' + secFormat,
+                        util='Util',
+                        dayFirst=dayFirst)
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_24(values):
             array_valid, dayFirst = date_util(values, separator="_", shortyear=False, yearloc=0)
@@ -1534,19 +1603,15 @@ class GeoTimeClassify:
             minFormat = minute_mOrM(values, separator=':', loc_hms=1)
             secFormat = second_sOrS(values, separator=':', loc_hms=2)
             if dayFirst:
-                # return {'category': 'time', 'subcategory': 'date',
-                # 'format': "%Y-" + dayFormat + "-" + monthFormat +' %H%M%S', "match_type": ['LSTM'],
-                # "Parser": "Util", "DayFirst": dayFirst}
-                return build_return_object(format="%Y_" + dayFormat + "_" + monthFormat + ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
-                                           dayFirst=dayFirst)
-
+                return build_return_object(
+                    format="%Y_" + dayFormat + "_" + monthFormat + ' ' + hourFormat + ':' + minFormat + ':' + secFormat,
+                    util='Util',
+                    dayFirst=dayFirst)
             else:
-                #    return {'category': 'time', 'subcategory': 'date',
-                #    'format':"%Y-" + monthFormat + "-" + dayFormat+ ' %H%M%S', "match_type": ['LSTM'],
-                # "Parser": "Util",  "DayFirst": dayFirst}
-                return build_return_object(format="%Y_" + monthFormat + "_" + dayFormat + ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
-                                           dayFirst=dayFirst)
-
+                return build_return_object(
+                    format="%Y_" + monthFormat + "_" + dayFormat + ' ' + hourFormat + ':' + minFormat + ':' + secFormat,
+                    util='Util',
+                    dayFirst=dayFirst)
 
         def date_util_25(values):
             array_valid, dayFirst = date_util(values, separator=".", shortyear=False, yearloc=0)
@@ -1562,21 +1627,18 @@ class GeoTimeClassify:
             secFormat = second_sOrS(values, separator=':', loc_hms=2)
             if len(array_valid) > len(values) * 0.85:
                 if dayFirst:
-                    # return {'category': 'time', 'subcategory': 'date',
-                    # 'format': "%Y-" + dayFormat + "-" + monthFormat +' %H%M%S', "match_type": ['LSTM'],
-                    # "Parser": "Util", "DayFirst": dayFirst}
-                    return build_return_object(format="%Y." + dayFormat + "." + monthFormat +  ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
-                                               dayFirst=dayFirst)
+                    return build_return_object(
+                        format="%Y." + dayFormat + "." + monthFormat + ' ' + hourFormat + ':' + minFormat + ':' + secFormat,
+                        util='Util',
+                        dayFirst=dayFirst)
 
                 else:
-                    #    return {'category': 'time', 'subcategory': 'date',
-                    #    'format':"%Y-" + monthFormat + "-" + dayFormat+ ' %H%M%S', "match_type": ['LSTM'],
-                    # "Parser": "Util",  "DayFirst": dayFirst}
-                    return build_return_object(format="%Y." + monthFormat + "." + dayFormat +  ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
-                                               dayFirst=dayFirst)
-
+                    return build_return_object(
+                        format="%Y." + monthFormat + "." + dayFormat + ' ' + hourFormat + ':' + minFormat + ':' + secFormat,
+                        util='Util',
+                        dayFirst=dayFirst)
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_26(values):
             array_valid, dayFirst = date_util(values, separator="-", shortyear=False, yearloc=2)
@@ -1592,21 +1654,19 @@ class GeoTimeClassify:
             secFormat = second_sOrS(values, separator=':', loc_hms=2)
             if len(array_valid) > len(values) * 0.85:
                 if dayFirst:
-                    # return {'category': 'time', 'subcategory': 'date',
-                    # 'format': "%Y-" + dayFormat + "-" + monthFormat +' %H%M%S', "match_type": ['LSTM'],
-                    # "Parser": "Util", "DayFirst": dayFirst}
-                    return build_return_object(format=dayFormat + "-" + monthFormat + '-%Y'+ ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
-                                               dayFirst=dayFirst)
+                    return build_return_object(
+                        format=dayFormat + "-" + monthFormat + '-%Y' + ' ' + hourFormat + ':' + minFormat + ':' + secFormat,
+                        util='Util',
+                        dayFirst=dayFirst)
 
                 else:
-                    #    return {'category': 'time', 'subcategory': 'date',
-                    #    'format':"%Y-" + monthFormat + "-" + dayFormat+ ' %H%M%S', "match_type": ['LSTM'],
-                    # "Parser": "Util",  "DayFirst": dayFirst}
-                    return build_return_object(format= monthFormat + "-" + dayFormat + '-%Y'+ ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
-                                               dayFirst=dayFirst)
+                    return build_return_object(
+                        format=monthFormat + "-" + dayFormat + '-%Y' + ' ' + hourFormat + ':' + minFormat + ':' + secFormat,
+                        util='Util',
+                        dayFirst=dayFirst)
 
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_27(values):
             array_valid, dayFirst = date_util(values, separator="/", shortyear=False, yearloc=2)
@@ -1621,21 +1681,19 @@ class GeoTimeClassify:
             secFormat = second_sOrS(values, separator=':', loc_hms=2)
             if len(array_valid) > len(values) * 0.85:
                 if dayFirst:
-                    # return {'category': 'time', 'subcategory': 'date',
-                    # 'format': "%Y-" + dayFormat + "-" + monthFormat +' %H%M%S', "match_type": ['LSTM'],
-                    # "Parser": "Util", "DayFirst": dayFirst}
-                    return build_return_object(format=dayFormat + "/" + monthFormat + '/%Y'+' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
-                                               dayFirst=dayFirst)
-
+                    return build_return_object(
+                        format=dayFormat + "/" + monthFormat + '/%Y' + ' ' + hourFormat + ':' + minFormat + ':' + secFormat,
+                        util='Util',
+                        dayFirst=dayFirst)
                 else:
-                    #    return {'category': 'time', 'subcategory': 'date',
-                    #    'format':"%Y-" + monthFormat + "-" + dayFormat+ ' %H%M%S', "match_type": ['LSTM'],
-                    # "Parser": "Util",  "DayFirst": dayFirst}
-                    return build_return_object(format= monthFormat + "/" + dayFormat + '/%Y'+' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
-                                               dayFirst=dayFirst)
+                    return build_return_object(
+                        format=monthFormat + "/" + dayFormat + '/%Y' + ' ' + hourFormat + ':' + minFormat + ':' + secFormat,
+                        util='Util',
+                        dayFirst=dayFirst)
 
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+
         def date_util_28(values):
             array_valid, dayFirst = date_util(values, separator="_", shortyear=False, yearloc=2)
             print('dayf', dayFirst)
@@ -1649,19 +1707,15 @@ class GeoTimeClassify:
             minFormat = minute_mOrM(values, separator=':', loc_hms=1)
             secFormat = second_sOrS(values, separator=':', loc_hms=2)
             if dayFirst:
-                # return {'category': 'time', 'subcategory': 'date',
-                # 'format': "%Y-" + dayFormat + "-" + monthFormat +' %H%M%S', "match_type": ['LSTM'],
-                # "Parser": "Util", "DayFirst": dayFirst}
-                return build_return_object(format=dayFormat + "_" + monthFormat + '_%Y' +' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
-                                           dayFirst=dayFirst)
-
+                return build_return_object(
+                    format=dayFormat + "_" + monthFormat + '_%Y' + ' ' + hourFormat + ':' + minFormat + ':' + secFormat,
+                    util='Util',
+                    dayFirst=dayFirst)
             else:
-                #    return {'category': 'time', 'subcategory': 'date',
-                #    'format':"%Y-" + monthFormat + "-" + dayFormat+ ' %H%M%S', "match_type": ['LSTM'],
-                # "Parser": "Util",  "DayFirst": dayFirst}
-                return build_return_object(format= monthFormat + "_" + dayFormat + '_%Y'+' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
-                                           dayFirst=dayFirst)
-
+                return build_return_object(
+                    format=monthFormat + "_" + dayFormat + '_%Y' + ' ' + hourFormat + ':' + minFormat + ':' + secFormat,
+                    util='Util',
+                    dayFirst=dayFirst)
 
         def date_util_29(values):
             array_valid, dayFirst = date_util(values, separator=".", shortyear=False, yearloc=2)
@@ -1676,22 +1730,17 @@ class GeoTimeClassify:
             secFormat = second_sOrS(values, separator=':', loc_hms=2)
             if len(array_valid) > len(values) * 0.85:
                 if dayFirst:
-                    # return {'category': 'time', 'subcategory': 'date',
-                    # 'format': "%Y-" + dayFormat + "-" + monthFormat +' %H%M%S', "match_type": ['LSTM'],
-                    # "Parser": "Util", "DayFirst": dayFirst}
-                    return build_return_object(format=dayFormat + "." + monthFormat + '.%Y' + ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
-                                               dayFirst=dayFirst)
-
+                    return build_return_object(
+                        format=dayFormat + "." + monthFormat + '.%Y' + ' ' + hourFormat + ':' + minFormat + ':' + secFormat,
+                        util='Util',
+                        dayFirst=dayFirst)
                 else:
-                    #    return {'category': 'time', 'subcategory': 'date',
-                    #    'format':"%Y-" + monthFormat + "-" + dayFormat+ ' %H%M%S', "match_type": ['LSTM'],
-                    # "Parser": "Util",  "DayFirst": dayFirst}
-                    return build_return_object(format= monthFormat + "." + dayFormat + '.%Y' + ' ' + hourFormat + ':' + minFormat + ':' + secFormat, util='Util',
-                                               dayFirst=dayFirst)
-
+                    return build_return_object(
+                        format=monthFormat + "." + dayFormat + '.%Y' + ' ' + hourFormat + ':' + minFormat + ':' + secFormat,
+                        util='Util',
+                        dayFirst=dayFirst)
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
-
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_util_22(values):
             array_valid = []
@@ -1708,13 +1757,10 @@ class GeoTimeClassify:
                     print(e)
 
             if 'failed' in array_valid:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
             else:
                 return build_return_object(format='Unix Timestamp', util=None, dayFirst=None)
 
-                # return {'category': 'time', 'subcategory': 'date', 'format': 'Unix Timestamp',
-                # "match_type": ['LSTM'],
-                #         "Parser": "Util"}
 
         def date_long_1(values):
             #              #  01 April 2008
@@ -1722,12 +1768,8 @@ class GeoTimeClassify:
             dayFormat = day_ddOrd(values, separator=' ', loc=0)
             if len(array_valid) > len(values) * 0.85:
                 return build_return_object(format=dayFormat + " %B %Y", util=None, dayFirst=None)
-
-                # return {'category': 'time', 'subcategory': 'date', 'format':dayFormat+" %B %Y",
-                # "match_type": ['LSTM'],  "Parser": "Util"}
-
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_long_2(values):
             array_valid, dayFirst = date_util(values, separator="none", shortyear=False, yearloc=None)
@@ -1736,23 +1778,16 @@ class GeoTimeClassify:
                 #                 02 April 20
                 #                    dd/LLLL/yy
                 return build_return_object(format=dayFormat + " %B %y", util=None, dayFirst=None)
-
-                # return  {'category': 'time', 'subcategory': 'date', 'format': dayFormat+" %B %y",
-                # "match_type": ['LSTM'], "Parser": "Util"}
-
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_long_3(values):
             array_valid, dayFirst = date_util(values, separator="none", shortyear=False, yearloc=None)
             dayFormat = day_ddOrd(values, separator=' ', loc=2)
             if len(array_valid) > len(values) * 0.85:
                 return build_return_object(format="%A, %B " + dayFormat + ",%y", util=None, dayFirst=None)
-                # return  {'category': 'time', 'subcategory': 'date', 'format': "%A, %B "+dayFormat+",%y",
-                # "match_type": ['LSTM'], "Parser": "Util"}
-
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_long_4(values):
             array_valid, dayFirst = date_util(values, separator="none", shortyear=False, yearloc=None)
@@ -1761,12 +1796,8 @@ class GeoTimeClassify:
                 #                 April 10, 2008
                 #                 LLLL dd, y
                 return build_return_object(format="%B " + dayFormat + ", %Y", util=None, dayFirst=None)
-
-                # return  {'category': 'time', 'subcategory': 'date', 'format':"%B "+dayFormat+", %Y" ,
-                # "match_type": ['LSTM'], "Parser": "Util"}
-
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_long_5(values):
             array_valid, dayFirst = date_util(values, separator="none", shortyear=False, yearloc=None)
@@ -1776,10 +1807,8 @@ class GeoTimeClassify:
                 #                 EEEE, LLLL dd,yy HH:mm:ss
 
                 return build_return_object(format="%A, %B " + dayFormat + ",%y HH:mm:ss", util=None, dayFirst=None)
-                # return {'category': 'time', 'subcategory': 'date','format': "%A, %B "+dayFormat+",%y HH:mm:ss",
-                # "match_type": ['LSTM'],"Parser": "Util"}
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def date_long_6(values):
 
@@ -1793,19 +1822,15 @@ class GeoTimeClassify:
 
             if len(array_valid) > len(values) * 0.85:
                 if dayFirst:
-                    # return {'category': 'time', 'subcategory': 'date',
-                    #         'format': dayFormat + "/" + monthFormat + "/%y HH:mm", "match_type": ['LSTM']}
                     return build_return_object(format=dayFormat + "/" + monthFormat + "/%y HH:mm", util=None,
                                                dayFirst=None)
-
                 #              03/23/21 01:55 PM
                 #                 MM/dd/yy HH:mm
                 else:
                     return build_return_object(format=monthFormat + "/" + dayFormat + "/%y HH:mm", util=None,
                                                dayFirst=None)
-                    # return {'category': 'time', 'subcategory': 'date', 'format':monthFormat+"/"+dayFormat+"/%y HH:mm", "match_type": ['LSTM'] }
             else:
-                return  build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
 
         def month_day_f(values):
             month_day_results = []
@@ -1824,16 +1849,14 @@ class GeoTimeClassify:
                     print(e)
 
             if "failed" in month_day_results:
-                return  build_return_standard_object(category='None', subcategory=None, match_type=None)
+                return build_return_standard_object(category=None, subcategory=None, match_type=None)
             elif "day" in month_day_results:
-                # return {'category': 'time', 'subcategory': 'date', 'format':day_ddOrd(values, separator=None, loc=None), "match_type": ['LSTM'] }
                 return build_return_object(format=day_ddOrd(values, separator=None, loc=None), util=None, dayFirst=None)
             elif "month_day" in month_day_results:
-                # return {'category': 'time', 'subcategory': 'date', 'format':month_MMorM(values, separator=None, loc=None), "match_type": ['LSTM'] }
                 return build_return_object(format=month_MMorM(values, separator=None, loc=None), util=None,
                                            dayFirst=None)
             else:
-                return build_return_standard_object(category='None', subcategory=None, match_type=None)
+                return build_return_standard_object(category=None, subcategory=None, match_type=None)
 
         def month_name_f(values):
             print("Start month validation ...")
@@ -1848,7 +1871,6 @@ class GeoTimeClassify:
                         print(e)
 
             if np.count_nonzero(month_array_valid) >= (len(values) * 0.65):
-                # return {'category': 'time', 'subcategory': 'date', 'format':'%B', "match_type": ['LSTM'] }
                 return build_return_object('%B', util=None, dayFirst=None)
             else:
                 return day_name_f(values)
@@ -1866,27 +1888,26 @@ class GeoTimeClassify:
                         print(e)
 
             if np.count_nonzero(day_array_valid) >= (len(values) * 0.65):
-
-                # return {'category': 'time', 'subcategory': 'date', 'format':'%A', "match_type": ['LSTM'] }
                 return build_return_object('%A', util=None, dayFirst=None)
             else:
-                return build_return_standard_object(category='None', subcategory=None, match_type=None)
+                return build_return_standard_object(category=None, subcategory=None, match_type=None)
 
         functionlist = defaultdict(
             int,
             {
                 "None": none_f,
+                "Skipped": Skipped_f,
                 "country_name": country_f,
                 "city": country_f,
                 "language_name": country_f,
                 "city_suffix": country_f,
+                "first_name": none_f,
                 "country_GID": country_iso3,
                 "country_code": country_iso2,
                 "continent": continent_f,
                 "geo": geo_f,
-                "pyfloat": geo_f,
-                "percent": geo_f,
-                "first_name": none_f,
+                "pyfloat": none_f,
+                "percent": none_f,
                 "ssn": none_f,
                 "phone_number": none_f,
                 "zipcode": none_f,
@@ -1950,20 +1971,27 @@ class GeoTimeClassify:
         )
         final_column_classification = []
 
-        def add_obj(obj, add_obj):
+        def add_obj(obj, add_objs):
+            for property in add_objs:
+                obj[property] = add_objs[property]
 
-            for property in add_obj:
-                print(property)
-                obj[property] = add_obj[property]
             return obj
 
         for pred in predictions:
-            final_column_classification.append(
-                add_obj({"column": pred["column"]}, functionlist[pred["avg_predictions"]["averaged_top_category"]](
+            if pred['values'] == 'Skipped':
+                final_column_classification.append(
+                    add_obj({"column": pred["column"]}, functionlist['Skipped'](
+                        pred['column'],fuzzyMatched
+                    ))
+                )
+            else:
+                final_column_classification.append(
+                    add_obj({"column": pred["column"]}, functionlist[pred["avg_predictions"]["averaged_top_category"]](
                         self.column_value_object[pred["column"]]
-                    ) ))
+                    )))
 
         return final_column_classification
+
 
     def fuzzymatchColumns(self, classifications):
         predictions = classifications
@@ -2010,16 +2038,14 @@ class GeoTimeClassify:
                 try:
                   for key in keyValue:
                       if self.fuzzyMatch(str(pred["column"]), str(key), 85):
-                            print('key',key)
                             T, ratio = self.fuzzyRatio(str(pred["column"]), str(key),85)
-                            print('Ratio', ratio)
                             predictions[i]['match_type'].append('fuzzy')
                             predictions[i]["fuzzyColumn"]=[]
                             predictions[i]["fuzzyColumn"].append({"matchedKey":str(key), "fuzzyCategory":words_to_check[y][key], "ratio":ratio})
                       else:
                             pass
                 except Exception as e:
-                    print(e)
+                    print("e", e)
 
         for pred2 in predictions:
             try:
@@ -2030,15 +2056,43 @@ class GeoTimeClassify:
                         bestRatio=0
                         if fmatch["ratio"]>bestRatio:
                             bestRatio=fmatch["ratio"]
-                            print(bestRatio)
                             ind=i
                     pred2['fuzzyColumn']=pred2['fuzzyColumn'][ind]
                 else:
                     pred2['fuzzyColumn']=pred2['fuzzyColumn'][0]
             except Exception as e:
-                print(e)
+                print(pred2['column'], "- Column has no fuzzy match")
 
         return predictions
+
+
+    def fuzzymatchColumns_enhanced(self,df):
+
+        words_to_check = [
+            {"Lat":"latitude"},
+            {"Latitude":"latitude"},
+            {"lng":"latitude"},
+            {"lon":"longitude"},
+            {"long":"longitude"},
+            {"Longitude":"longitude"},
+            {"ISO2":"ISO2"},
+            {"ISO3": "ISO3"}
+        ]
+        array_of_columnMatch_index=[]
+        index_to_not_process=[]
+        for i, header in enumerate(df.columns):
+            # print(i,header)
+            for y, keyValue in enumerate(words_to_check):
+                for key in keyValue:
+                    if self.fuzzyMatch(header, str(key), 90):
+                        T, ratio = self.fuzzyRatio(header, str(key), 90)
+                        index_to_not_process.append(i)
+                        array_of_columnMatch_index.append({'index':i, 'header':header, 'key':key, 'value':keyValue[key], 'ratio': ratio})
+                    else:
+                        pass
+
+        return index_to_not_process , array_of_columnMatch_index
+
 
     def standard_dateColumns(self, fuzzyOutput, formats='default'):
         df = self.df
@@ -2068,33 +2122,56 @@ class GeoTimeClassify:
                 print(e)
         return df
 
-    def standard_dateColumn(self, fuzzyOutput, columnName):
-        df = self.df
-        for out in fuzzyOutput:
-            if out["column"] == columnName:
-                dayFirst = out["classification"][0]["DayFirst"]
 
-                df = df.assign(
-                    ISO_8601=lambda dataframe: dataframe[columnName].map(
-                        lambda date: dateutil.parser.parse(str(date), dayfirst=dayFirst)
-                    )
-                )
-        return df
+    def final_step(self, t):
+        classifiedObjs=[]
+        for tstep in t:
+            tstep['match_type']=list(set(tstep['match_type']))
+            tstep['match_type']= [i for i in tstep['match_type'] if i]
+            fuzzyCol = None
+            try:
+                fuzzyCol = tstep['fuzzyColumn']
+            except Exception as e:
+                print(tstep['column'],"- Column has no fuzzy match")
 
-    def columns_classified(self, path):
-        preds = self.predictions(path_to_csv=path)
-        output = self.assign_heuristic_function(preds)
-        output_fuz = self.fuzzymatchColumns(output)
-        return output_fuz
+            classifiedObj = Classification(column=tstep['column'], category=tstep["category"], subcategory=tstep['subcategory'],
+                                           format=tstep['format'],
+                                           match_type=tstep['match_type'], Parser=tstep['Parser'], DayFirst=tstep['DayFirst'],
+                                           fuzzyColumn=fuzzyCol)
+            classifiedObjs.append(classifiedObj)
+        return Classifications(classifications = classifiedObjs)
 
-    def add_iso8601_columns(self, path, formats):
-        preds = self.predictions(path_to_csv=path)
-        output = self.assign_heuristic_function(preds)
-        output_fuz = self.fuzzymatchColumns(output)
-        output_col = self.standard_dateColumns(output_fuz, formats)
+    def findNANsColumns(self, df):
+        index_nan=[]
+        for index,column in enumerate(df.columns):
+            if df[column].count() > 0:
+                pass
+            else:
+                index_nan.append(index)
 
-        return output_col
+        return index_nan
+
+
+    def columns_classifed(self, path):
+        df = self.read_in_csv(path)
+        index_remove, fuzzyMatchColumns = self.fuzzymatchColumns_enhanced(df)
+        columns_na = self.findNANsColumns(df)
+        index_remove=index_remove+columns_na
+        preds = self.predictions_enhanced(df, index_remove)
+        output = self.assign_heuristic_function_enhanced(preds, fuzzyMatchColumns)
+        fuzzyMatch=self.fuzzymatchColumns(output)
+        final = self.final_step(fuzzyMatch)
+        return final
 
     def get_Fake_Data(self):
         return self.FakeData
+
+# import time
+# start_time=time.time()
+# gc=GeoTimeClassify(20)
+# #pred=gc.columns_classified("/home/kyle/Desktop/blank.csv")
+#
+# preds=gc.columns_classifed("/home/kyle/code/geotime_classify/examples/example_4.csv")
+# print(preds)
+# print("%s seconds: " % (time.time()-start_time))
 
