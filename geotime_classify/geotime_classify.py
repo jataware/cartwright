@@ -2145,9 +2145,9 @@ class GeoTimeClassify:
 # import time
 # start_time=time.time()
 # gc=GeoTimeClassify(10)
-# #pred=gc.columns_classified("/home/kyle/Desktop/blank.csv")
+# pred=gc.columns_classifed("/home/kyle/Desktop/blank.csv")
 #
-# preds=gc.columns_classifed("/home/kyle/Desktop/test_data/Disasters/disaster.csv")
-# print(preds)
+# #preds=gc.columns_classifed("/home/kyle/Desktop/test_data/Disasters/disaster.csv")
+# print(pred)
 # print("%s seconds: " % (time.time()-start_time))
 
