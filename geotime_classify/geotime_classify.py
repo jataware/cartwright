@@ -881,7 +881,7 @@ class GeoTimeClassify:
 
             if np.count_nonzero(bool_array) >= (len(values) * 0.85):
 
-                return build_return_standard_object(category='Boolean', subcategory=None, match_type='LSTM')
+                return build_return_standard_object(category='boolean', subcategory=None, match_type='LSTM')
             else:
                 return build_return_standard_object(category=None, subcategory=None, match_type=None)
 
@@ -898,7 +898,7 @@ class GeoTimeClassify:
 
             if np.count_nonzero(bool_array) >= (len(values) * .85):
 
-                return build_return_standard_object(category='Boolean', subcategory=None, match_type='LSTM')
+                return build_return_standard_object(category='boolean', subcategory=None, match_type='LSTM')
             else:
                 return build_return_standard_object(category=None, subcategory=None, match_type=None)
 
@@ -2142,12 +2142,5 @@ class GeoTimeClassify:
     def get_Fake_Data(self):
         return self.FakeData
 
-# import time
-# start_time=time.time()
-# gc=GeoTimeClassify(10)
-# pred=gc.columns_classifed("/home/kyle/Desktop/blank.csv")
-#
-# #preds=gc.columns_classifed("/home/kyle/Desktop/test_data/Disasters/disaster.csv")
-# print(pred)
-# print("%s seconds: " % (time.time()-start_time))
+
 
