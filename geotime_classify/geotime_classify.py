@@ -2128,7 +2128,7 @@ class GeoTimeClassify:
         return index_nan
 
 
-    def columns_classifed(self, path):
+    def columns_classified(self, path):
         df = self.read_in_csv(path)
         index_remove, fuzzyMatchColumns = self.fuzzymatchColumns_enhanced(df)
         columns_na = self.findNANsColumns(df)
