@@ -24,6 +24,7 @@ import fuzzywuzzy
 import pkg_resources
 from . import geotime_schema
 
+import logging
 
 # Need to have the class of the model in local memory to load a saved model in pytorch
 class LSTMClassifier(nn.Module):
@@ -96,7 +97,12 @@ class PaddedTensorDataset(Dataset):
 
 
 class GeoTimeClassify:
-    def __init__(self, number_of_samples):
+    def __init__(self, number_of_samples, log_level=logging.INFO):
+
+        # Set log level and formatter
+        logging.getLogger().setLevel(log_level)
+        logging.basicConfig(format='%(levelname)s - %(asctime)s %(message)s')
+
         self.model = LSTMClassifier(vocab_size=89, embedding_dim=128, hidden_dim=32, output_size=71)
         self.model.load_state_dict(
             torch.load(pkg_resources.resource_stream(__name__, 'models/LSTM_RNN_Geotime_Classify_v_0.09_dict.pth')))
@@ -545,7 +551,7 @@ class GeoTimeClassify:
 
 
     def predictions_enhanced(self, df, index_remove):
-        print('Start LSTM predictions ...')
+        logging.info('Start LSTM predictions ...')
 
         class LSTMClassifier(nn.Module):
             def __init__(self, vocab_size, embedding_dim, hidden_dim, output_size):
@@ -609,7 +615,7 @@ class GeoTimeClassify:
                         }
                     )
                 except Exception as e:
-                    print(e)
+                    logging.error(f"{column}: e")
 
         return predictionList
 
@@ -660,7 +666,7 @@ class GeoTimeClassify:
                     "match_type": [match_type], "Parser": None, "DayFirst": None}
 
         def city_f(values):
-            print("Start city validation ...")
+            logging.info("Start city validation ...")
             city_match_bool = []
             if len(values) < 40:
                 subsample = 5
@@ -668,7 +674,7 @@ class GeoTimeClassify:
                 # subsample = int(round(.2*len(values),0))
                 subsample = 5
 
-            print(subsample)
+            logging.info(subsample)
             count =0
             passed=0
             while passed < 2 and not count >= subsample:
@@ -682,18 +688,18 @@ class GeoTimeClassify:
                             city_match_bool.append(True)
                             passed += 1
                 except Exception as e:
-                    print(e)
+                    logging.error(f"{values}: e")
 
-            # print("city_match_bool", city_match_bool)
+            # logging.info("city_match_bool", city_match_bool)
             if np.count_nonzero(city_match_bool) >= 2:
-                print('city validated')
+                logging.info('city validated')
                 return build_return_standard_object(category='geo', subcategory='city_name', match_type='LSTM')
             else:
                 return build_return_standard_object(category=None, subcategory=None, match_type=None)
 
         def state_f(values):
 
-            print("Start state validation ...")
+            logging.info("Start state validation ...")
             state_match_bool = []
             subsample=len(values)
             count = 0
@@ -709,17 +715,17 @@ class GeoTimeClassify:
                             state_match_bool.append(True)
                             passed += 1
                 except Exception as e:
-                    print(e)
+                    logging.error(f"{values}: e")
 
             if np.count_nonzero(state_match_bool) >= 5:
-                print('state validated')
+                logging.info('state validated')
                 return build_return_standard_object(category='geo', subcategory='state_name', match_type='LSTM')
             else:
                 return city_f(values)
 
         def country_f(values):
 
-            print("Start country validation ...")
+            logging.info("Start country validation ...")
             country_match_bool = []
             subsample = len(values)
             count = 0
@@ -735,16 +741,16 @@ class GeoTimeClassify:
                             country_match_bool.append(True)
                             passed += 1
                 except Exception as e:
-                    print(e)
+                    logging.error(f"{values}: e")
 
             if np.count_nonzero(country_match_bool) >= 5:
-                print('country validated')
+                logging.info('country validated')
                 return build_return_standard_object(category='geo', subcategory='country_name', match_type='LSTM')
             else:
                 return state_f(values)
 
         def country_iso3(values):
-            print("Start iso3 validation ...")
+            logging.info("Start iso3 validation ...")
             ISO_in_lookup = []
 
             for iso in values:
@@ -754,7 +760,7 @@ class GeoTimeClassify:
                             self.fuzzyMatch(str(iso), str(cc), ratio=85)
                         )
                     except Exception as e:
-                        print(e)
+                        logging.error(f"{values}: e")
 
             if np.count_nonzero(ISO_in_lookup) >= (len(values) * 0.65):
                 return build_return_standard_object(category='geo', subcategory='ISO3', match_type='LSTM')
@@ -762,7 +768,7 @@ class GeoTimeClassify:
                 return country_iso2(values)
 
         def country_iso2(values):
-            print("Start iso2 validation ...")
+            logging.info("Start iso2 validation ...")
             ISO2_in_lookup = []
             for iso in values:
                 for cc in iso2_lookup:
@@ -772,7 +778,7 @@ class GeoTimeClassify:
                             self.fuzzyMatch(str(iso), str(cc), ratio=85)
                         )
                     except Exception as e:
-                        print(e)
+                        logging.error(f"{values}: e")
 
             if np.count_nonzero(ISO2_in_lookup) >= (len(values) * 0.65):
 
@@ -781,7 +787,7 @@ class GeoTimeClassify:
                 return build_return_standard_object(category=None, subcategory=None, match_type=None)
 
         def continent_f(values):
-            print("Start continent validation ...")
+            logging.info("Start continent validation ...")
             cont_in_lookup = []
 
             for cont in values:
@@ -791,7 +797,7 @@ class GeoTimeClassify:
                             self.fuzzyMatch(str(cont), str(c), ratio=85)
                         )
                     except Exception as e:
-                        print(e)
+                        logging.error(f"{values}: e")
 
             if np.count_nonzero(cont_in_lookup) >= (len(values) * 0.65):
 
@@ -800,7 +806,7 @@ class GeoTimeClassify:
                 return build_return_standard_object(category=None, subcategory=None, match_type=None)
 
         def geo_f(values):
-            print("Start geo validation ...")
+            logging.info("Start geo validation ...")
             geo_valid = []
             percent_array = []
             for geo in values:
@@ -816,7 +822,7 @@ class GeoTimeClassify:
                     else:
                         geo_valid.append("failed")
                 except Exception as e:
-                    print(e)
+                    logging.error(f"{values}: e")
 
             if "failed" in geo_valid:
                 return build_return_standard_object(category=None, subcategory=None, match_type=None)
@@ -831,7 +837,7 @@ class GeoTimeClassify:
                 return build_return_standard_object(category=None, subcategory=None, match_type=None)
 
         def year_f(values):
-            print("Start year validation ...")
+            logging.info("Start year validation ...")
             year_values_valid = []
             years_failed = []
             strange_year = []
@@ -845,7 +851,7 @@ class GeoTimeClassify:
                     else:
                         years_failed.append("Failed")
                 except Exception as e:
-                    print(e)
+                    logging.error(f"{values}: e")
 
             if len(years_failed) > len(values) * 0.15:
                 return build_return_standard_object(category=None, subcategory=None, match_type=None)
@@ -855,7 +861,7 @@ class GeoTimeClassify:
                 return build_return_object(format="%Y", util=None, dayFirst=None)
 
         def bool_f(values):
-            print("Start boolean validation ...")
+            logging.info("Start boolean validation ...")
             bool_arr = ["true", "false", "T", "F"]
             bool_array = []
             for bools in values:
@@ -863,7 +869,7 @@ class GeoTimeClassify:
                     try:
                         bool_array.append(self.fuzzyMatch(bools, b, ratio=85))
                     except Exception as e:
-                        print(e)
+                        logging.error(f"{values}: e")
 
             if np.count_nonzero(bool_array) >= (len(values) * 0.85):
 
@@ -872,7 +878,7 @@ class GeoTimeClassify:
                 return build_return_standard_object(category=None, subcategory=None, match_type=None)
 
         def bool_letter_f(values):
-            print('Start boolean validation ...')
+            logging.info('Start boolean validation ...')
             bool_arr = ['t', 'f', 'T', 'F']
             bool_array = []
             for bools in values:
@@ -880,7 +886,7 @@ class GeoTimeClassify:
                     try:
                         bool_array.append(self.fuzzyMatch(bools, b, ratio=98))
                     except Exception as e:
-                        print(e)
+                        logging.error(f"{values}: e")
 
             if np.count_nonzero(bool_array) >= (len(values) * .85):
 
@@ -907,7 +913,7 @@ class GeoTimeClassify:
                     else:
                         pass
                 except Exception as e:
-                    print(e)
+                    logging.error(f"{values}: e")
 
             return util_dates, dayFirst
 
@@ -924,7 +930,7 @@ class GeoTimeClassify:
                         if d_value[0] == '0':
                             dayFormat = '%d'
                 except Exception as e:
-                    print(e)
+                    logging.error(f"{values}: e")
             return dayFormat
 
         # Month Format
@@ -940,7 +946,7 @@ class GeoTimeClassify:
                         if d_value[0] == '0':
                             monthFormat = '%m'
                 except Exception as e:
-                    print(e)
+                    logging.error(f"{values}: e")
             return monthFormat
 
         # Hour format
@@ -1008,7 +1014,7 @@ class GeoTimeClassify:
                             if int(arr[0]) > 12:
                                 return True
                 except Exception as e:
-                    print("error occurred", e)
+                    logging.error(f"error occurred: {e}")
 
             return False
 
@@ -1022,9 +1028,9 @@ class GeoTimeClassify:
                     if isinstance(dateArrow, datetime.date):
                         utils_array.append("true")
                     else:
-                        print("Not a valid date format")
+                        logging.warn("Not a valid date format")
                 except Exception as e:
-                    print(e, "Error from Arrow: Date had an error")
+                    logging.error(f"Error from Arrow: Date had an error: {e}")
             return utils_array
 
         def date_arrow_1(values):
@@ -1046,7 +1052,7 @@ class GeoTimeClassify:
                 "subcategory"] == 'date' and validMonth['format'] == "%-m":
                 return build_return_object(format="%Y-" + monthFormat, util='arrow', dayFirst=None)
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_arrow_3(values):
             array_valid = date_arrow(values, separator="/")
@@ -1063,7 +1069,7 @@ class GeoTimeClassify:
                 return build_return_object(format="%Y/" + monthFormat, util='arrow', dayFirst=None)
 
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_arrow_4(values):
             array_valid = date_arrow(values, separator=".")
@@ -1074,7 +1080,7 @@ class GeoTimeClassify:
                     monthval = val.split('.')[1]
                     allMonthVals.append(monthval)
                 except Exception as e:
-                    print(e)
+                    logging.error(f"{values}: e")
 
             validMonth = month_day_f(allMonthVals)
 
@@ -1086,7 +1092,7 @@ class GeoTimeClassify:
                 return build_return_object(format="%Y." + monthFormat, util='arrow', dayFirst=None)
 
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
 
         def iso_time(values):
@@ -1100,7 +1106,7 @@ class GeoTimeClassify:
                 return build_return_object(format="%Y-%m-%dT%H%M%S", util='Util', dayFirst=dayFirst)
 
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_1(values):
             array_valid, dayFirst = date_util(values, separator="-", shortyear=False, yearloc=None)
@@ -1121,7 +1127,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_2(values):
             array_valid, dayFirst = date_util(values, separator="-", shortyear=False, yearloc=None)
@@ -1142,7 +1148,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_3(values):
             array_valid, dayFirst = date_util(values, separator="_", shortyear=False, yearloc=None)
@@ -1191,7 +1197,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_6(values):
             array_valid, dayFirst = date_util(values, separator="/", shortyear=True, yearloc=2)
@@ -1211,7 +1217,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_7(values):
             array_valid, dayFirst = date_util(values, separator=".", shortyear=False, yearloc=None)
@@ -1232,7 +1238,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_8(values):
             array_valid, dayFirst = date_util(values, separator=".", shortyear=True, yearloc=2)
@@ -1252,7 +1258,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_9(values):
             array_valid, dayFirst = date_util(values, separator="-", shortyear=False, yearloc=None)
@@ -1272,7 +1278,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_10(values):
             array_valid, dayFirst = date_util(values, separator="-", shortyear=True, yearloc=2)
@@ -1292,7 +1298,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_11(values):
             array_valid, dayFirst = date_util(values, separator="_", shortyear=False, yearloc=None)
@@ -1345,7 +1351,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_14(values):
 
@@ -1367,7 +1373,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_15(values):
             array_valid, dayFirst = date_util(values, separator=".", shortyear=False, yearloc=None)
@@ -1389,7 +1395,7 @@ class GeoTimeClassify:
 
 
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_16(values):
             array_valid, dayFirst = date_util(values, separator=".", shortyear=True, yearloc=2)
@@ -1416,7 +1422,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_17(values):
             array_valid, dayFirst = date_util(values, separator="_", shortyear=False, yearloc=None)
@@ -1455,7 +1461,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_19(values):
             array_valid, dayFirst = date_util(values, separator="-", shortyear=False, yearloc=None)
@@ -1476,7 +1482,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_20(values):
             array_valid, dayFirst = date_util(values, separator="/", shortyear=False, yearloc=None)
@@ -1497,7 +1503,7 @@ class GeoTimeClassify:
                                                dayFirst=dayFirst)
 
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_21(values):
             array_valid, dayFirst = date_util(values, separator="-", shortyear=False, yearloc=0)
@@ -1525,7 +1531,7 @@ class GeoTimeClassify:
                         util='Util',
                         dayFirst=dayFirst)
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_23(values):
             array_valid, dayFirst = date_util(values, separator="/", shortyear=False, yearloc=0)
@@ -1550,7 +1556,7 @@ class GeoTimeClassify:
                         util='Util',
                         dayFirst=dayFirst)
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_24(values):
             array_valid, dayFirst = date_util(values, separator="_", shortyear=False, yearloc=0)
@@ -1600,7 +1606,7 @@ class GeoTimeClassify:
                         util='Util',
                         dayFirst=dayFirst)
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_26(values):
             array_valid, dayFirst = date_util(values, separator="-", shortyear=False, yearloc=2)
@@ -1628,7 +1634,7 @@ class GeoTimeClassify:
                         dayFirst=dayFirst)
 
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_27(values):
             array_valid, dayFirst = date_util(values, separator="/", shortyear=False, yearloc=2)
@@ -1654,11 +1660,11 @@ class GeoTimeClassify:
                         dayFirst=dayFirst)
 
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_28(values):
             array_valid, dayFirst = date_util(values, separator="_", shortyear=False, yearloc=2)
-            print('dayf', dayFirst)
+            logging.info('dayf', dayFirst)
             if dayFirst:
                 dayFormat = day_ddOrd(values, separator='_', loc=0)
                 monthFormat = month_MMorM(values, separator='_', loc=1)
@@ -1702,7 +1708,7 @@ class GeoTimeClassify:
                         util='Util',
                         dayFirst=dayFirst)
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_util_22(values):
             array_valid = []
@@ -1716,10 +1722,10 @@ class GeoTimeClassify:
                         array_valid.append('failed')
                 except Exception as e:
                     array_valid.append('failed')
-                    print(e)
+                    logging.error(f"{values}: e")
 
             if 'failed' in array_valid:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
             else:
                 return build_return_object(format='Unix Timestamp', util=None, dayFirst=None)
 
@@ -1731,7 +1737,7 @@ class GeoTimeClassify:
             if len(array_valid) > len(values) * 0.85:
                 return build_return_object(format=dayFormat + " %B %Y", util=None, dayFirst=None)
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_long_2(values):
             array_valid, dayFirst = date_util(values, separator="none", shortyear=False, yearloc=None)
@@ -1741,7 +1747,7 @@ class GeoTimeClassify:
                 #                    dd/LLLL/yy
                 return build_return_object(format=dayFormat + " %B %y", util=None, dayFirst=None)
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_long_3(values):
             array_valid, dayFirst = date_util(values, separator="none", shortyear=False, yearloc=None)
@@ -1749,7 +1755,7 @@ class GeoTimeClassify:
             if len(array_valid) > len(values) * 0.85:
                 return build_return_object(format="%A, %B " + dayFormat + ",%y", util=None, dayFirst=None)
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_long_4(values):
             array_valid, dayFirst = date_util(values, separator="none", shortyear=False, yearloc=None)
@@ -1759,7 +1765,7 @@ class GeoTimeClassify:
                 #                 LLLL dd, y
                 return build_return_object(format="%B " + dayFormat + ", %Y", util=None, dayFirst=None)
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_long_5(values):
             array_valid, dayFirst = date_util(values, separator="none", shortyear=False, yearloc=None)
@@ -1770,7 +1776,7 @@ class GeoTimeClassify:
 
                 return build_return_object(format="%A, %B " + dayFormat + ",%y HH:mm:ss", util=None, dayFirst=None)
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def date_long_6(values):
 
@@ -1792,7 +1798,7 @@ class GeoTimeClassify:
                     return build_return_object(format=monthFormat + "/" + dayFormat + "/%y HH:mm", util=None,
                                                dayFirst=None)
             else:
-                return build_return_standard_object(category='unknown_date', subcategory=None, match_type=None)
+                return build_return_standard_object(category='unknown', subcategory=None, match_type=None)
 
         def month_day_f(values):
             month_day_results = []
@@ -1806,9 +1812,9 @@ class GeoTimeClassify:
                         else:
                             month_day_results.append("failed")
                     else:
-                        print("Not a valid digit")
+                        logging.warn("Not a valid digit")
                 except Exception as e:
-                    print(e)
+                    logging.error(f"{values}: e")
 
             if "failed" in month_day_results:
                 return build_return_standard_object(category=None, subcategory=None, match_type=None)
@@ -1821,7 +1827,7 @@ class GeoTimeClassify:
                 return build_return_standard_object(category=None, subcategory=None, match_type=None)
 
         def month_name_f(values):
-            print("Start month validation ...")
+            logging.info("Start month validation ...")
             month_array_valid = []
             for month in values:
                 for m in self.month_of_year:
@@ -1830,7 +1836,7 @@ class GeoTimeClassify:
                             self.fuzzyMatch(str(month), str(m), ratio=85)
                         )
                     except Exception as e:
-                        print(e)
+                        logging.error(f"{values}: e")
 
             if np.count_nonzero(month_array_valid) >= (len(values) * 0.65):
                 return build_return_object('%B', util=None, dayFirst=None)
@@ -1838,7 +1844,7 @@ class GeoTimeClassify:
                 return day_name_f(values)
 
         def day_name_f(values):
-            print("Start day validation ...")
+            logging.info("Start day validation ...")
             day_array_valid = []
             for day in values:
                 for d in self.day_of_week:
@@ -1847,7 +1853,7 @@ class GeoTimeClassify:
                             self.fuzzyMatch(str(day), str(d), ratio=85)
                         )
                     except Exception as e:
-                        print(e)
+                        logging.error(f"{values}: e")
 
             if np.count_nonzero(day_array_valid) >= (len(values) * 0.65):
                 return build_return_object('%A', util=None, dayFirst=None)
@@ -1947,10 +1953,19 @@ class GeoTimeClassify:
                     ))
                 )
             else:
-                final_column_classification.append(
-                    add_obj({"column": pred["column"]}, functionlist[pred["avg_predictions"]["averaged_top_category"]](
-                        self.column_value_object[pred["column"]]
-                    )))
+                try:
+                    logging.debug(f'Adding classification for column {pred["column"]}')
+                    logging.debug(f'Using function {functionlist[pred["avg_predictions"]["averaged_top_category"]]}')
+                    obj_to_add = add_obj({"column": pred["column"]}, functionlist[pred["avg_predictions"]["averaged_top_category"]](
+                            self.column_value_object[pred["column"]]
+                        ))
+                    final_column_classification.append(obj_to_add)
+                except Exception as e:
+                    logging.error(f'Retrying column {pred["column"]} due to error: {e}')
+                    final_column_classification.append(
+                        add_obj({"column": pred["column"]}, none_f(
+                            self.column_value_object[pred["column"]]
+                        )))                    
 
         return final_column_classification
 
@@ -2007,7 +2022,7 @@ class GeoTimeClassify:
                       else:
                             pass
                 except Exception as e:
-                    print("e", e)
+                    logging.error(f'{pred["column"]}: e')
 
         for pred2 in predictions:
             try:
@@ -2023,7 +2038,7 @@ class GeoTimeClassify:
                 else:
                     pred2['fuzzyColumn']=pred2['fuzzyColumn'][0]
             except Exception as e:
-                print(pred2['column'], "- Column has no fuzzy match")
+                logging.warn(f"{pred2['column']}: Column has no fuzzy match")
 
         return predictions
 
@@ -2043,7 +2058,7 @@ class GeoTimeClassify:
         array_of_columnMatch_index=[]
         index_to_not_process=[]
         for i, header in enumerate(df.columns):
-            # print(i,header)
+            # logging.info(i,header)
             for y, keyValue in enumerate(words_to_check):
                 for key in keyValue:
                     if self.fuzzyMatch(header, str(key), 90):
@@ -2060,7 +2075,7 @@ class GeoTimeClassify:
         df = self.df
         for i, out in enumerate(fuzzyOutput):
             try:
-                #             print(out['classification'][0]['Category'])
+                #             logging.info(out['classification'][0]['Category'])
                 if out['subcategory'] == 'date' or out['fuzzyColumn']["fuzzyCategory"] == 'Date' or out['fuzzyColumn']["fuzzyCategory"] == 'Timestamp' or out['fuzzyColumn']["fuzzyCategory"] == 'Datetime':
                     new_column = 'ISO_8601_' + str(i)
                     if 'DayFirst' in out:
@@ -2081,7 +2096,7 @@ class GeoTimeClassify:
                                 lambda date: dateutil.parser.parse(str(date), dayfirst=dayFirst))}
                         )
             except Exception as e:
-                print(e)
+                logging.error(f"{out['column']}: e")
         return df
 
 
@@ -2094,8 +2109,15 @@ class GeoTimeClassify:
             try:
                 fuzzyCol = tstep['fuzzyColumn']
             except Exception as e:
-                print(tstep['column'],"- Column has no fuzzy match")
+                logging.info(f"{tstep['column']}: Column has no fuzzy match")
 
+            # Some were putting "value" in category and failing subsequently
+            # This handles that error
+            # TODO: this should be handled more cleanly
+            cat = tstep["category"]
+            if cat not in ['geo','time','boolean','unknown']:
+                cat = 'unknown'
+                
             classifiedObj = geotime_schema.Classification(column=tstep['column'], category=tstep["category"], subcategory=tstep['subcategory'],
                                                           format=tstep['format'],
                                                           match_type=tstep['match_type'], Parser=tstep['Parser'], DayFirst=tstep['DayFirst'],
