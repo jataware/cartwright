@@ -2142,12 +2142,12 @@ class GeoTimeClassify:
     def get_Fake_Data(self):
         return self.FakeData
 
-import time
-start_time=time.time()
-gc=GeoTimeClassify(10)
-#pred=gc.columns_classified("/home/kyle/Desktop/blank.csv")
-
-preds=gc.columns_classifed("/home/kyle/Desktop/test_data/Disasters/disaster.csv")
-print(preds)
-print("%s seconds: " % (time.time()-start_time))
+# import time
+# start_time=time.time()
+# gc=GeoTimeClassify(10)
+# #pred=gc.columns_classified("/home/kyle/Desktop/blank.csv")
+#
+# preds=gc.columns_classifed("/home/kyle/Desktop/test_data/Disasters/disaster.csv")
+# print(preds)
+# print("%s seconds: " % (time.time()-start_time))
 
