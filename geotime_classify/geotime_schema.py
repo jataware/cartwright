@@ -45,7 +45,7 @@ class category(str, Enum):
     geo= "geo"
     time="time"
     boolean="boolean"
-    unknown = "unknown"
+    unknown_date = "unknown_date"
 
 class subcategory(str, Enum):
     """
