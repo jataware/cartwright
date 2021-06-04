@@ -26,7 +26,7 @@ def read_file(filename, cb):
 
 setup(
     name='geotime_classify',
-    version='0.6.1',
+    version='0.6.7',
     license='LGPL-3.0-or-later',
     description='Categorizes spatial and temporal columns for csv files. Standardizes date columns for transformations',
     long_description=long_description,
@@ -37,6 +37,7 @@ setup(
     packages=find_packages(),
     package_dir={'geotime_classify': 'geotime_classify'},
     package_data={'geotime_classify': ['models/*','datasets/*']},
+    py_modules=['geotime_schema'],
     # include_package_data=True,
     zip_safe=False,
 

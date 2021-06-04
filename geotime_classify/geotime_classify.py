@@ -1,42 +1,28 @@
 #!/usr/bin/env python
 from __future__ import unicode_literals, print_function, division
 
-import os
-
 import torch
 import torch.autograd as autograd
-from torch.autograd import Variable
 import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 
 from torch.utils.data import Dataset, DataLoader
-from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+from torch.nn.utils.rnn import pack_padded_sequence
 
 from collections import defaultdict
-from collections import Counter
 
 # Kyle's attempt
 import pandas as pd
 import numpy as np
-import re
-from string import punctuation
-import glob
 
-import string
 import random
-import time
 import dateutil.parser
 import datetime
 import arrow
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 import fuzzywuzzy
-import pkgutil
-import csv
 import pkg_resources
-from geotime_schema import *
-
+from . import geotime_schema
 
 
 # Need to have the class of the model in local memory to load a saved model in pytorch
@@ -2110,12 +2096,12 @@ class GeoTimeClassify:
             except Exception as e:
                 print(tstep['column'],"- Column has no fuzzy match")
 
-            classifiedObj = Classification(column=tstep['column'], category=tstep["category"], subcategory=tstep['subcategory'],
-                                           format=tstep['format'],
-                                           match_type=tstep['match_type'], Parser=tstep['Parser'], DayFirst=tstep['DayFirst'],
-                                           fuzzyColumn=fuzzyCol)
+            classifiedObj = geotime_schema.Classification(column=tstep['column'], category=tstep["category"], subcategory=tstep['subcategory'],
+                                                          format=tstep['format'],
+                                                          match_type=tstep['match_type'], Parser=tstep['Parser'], DayFirst=tstep['DayFirst'],
+                                                          fuzzyColumn=fuzzyCol)
             classifiedObjs.append(classifiedObj)
-        return Classifications(classifications = classifiedObjs)
+        return geotime_schema.Classifications(classifications = classifiedObjs)
 
     def findNANsColumns(self, df):
         index_nan=[]
@@ -2141,6 +2127,5 @@ class GeoTimeClassify:
 
     def get_Fake_Data(self):
         return self.FakeData
-
 
 
