@@ -97,7 +97,7 @@ class PaddedTensorDataset(Dataset):
 
 
 class GeoTimeClassify:
-    def __init__(self, number_of_samples, log_level=logging.INFO):
+    def __init__(self, number_of_samples, log_level=logging.ERROR):
 
         # Set log level and formatter
         logging.getLogger().setLevel(log_level)
