@@ -64,11 +64,12 @@ You should see an array with a dict for each column. The keys in each dict are
   Possible information returned for each column are:
   1. **'column'**:Column name in csv
   2. **'classification'**: an array with a few possible values:
-	  A. *'Category'*: The final classified name for the column** most important return
-	  B. *'type'*: This will be returned if there is addition sub categories for the classification. E.g. [{'Category': 'Geo', 'type': 'Latitude (number)'}]
-	  C. *'Format'*: If the column is classified as a date it will give the best guess at the format for that date column. 
-	  D. *'Parser'*: This lets you know what parser was used for determining if it was a valid date or not. The two options are 'Arrow' and 'Util' which represent the arrow and dateutil libraries respectively. 
-	  E. *'DayFirst'*: A boolean value. If the column is classified as a date the validation code will try to test if day or month come first in the format, which is necessary for accurate date standardization. 
+	  A. *'category'*: The final classified name for the column** most important return
+	  B. *'subcategory'*: This will be returned if there is addition sub categories for the classification. E.g. [{'Category': 'Geo', 'type': 'Latitude (number)'}]
+	  C. *'format'*: If the column is classified as a date it will give the best guess at the format for that date column. 
+	  D. *'parser'*: This lets you know what parser was used for determining if it was a valid date or not. The two options are 'Arrow' and 'Util' which represent the arrow and dateutil libraries respectively. 
+	  E. *'dayFirst'*: A boolean value. If the column is classified as a date the validation code will try to test if day or month come first in the format, which is necessary for accurate date standardization. 
+      F. *'match_type'*: How the classification was made. LSTM for the model, fuzzy for fuzzywuzzy match on column headers.
 5. **'fuzzyColumn'**: This is returned if the column name is similar enough to any word in a list of interest. Shown below.
     [  
     "Date",  
@@ -112,15 +113,11 @@ The 'format' of a date classification are created using this reference sheet: ht
 Possible classifciation options: 
 1. "category": "None"
 2. "category": "geo", "subcategory":"continent"
-3. "category": "geo", "subcategory":"country name"
-4. "category": "geo", "subcategory":"state name"
-5. "category": "geo", "subcategory":"city name"
+3. "category": "geo", "subcategory":"country_name"
+4. "category": "geo", "subcategory":"state_name"
+5. "category": "geo", "subcategory":"city_name"
 6. "category": "geo", "subcategory":"ISO3"
 7. "category": "geo", "subcategory":"ISO2"
-8. "category": "unknown code"
-9. "category": "proper noun"
-10. "category": "number"
-11. "category": "number/geo" , "subcategory": "Unknown-mostly between -1 and 1"
 12. "category": "geo", "subcategory": "longitude"
 13. "category": "geo", "subcategory": "latitude"
 19. "category": "unknown date" , "subcategory": None

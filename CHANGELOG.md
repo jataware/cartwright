@@ -1,3 +1,13 @@
+## 0.6.7 (2021-04-15)
+  - Sixty Seventh release on PyPI.
+## 0.6.6 (2021-04-15)
+  - Sixty Sixth release on PyPI.
+## 0.6.5 (2021-04-15)
+  - Sixty Fifth release on PyPI.
+## 0.6.3 (2021-04-15)
+  - Sixty Third release on PyPI.
+## 0.6.2 (2021-04-15)
+  - Sixty First release on PyPI.
 ## 0.6.0 (2021-06-02)
   - Sixth release on PyPI. Breaking changes due to pydantic schema added.
 ## 0.5.7 (2021-04-15)
