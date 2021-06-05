@@ -833,26 +833,24 @@ class GeoTimeClassify:
         def year_f(values):
             print("Start year validation ...")
             year_values_valid = []
-            years_failed = []
-            strange_year = []
+
             for year in values:
                 try:
                     if str.isdigit(str(year)):
-                        if 1300 < int(year) < 2500:
+                        if 1800 < int(year) < 2100:
                             year_values_valid.append("True")
                         else:
-                            strange_year.append("Maybe")
+                            pass
                     else:
-                        years_failed.append("Failed")
+                        pass
                 except Exception as e:
                     print(e)
 
-            if len(years_failed) > len(values) * 0.15:
-                return build_return_standard_object(category=None, subcategory=None, match_type=None)
-            elif len(strange_year) > len(values) * 15:
-                return build_return_standard_object(category=None, subcategory=None, match_type=None)
-            elif len(year_values_valid) > len(values) * 0.75:
+            if len(year_values_valid) > len(values) * 0.75:
                 return build_return_object(format="%Y", util=None, dayFirst=None)
+            else:
+                return build_return_standard_object(category=None, subcategory=None, match_type=None)
+
 
         def bool_f(values):
             print("Start boolean validation ...")
@@ -1940,17 +1938,20 @@ class GeoTimeClassify:
             return obj
 
         for pred in predictions:
-            if pred['values'] == 'Skipped':
-                final_column_classification.append(
-                    add_obj({"column": pred["column"]}, functionlist['Skipped'](
-                        pred['column'],fuzzyMatched
-                    ))
-                )
-            else:
-                final_column_classification.append(
-                    add_obj({"column": pred["column"]}, functionlist[pred["avg_predictions"]["averaged_top_category"]](
-                        self.column_value_object[pred["column"]]
-                    )))
+            try:
+                if pred['values'] == 'Skipped':
+                    final_column_classification.append(
+                        add_obj({"column": pred["column"]}, functionlist['Skipped'](
+                            pred['column'],fuzzyMatched
+                        ))
+                    )
+                else:
+                    final_column_classification.append(
+                        add_obj({"column": pred["column"]}, functionlist[pred["avg_predictions"]["averaged_top_category"]](
+                            self.column_value_object[pred["column"]]
+                        )))
+            except Exception as e:
+                print(e)
 
         return final_column_classification
 
@@ -2115,6 +2116,7 @@ class GeoTimeClassify:
 
 
     def columns_classified(self, path):
+        print('start')
         df = self.read_in_csv(path)
         index_remove, fuzzyMatchColumns = self.fuzzymatchColumns_enhanced(df)
         columns_na = self.findNANsColumns(df)
@@ -2127,5 +2129,6 @@ class GeoTimeClassify:
 
     def get_Fake_Data(self):
         return self.FakeData
+
 
 
