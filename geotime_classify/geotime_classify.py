@@ -839,26 +839,24 @@ class GeoTimeClassify:
         def year_f(values):
             logging.info("Start year validation ...")
             year_values_valid = []
-            years_failed = []
-            strange_year = []
+
             for year in values:
                 try:
                     if str.isdigit(str(year)):
-                        if 1300 < int(year) < 2500:
+                        if 1800 < int(year) < 2100:
                             year_values_valid.append("True")
                         else:
-                            strange_year.append("Maybe")
+                            pass
                     else:
-                        years_failed.append("Failed")
+                        pass
                 except Exception as e:
                     logging.error(f"{values}: e")
 
-            if len(years_failed) > len(values) * 0.15:
-                return build_return_standard_object(category=None, subcategory=None, match_type=None)
-            elif len(strange_year) > len(values) * 15:
-                return build_return_standard_object(category=None, subcategory=None, match_type=None)
-            elif len(year_values_valid) > len(values) * 0.75:
+            if len(year_values_valid) > len(values) * 0.75:
                 return build_return_object(format="%Y", util=None, dayFirst=None)
+            else:
+                return build_return_standard_object(category=None, subcategory=None, match_type=None)
+
 
         def bool_f(values):
             logging.info("Start boolean validation ...")
@@ -1038,7 +1036,7 @@ class GeoTimeClassify:
             if len(array_valid) > len(values) * 0.85:
                 return build_return_object(format="%Y%d", util='arrow', dayFirst=None)
             else:
-                return build_return_standard_object(category='unknown date', subcategory=None, match_type=None)
+                return build_return_standard_object(category=None, subcategory=None, match_type=None)
 
         def date_arrow_2(values):
             # array_valid = date_arrow(values, separator="-")
@@ -1946,6 +1944,7 @@ class GeoTimeClassify:
             return obj
 
         for pred in predictions:
+
             if pred['values'] == 'Skipped':
                 final_column_classification.append(
                     add_obj({"column": pred["column"]}, functionlist['Skipped'](
@@ -1966,6 +1965,7 @@ class GeoTimeClassify:
                         add_obj({"column": pred["column"]}, none_f(
                             self.column_value_object[pred["column"]]
                         )))                    
+
 
         return final_column_classification
 
@@ -2137,6 +2137,7 @@ class GeoTimeClassify:
 
 
     def columns_classified(self, path):
+        print('start')
         df = self.read_in_csv(path)
         index_remove, fuzzyMatchColumns = self.fuzzymatchColumns_enhanced(df)
         columns_na = self.findNANsColumns(df)
@@ -2149,5 +2150,6 @@ class GeoTimeClassify:
 
     def get_Fake_Data(self):
         return self.FakeData
+
 
 
