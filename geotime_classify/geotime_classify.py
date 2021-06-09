@@ -664,6 +664,7 @@ class GeoTimeClassify:
                     "match_type": [], "Parser": None, "DayFirst": None}
 
         def Skipped_f(column, fuzzyMatched):
+            print(column, fuzzyMatched, 'hksdjf')
             category=None
             subcategory=None
             match_type=None
@@ -1996,9 +1997,10 @@ class GeoTimeClassify:
         for i,pred in enumerate(predictions):
             try:
                 if pred['values']=='Skipped':
+                    print(pred['values'], 'hherere',fuzzyMatched)
                     final_column_classification.append(
-                        add_obj({"column": predictions[count]["column"]}, functionlist['Skipped'](
-                            predictions[count]['column'], fuzzyMatched
+                        add_obj({"column": pred["column"]}, functionlist['Skipped'](
+                            pred['column'], fuzzyMatched
                         ))
                     )
                     if i > count:
