@@ -1,6 +1,6 @@
 from enum import Enum, IntEnum
 from pydantic import BaseModel, constr, Field
-from typing import List, Optional, Literal
+from typing import List, Optional
 
 class fuzzyCategory(str,Enum):
     """
@@ -45,6 +45,7 @@ class category(str, Enum):
     geo= "geo"
     time="time"
     boolean="boolean"
+    timeout="timeout"
 
 
 class subcategory(str, Enum):
@@ -60,6 +61,13 @@ class subcategory(str, Enum):
     longitude="longitude"
     latitude="latitude"
     date="date"
+
+class matchtype(str, Enum):
+    """
+     is the type of match for classification if any.
+    """
+    fuzzy="fuzzy"
+    LSTM="LSTM"
 
 class fuzzyColumn(BaseModel):
     """
@@ -84,7 +92,7 @@ class Classification(BaseModel):
     category: Optional[category]
     subcategory: Optional[subcategory]
     format: str = Field(default=None, description='the date represented in strftime format')
-    match_type: List[Literal["LSTM", "fuzzy"]]
+    match_type: List[matchtype]
     Parser: Optional[Parser]
     DayFirst: bool = Field(default=None, description='Boolean: if day is first in date format' )
     fuzzyColumn: Optional[fuzzyColumn]
@@ -95,5 +103,3 @@ class Classifications(BaseModel):
         Classifications are a list of Classification objects. This is what is returned from geotime_classify.
     """
     classifications: List[Classification]
-
-
