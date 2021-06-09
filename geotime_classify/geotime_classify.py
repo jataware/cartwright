@@ -27,6 +27,7 @@ from . import geotime_schema
 # import geotime_schema
 from datetime import datetime, timedelta
 import time
+
 import logging
 
 # Need to have the class of the model in local memory to load a saved model in pytorch
@@ -105,6 +106,7 @@ class GeoTimeClassify:
         # logging.getLogger().setLevel(log_level)
         # logging.basicConfig(format='%(levelname)s - %(asctime)s %(message)s')
         self.model = LSTMClassifier(vocab_size=89, embedding_dim=128, hidden_dim=32, output_size=73)
+
         self.model.load_state_dict(
             torch.load(pkg_resources.resource_stream(__name__, 'models/LSTM_RNN_Geotime_Classify_v_0.11_dict.pth')))
         self.model.eval()
@@ -557,6 +559,7 @@ class GeoTimeClassify:
 
     def predictions_enhanced(self, df, index_remove):
         logging.info('Start LSTM predictions ...')
+
         class LSTMClassifier(nn.Module):
             def __init__(self, vocab_size, embedding_dim, hidden_dim, output_size):
                 super(LSTMClassifier, self).__init__()
@@ -621,6 +624,7 @@ class GeoTimeClassify:
                 except Exception as e:
                     logging.error(f"predictions_enhanced: {column}: {e}")
 
+
         return predictionList
 
     # match two words return true based on ratio
@@ -676,6 +680,7 @@ class GeoTimeClassify:
             logging.info("Start city validation ...")
             city_match_bool = []
             subsample = 5
+
             count =0
             passed=0
             while passed < 2 and not count >= subsample:
@@ -717,6 +722,7 @@ class GeoTimeClassify:
                 except Exception as e:
                     logging.error(f"state_f -{values}: {e}")
 
+
             if np.count_nonzero(state_match_bool) >= 5:
                 logging.info('state validated')
                 return build_return_standard_object(category='geo', subcategory='state_name', match_type='LSTM')
@@ -743,6 +749,7 @@ class GeoTimeClassify:
                 except Exception as e:
                     logging.error(f"country_f - {values}: {e}")
 
+
             if np.count_nonzero(country_match_bool) >= 5:
                 logging.info('country validated')
                 return build_return_standard_object(category='geo', subcategory='country_name', match_type='LSTM')
@@ -762,6 +769,7 @@ class GeoTimeClassify:
                     except Exception as e:
                         logging.error(f"country_iso3 - {values}: {e}")
 
+
             if np.count_nonzero(ISO_in_lookup) >= (len(values) * 0.65):
                 return build_return_standard_object(category='geo', subcategory='ISO3', match_type='LSTM')
             else:
@@ -779,6 +787,7 @@ class GeoTimeClassify:
                         )
                     except Exception as e:
                         logging.error(f"country_iso2 - {values}: {e}")
+
 
             if np.count_nonzero(ISO2_in_lookup) >= (len(values) * 0.65):
 
@@ -798,6 +807,7 @@ class GeoTimeClassify:
                         )
                     except Exception as e:
                         logging.error(f"continent_f - {c} - {cont}: {e}")
+
 
             if np.count_nonzero(cont_in_lookup) >= (len(values) * 0.65):
 
@@ -823,6 +833,7 @@ class GeoTimeClassify:
                         geo_valid.append("failed")
                 except Exception as e:
                     logging.error(f"geo_f - {values}: {e}")
+
 
 
             if "failed" in geo_valid:
@@ -1036,6 +1047,7 @@ class GeoTimeClassify:
                         logging.info(f"{date}: Not valid format")
                 except Exception as e:
                     logging.error(f"date_arrow - {date}: {e}")
+
             return utils_array
 
         def date_arrow_1(values):
@@ -1087,6 +1099,7 @@ class GeoTimeClassify:
                     allMonthVals.append(monthval)
                 except Exception as e:
                     logging.error(f"date_arrow_4 - {val}: {e}")
+
 
             validMonth = month_day_f(allMonthVals)
             if len(array_valid) > len(values) * 0.75 and validMonth['category'] is not None:
@@ -1671,6 +1684,7 @@ class GeoTimeClassify:
 
         def date_util_28(values):
             array_valid, dayFirst = date_util(values, separator="_", shortyear=False, yearloc=2)
+
             if dayFirst:
                 dayFormat = day_ddOrd(values, separator='_', loc=0)
                 monthFormat = month_MMorM(values, separator='_', loc=1)
@@ -1818,7 +1832,7 @@ class GeoTimeClassify:
                         else:
                             month_day_results.append("failed")
                     else:
-                        loggin.info("Month_day test: Not a valid digit")
+                        loggin.warn("Month_day test: Not a valid digit")
                 except Exception as e:
                     logging.error(f"month_day_f - {md}: {e}")
 
@@ -1843,6 +1857,7 @@ class GeoTimeClassify:
                         )
                     except Exception as e:
                         logging.error(f"month_name_f - {m}: {e}")
+
 
             if np.count_nonzero(month_array_valid) >= (len(values) * 0.65):
                 return build_return_object('%B', util=None, dayFirst=None)
@@ -2006,6 +2021,7 @@ class GeoTimeClassify:
                     ))
                 )
 
+
         return final_column_classification
 
 
@@ -2079,7 +2095,8 @@ class GeoTimeClassify:
                 else:
                     pred2['fuzzyColumn']=pred2['fuzzyColumn'][0]
             except Exception as e:
-                logging.error(pred2['column'], f"fuzzymatchColumns - Column has no fuzzy match: {e}")
+                logging.warn(pred2['column'], f"fuzzymatchColumns - Column has no fuzzy match: {e}")
+
 
         return predictions
 
@@ -2099,6 +2116,7 @@ class GeoTimeClassify:
         array_of_columnMatch_index=[]
         index_to_not_process=[]
         for i, header in enumerate(df.columns):
+
             for y, keyValue in enumerate(words_to_check):
                 for key in keyValue:
                     if self.fuzzyMatch(header, str(key), 90):
@@ -2115,6 +2133,7 @@ class GeoTimeClassify:
         df = self.df
         for i, out in enumerate(fuzzyOutput):
             try:
+
                 if out['subcategory'] == 'date' or out['fuzzyColumn']["fuzzyCategory"] == 'Date' or out['fuzzyColumn']["fuzzyCategory"] == 'Timestamp' or out['fuzzyColumn']["fuzzyCategory"] == 'Datetime':
                     new_column = 'ISO_8601_' + str(i)
                     if 'DayFirst' in out:
@@ -2136,6 +2155,7 @@ class GeoTimeClassify:
                         )
             except Exception as e:
                 logging.error(f"standard_dateColumns - {out}: {e}")
+
         return df
 
 
@@ -2149,6 +2169,7 @@ class GeoTimeClassify:
                 fuzzyCol = tstep['fuzzyColumn']
             except Exception as e:
                 logging.error(tstep['column'],f"final_step - Column has no fuzzy match:{e}")
+
 
             classifiedObj = geotime_schema.Classification(column=tstep['column'], category=tstep["category"], subcategory=tstep['subcategory'],
                                                           format=tstep['format'],
