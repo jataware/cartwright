@@ -33,7 +33,7 @@ class fuzzyCategory(str,Enum):
     Province= "Province"
     Territory= "Territory"
     Address= "Address"
-    ISO2: "ISO2"
+    ISO2= "ISO2"
     ISO3 = "ISO3"
     ISO_code= "ISO_code"
     Results= "Results"
