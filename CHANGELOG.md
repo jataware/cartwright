@@ -1,4 +1,8 @@
-## 0.7.5 (2021-06-29)
+## 0.7.8 (2021-06-29)
+  - Seventy Eighth release on PyPI.
+## 0.7.7 (2021-06-29)
+  - Seventy Seventh release on PyPI.
+## 0.7.6 (2021-06-29)
   - Seventy Sixth release on PyPI.
 ## 0.7.5 (2021-04-15)
   - Seventy Fifth release on PyPI.

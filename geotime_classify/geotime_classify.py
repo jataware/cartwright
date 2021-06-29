@@ -25,10 +25,10 @@ import pkg_resources
 from . import geotime_schema
 # When working locally. use this.
 # import geotime_schema
-from datetime import datetime, timedelta
 import time
 
 import logging
+
 
 # Need to have the class of the model in local memory to load a saved model in pytorch
 class LSTMClassifier(nn.Module):
@@ -129,8 +129,7 @@ class GeoTimeClassify:
         self.cont_lookup = np.asarray(self.cont_lookup["continent_name"])
         self.FakeData = pd.read_csv(pkg_resources.resource_stream(__name__, 'datasets/Fake_data.csv'),
                                     encoding='latin-1')
-        self.seconds_to_finish=seconds_to_finish
-
+        self.seconds_to_finish = seconds_to_finish
 
         self.day_of_week = [
             "Monday",
@@ -515,8 +514,6 @@ class GeoTimeClassify:
         df = pd.read_csv(path)
         return df
 
-
-
     def get_arrayOfValues_df_enhanced(self, df, index_remove):
         column_value_object = {}
 
@@ -554,8 +551,6 @@ class GeoTimeClassify:
 
     def return_data(self):
         return self.cont_lookup
-
-
 
     def predictions_enhanced(self, df, index_remove):
         logging.info('Start LSTM predictions ...')
@@ -624,7 +619,6 @@ class GeoTimeClassify:
                 except Exception as e:
                     logging.error(f"predictions_enhanced: {column}: {e}")
 
-
         return predictionList
 
     # match two words return true based on ratio
@@ -655,24 +649,23 @@ class GeoTimeClassify:
             return {'category': category, 'subcategory': subcategory, 'format': None,
                     "match_type": [match_type], "Parser": None, "DayFirst": None}
 
-
         def none_f(values):
             return build_return_standard_object(category=None, subcategory=None, match_type=None)
-        
+
         def timeout_f(column):
             return {'category': 'timeout', 'subcategory': None, 'format': None,
                     "match_type": [], "Parser": None, "DayFirst": None}
 
         def Skipped_f(column, fuzzyMatched):
             print(column, fuzzyMatched, 'hksdjf')
-            category=None
-            subcategory=None
-            match_type=None
+            category = None
+            subcategory = None
+            match_type = None
             for match in fuzzyMatched:
                 if column == match['header']:
-                    match_type='fuzzy'
-                    category="geo"
-                    subcategory=match['value']
+                    match_type = 'fuzzy'
+                    category = "geo"
+                    subcategory = match['value']
 
             return {'category': category, 'subcategory': subcategory, 'format': None,
                     "match_type": [match_type], "Parser": None, "DayFirst": None}
@@ -682,8 +675,8 @@ class GeoTimeClassify:
             city_match_bool = []
             subsample = 5
 
-            count =0
-            passed=0
+            count = 0
+            passed = 0
             while passed < 2 and not count >= subsample:
                 count += 1
                 try:
@@ -707,7 +700,7 @@ class GeoTimeClassify:
 
             logging.info("Start state validation ...")
             state_match_bool = []
-            subsample=len(values)
+            subsample = len(values)
             count = 0
             passed = 0
             while passed < 5 and not count >= subsample:
@@ -722,7 +715,6 @@ class GeoTimeClassify:
                             passed += 1
                 except Exception as e:
                     logging.error(f"state_f -{values}: {e}")
-
 
             if np.count_nonzero(state_match_bool) >= 5:
                 logging.info('state validated')
@@ -750,7 +742,6 @@ class GeoTimeClassify:
                 except Exception as e:
                     logging.error(f"country_f - {values}: {e}")
 
-
             if np.count_nonzero(country_match_bool) >= 5:
                 logging.info('country validated')
                 return build_return_standard_object(category='geo', subcategory='country_name', match_type='LSTM')
@@ -770,7 +761,6 @@ class GeoTimeClassify:
                     except Exception as e:
                         logging.error(f"country_iso3 - {values}: {e}")
 
-
             if np.count_nonzero(ISO_in_lookup) >= (len(values) * 0.65):
                 return build_return_standard_object(category='geo', subcategory='ISO3', match_type='LSTM')
             else:
@@ -788,7 +778,6 @@ class GeoTimeClassify:
                         )
                     except Exception as e:
                         logging.error(f"country_iso2 - {values}: {e}")
-
 
             if np.count_nonzero(ISO2_in_lookup) >= (len(values) * 0.65):
 
@@ -808,7 +797,6 @@ class GeoTimeClassify:
                         )
                     except Exception as e:
                         logging.error(f"continent_f - {c} - {cont}: {e}")
-
 
             if np.count_nonzero(cont_in_lookup) >= (len(values) * 0.65):
 
@@ -834,8 +822,6 @@ class GeoTimeClassify:
                         geo_valid.append("failed")
                 except Exception as e:
                     logging.error(f"geo_f - {values}: {e}")
-
-
 
             if "failed" in geo_valid:
                 return build_return_standard_object(category=None, subcategory=None, match_type=None)
@@ -865,12 +851,10 @@ class GeoTimeClassify:
                 except Exception as e:
                     logging.error(f"year_f - {values}: {e}")
 
-
             if len(year_values_valid) > len(values) * 0.75:
                 return build_return_object(format="%Y", util=None, dayFirst=None)
             else:
                 return build_return_standard_object(category=None, subcategory=None, match_type=None)
-
 
         def bool_f(values):
             logging.info("Start boolean validation ...")
@@ -882,7 +866,6 @@ class GeoTimeClassify:
                         bool_array.append(self.fuzzyMatch(bools, b, ratio=85))
                     except Exception as e:
                         logging.error(f"bool_f - {values}: {e}")
-
 
             if np.count_nonzero(bool_array) >= (len(values) * 0.85):
 
@@ -900,7 +883,6 @@ class GeoTimeClassify:
                         bool_array.append(self.fuzzyMatch(bools, b, ratio=98))
                     except Exception as e:
                         logging.error(f"bool_letter_f -{values}: {e}")
-
 
             if np.count_nonzero(bool_array) >= (len(values) * .85):
 
@@ -928,7 +910,6 @@ class GeoTimeClassify:
                         pass
                 except Exception as e:
                     logging.error(f"date_util - {date}: {e}")
-
 
             return util_dates, dayFirst
 
@@ -1035,7 +1016,6 @@ class GeoTimeClassify:
 
             return False
 
-
         def date_arrow(values, separator):
             utils_array = []
             for date in values:
@@ -1101,7 +1081,6 @@ class GeoTimeClassify:
                 except Exception as e:
                     logging.error(f"date_arrow_4 - {val}: {e}")
 
-
             validMonth = month_day_f(allMonthVals)
             if len(array_valid) > len(values) * 0.75 and validMonth['category'] is not None:
                 return build_return_object(format="%Y." + monthFormat, util='arrow', dayFirst=None)
@@ -1111,7 +1090,6 @@ class GeoTimeClassify:
                 return build_return_object(format="%Y." + monthFormat, util='arrow', dayFirst=None)
             else:
                 return build_return_standard_object(category=None, subcategory=None, match_type=None)
-
 
         def iso_time(values):
             array_valid, dayFirst = date_util(values, separator="none", shortyear=False, yearloc=None)
@@ -1198,6 +1176,7 @@ class GeoTimeClassify:
                 return build_return_object(format=monthFormat + "_" + dayFormat + "_%y", util='Util', dayFirst=dayFirst)
 
         def date_util_5(values):
+            print('made it', values)
             array_valid, dayFirst = date_util(values, separator="/", shortyear=False, yearloc=None)
             if dayFirst:
                 dayFormat = day_ddOrd(values, separator='/', loc=0)
@@ -1218,6 +1197,7 @@ class GeoTimeClassify:
                 return build_return_standard_object(category=None, subcategory=None, match_type=None)
 
         def date_util_6(values):
+            print(values)
             array_valid, dayFirst = date_util(values, separator="/", shortyear=True, yearloc=2)
             if dayFirst:
                 dayFormat = day_ddOrd(values, separator='/', loc=0)
@@ -1750,7 +1730,6 @@ class GeoTimeClassify:
             else:
                 return build_return_object(format='Unix Timestamp', util=None, dayFirst=None)
 
-
         def date_long_1(values):
             #              #  01 April 2008
             array_valid, dayFirst = date_util(values, separator="none", shortyear=False, yearloc=None)
@@ -1833,7 +1812,7 @@ class GeoTimeClassify:
                         else:
                             month_day_results.append("failed")
                     else:
-                        loggin.warn("Month_day test: Not a valid digit")
+                        logging.warning("Month_day test: Not a valid digit")
                 except Exception as e:
                     logging.error(f"month_day_f - {md}: {e}")
 
@@ -1858,7 +1837,6 @@ class GeoTimeClassify:
                         )
                     except Exception as e:
                         logging.error(f"month_name_f - {m}: {e}")
-
 
             if np.count_nonzero(month_array_valid) >= (len(values) * 0.65):
                 return build_return_object('%B', util=None, dayFirst=None)
@@ -1897,8 +1875,8 @@ class GeoTimeClassify:
                 "country_code": country_iso2,
                 "continent": continent_f,
                 "geo": geo_f,
-                "latitude":geo_f,
-                "longitude":geo_f,
+                "latitude": geo_f,
+                "longitude": geo_f,
                 "latlong": none_f,
                 "pyfloat": none_f,
                 "percent": none_f,
@@ -1972,20 +1950,21 @@ class GeoTimeClassify:
             return obj
 
         currentTime = time.perf_counter()
-        count=0
-        timesUp= time.perf_counter()
-        while currentTime-timesUp<self.seconds_to_finish and count<len(predictions):
-        # for pred in predictions:
-            
+        count = 0
+        timesUp = time.perf_counter()
+        while currentTime - timesUp < self.seconds_to_finish and count < len(predictions):
+            # for pred in predictions:
+
             try:
                 if predictions[count]['values'] == 'Skipped':
-                   pass
+                    pass
                 else:
                     final_column_classification.append(
-                        add_obj({"column": predictions[count]["column"]}, functionlist[predictions[count]["avg_predictions"]["averaged_top_category"]](
-                            self.column_value_object[predictions[count]["column"]]
-                        )))
-                    
+                        add_obj({"column": predictions[count]["column"]},
+                                functionlist[predictions[count]["avg_predictions"]["averaged_top_category"]](
+                                    self.column_value_object[predictions[count]["column"]]
+                                )))
+
             except Exception as e:
                 logging.error(f"While loop failed: {e}")
             count += 1
@@ -1993,11 +1972,11 @@ class GeoTimeClassify:
 
         # if the model ends before it is finished we want to make sure we are still classifying the skipped values.
         # also we want to keep track of what index are the skipped columns
-        additionalColumnClassified=[]
-        for i,pred in enumerate(predictions):
+        additionalColumnClassified = []
+        for i, pred in enumerate(predictions):
             try:
-                if pred['values']=='Skipped':
-                    print(pred['values'], 'hherere',fuzzyMatched)
+                if pred['values'] == 'Skipped':
+                    print(pred['values'], 'hherere', fuzzyMatched)
                     final_column_classification.append(
                         add_obj({"column": pred["column"]}, functionlist['Skipped'](
                             pred['column'], fuzzyMatched
@@ -2009,7 +1988,7 @@ class GeoTimeClassify:
                     pass
             except Exception as e:
                 logging.error(f"assign_heuristic_function_enhanced - {pred}: {e}")
-        
+
         # if we skipped a column return 'timeout' for category
         for i, p in enumerate(predictions):
             if i < count:
@@ -2023,100 +2002,96 @@ class GeoTimeClassify:
                     ))
                 )
 
-
         return final_column_classification
-
 
     def fuzzymatchColumns(self, classifications):
         predictions = classifications
         words_to_check = [
-            {"Date":"Date"},
-            {"Datetime":"Datetime"},
-            {"Timestamp":"Timestamp"},
-            {"Epoch":"Epoch"},
-            {"Time":"Time"},
-            {"Year":"Year"},
-            {"Month":"Month"},
-            {"Lat":"Latitude"},
-            {"Latitude":"Latitude"},
-            {"lng":"Latitude"},
-            {"lon":"Longitude"},
-            {"long":"Longitude"},
-            {"Longitude":"Longitude"},
-            {"Geo":"Geo"},
-            {"Coordinates":"Coordinates"},
-            {"Location":"Location"},
-            {"West":"West"},
-            {"South":"South"},
-            {"East":"East"},
-            {"North":"North"},
-            {"Country":"Country"},
-            {"CountryName":"CountryName"},
-            {"CC":"CC"},
-            {"CountryCode":"CountryCode"},
-            {"State":"State"},
-            {"City":"City"},
-            {"Town":"Town"},
+            {"Date": "Date"},
+            {"Datetime": "Datetime"},
+            {"Timestamp": "Timestamp"},
+            {"Epoch": "Epoch"},
+            {"Time": "Time"},
+            {"Year": "Year"},
+            {"Month": "Month"},
+            {"Lat": "Latitude"},
+            {"Latitude": "Latitude"},
+            {"lng": "Latitude"},
+            {"lon": "Longitude"},
+            {"long": "Longitude"},
+            {"Longitude": "Longitude"},
+            {"Geo": "Geo"},
+            {"Coordinates": "Coordinates"},
+            {"Location": "Location"},
+            {"West": "West"},
+            {"South": "South"},
+            {"East": "East"},
+            {"North": "North"},
+            {"Country": "Country"},
+            {"CountryName": "CountryName"},
+            {"CC": "CC"},
+            {"CountryCode": "CountryCode"},
+            {"State": "State"},
+            {"City": "City"},
+            {"Town": "Town"},
             {"Region": "Region"},
             {"Province": "Province"},
             {"Territory": "Territory"},
-            {"Address":"Address"},
-            {"ISO2":"ISO2"},
+            {"Address": "Address"},
+            {"ISO2": "ISO2"},
             {"ISO3": "ISO3"},
-            {"ISO_code":"ISO_code"},
+            {"ISO_code": "ISO_code"},
             {"Results": "Results"},
         ]
-
 
         for i, pred in enumerate(predictions):
             for y, keyValue in enumerate(words_to_check):
                 try:
-                      for key in keyValue:
-                          if self.fuzzyMatch(str(pred["column"]), str(key), 85):
-                                T, ratio = self.fuzzyRatio(str(pred["column"]), str(key),85)
-                                predictions[i]['match_type'].append('fuzzy')
-                                predictions[i]["fuzzyColumn"]=[]
-                                predictions[i]["fuzzyColumn"].append({"matchedKey":str(key), "fuzzyCategory":words_to_check[y][key], "ratio":ratio})
-                          else:
-                                pass
+                    for key in keyValue:
+                        if self.fuzzyMatch(str(pred["column"]), str(key), 85):
+                            T, ratio = self.fuzzyRatio(str(pred["column"]), str(key), 85)
+                            predictions[i]['match_type'].append('fuzzy')
+                            predictions[i]["fuzzyColumn"] = []
+                            predictions[i]["fuzzyColumn"].append(
+                                {"matchedKey": str(key), "fuzzyCategory": words_to_check[y][key], "ratio": ratio})
+                        else:
+                            pass
 
                 except Exception as e:
                     logging.error(f"fuzzymatchColumns - {keyValue}: {e}")
         # return only the hightest fuzzy match value
         for pred2 in predictions:
             try:
-                if len(pred2["fuzzyColumn"])>1:
+                if len(pred2["fuzzyColumn"]) > 1:
                     ind = 0
                     for i, fmatch in pred2['fuzzyColumn']:
 
-                        bestRatio=0
-                        if fmatch["ratio"]>bestRatio:
-                            bestRatio=fmatch["ratio"]
-                            ind=i
-                    pred2['fuzzyColumn']=pred2['fuzzyColumn'][ind]
+                        bestRatio = 0
+                        if fmatch["ratio"] > bestRatio:
+                            bestRatio = fmatch["ratio"]
+                            ind = i
+                    pred2['fuzzyColumn'] = pred2['fuzzyColumn'][ind]
                 else:
-                    pred2['fuzzyColumn']=pred2['fuzzyColumn'][0]
+                    pred2['fuzzyColumn'] = pred2['fuzzyColumn'][0]
             except Exception as e:
-                logging.warn(pred2['column'], f"fuzzymatchColumns - Column has no fuzzy match: {e}")
-
+                logging.warning(pred2['column'], f"fuzzymatchColumns - Column has no fuzzy match: {e}")
 
         return predictions
 
-
-    def fuzzymatchColumns_enhanced(self,df):
+    def fuzzymatchColumns_enhanced(self, df):
 
         words_to_check = [
-            {"Lat":"latitude"},
-            {"Latitude":"latitude"},
-            {"lng":"latitude"},
-            {"lon":"longitude"},
-            {"long":"longitude"},
-            {"Longitude":"longitude"},
-            {"ISO2":"ISO2"},
+            {"Lat": "latitude"},
+            {"Latitude": "latitude"},
+            {"lng": "latitude"},
+            {"lon": "longitude"},
+            {"long": "longitude"},
+            {"Longitude": "longitude"},
+            {"ISO2": "ISO2"},
             {"ISO3": "ISO3"}
         ]
-        array_of_columnMatch_index=[]
-        index_to_not_process=[]
+        array_of_columnMatch_index = []
+        index_to_not_process = []
         for i, header in enumerate(df.columns):
 
             for y, keyValue in enumerate(words_to_check):
@@ -2124,19 +2099,20 @@ class GeoTimeClassify:
                     if self.fuzzyMatch(header, str(key), 90):
                         T, ratio = self.fuzzyRatio(header, str(key), 90)
                         index_to_not_process.append(i)
-                        array_of_columnMatch_index.append({'index':i, 'header':header, 'key':key, 'value':keyValue[key], 'ratio': ratio})
+                        array_of_columnMatch_index.append(
+                            {'index': i, 'header': header, 'key': key, 'value': keyValue[key], 'ratio': ratio})
                     else:
                         pass
 
-        return index_to_not_process , array_of_columnMatch_index
-
+        return index_to_not_process, array_of_columnMatch_index
 
     def standard_dateColumns(self, fuzzyOutput, formats='default'):
         df = self.df
         for i, out in enumerate(fuzzyOutput):
             try:
 
-                if out['subcategory'] == 'date' or out['fuzzyColumn']["fuzzyCategory"] == 'Date' or out['fuzzyColumn']["fuzzyCategory"] == 'Timestamp' or out['fuzzyColumn']["fuzzyCategory"] == 'Datetime':
+                if out['subcategory'] == 'date' or out['fuzzyColumn']["fuzzyCategory"] == 'Date' or out['fuzzyColumn'][
+                    "fuzzyCategory"] == 'Timestamp' or out['fuzzyColumn']["fuzzyCategory"] == 'Datetime':
                     new_column = 'ISO_8601_' + str(i)
                     if 'DayFirst' in out:
                         if out['DayFirst'] is not None:
@@ -2160,29 +2136,29 @@ class GeoTimeClassify:
 
         return df
 
-
     def final_step(self, t):
-        classifiedObjs=[]
+        classifiedObjs = []
         for tstep in t:
-            tstep['match_type']=list(set(tstep['match_type']))
-            tstep['match_type']= [i for i in tstep['match_type'] if i]
+            tstep['match_type'] = list(set(tstep['match_type']))
+            tstep['match_type'] = [i for i in tstep['match_type'] if i]
             fuzzyCol = None
             try:
                 fuzzyCol = tstep['fuzzyColumn']
             except Exception as e:
-                logging.error(tstep['column'],f"final_step - Column has no fuzzy match:{e}")
+                logging.error(tstep['column'], f"final_step - Column has no fuzzy match:{e}")
 
-
-            classifiedObj = geotime_schema.Classification(column=tstep['column'], category=tstep["category"], subcategory=tstep['subcategory'],
+            classifiedObj = geotime_schema.Classification(column=tstep['column'], category=tstep["category"],
+                                                          subcategory=tstep['subcategory'],
                                                           format=tstep['format'],
-                                                          match_type=tstep['match_type'], Parser=tstep['Parser'], DayFirst=tstep['DayFirst'],
+                                                          match_type=tstep['match_type'], Parser=tstep['Parser'],
+                                                          DayFirst=tstep['DayFirst'],
                                                           fuzzyColumn=fuzzyCol)
             classifiedObjs.append(classifiedObj)
-        return geotime_schema.Classifications(classifications = classifiedObjs)
+        return geotime_schema.Classifications(classifications=classifiedObjs)
 
     def findNANsColumns(self, df):
-        index_nan=[]
-        for index,column in enumerate(df.columns):
+        index_nan = []
+        for index, column in enumerate(df.columns):
             if df[column].count() > 0:
                 pass
             else:
@@ -2190,16 +2166,15 @@ class GeoTimeClassify:
 
         return index_nan
 
-
     def columns_classified(self, path):
         logging.info('starting classification')
         df = self.read_in_csv(path)
         index_remove, fuzzyMatchColumns = self.fuzzymatchColumns_enhanced(df)
         columns_na = self.findNANsColumns(df)
-        index_remove=index_remove+columns_na
+        index_remove = index_remove + columns_na
         preds = self.predictions_enhanced(df, index_remove)
         output = self.assign_heuristic_function_enhanced(preds, fuzzyMatchColumns)
-        fuzzyMatch=self.fuzzymatchColumns(output)
+        fuzzyMatch = self.fuzzymatchColumns(output)
         final = self.final_step(fuzzyMatch)
         return final
 
