@@ -173,3 +173,10 @@ This is the most simple part of the workflow. For each column header we try to m
 ## Retraining geotime_classify with github repo
 To get started read the README in the training_model directory. 
 
+## Building the `pip` package
+
+```
+bump2version --current-version=XYZ patch setup.py
+python3 setup.py sdist bdist_wheel
+python3 -m twine upload dist/*
+```
