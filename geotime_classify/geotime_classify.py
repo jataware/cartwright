@@ -915,81 +915,86 @@ class GeoTimeClassify:
 
         # Day format
         def day_ddOrd(values, separator, loc):
-            dayFormat = '%-d'
-            for d in values:
-                try:
-                    if separator is None:
-                        if d[0] == '0':
-                            dayFormat = '%d'
-                    else:
-                        d_value = d.split(separator)[loc]
-                        if d_value[0] == '0':
-                            dayFormat = '%d'
-                except Exception as e:
-                    logging.error(f"day_ddOrd - {d}: {e}")
-
-            return dayFormat
+            return "%d"
+            # dayFormat = '%-d'
+            # for d in values:
+            #     try:
+            #         if separator is None:
+            #             if d[0] == '0':
+            #                 dayFormat = '%d'
+            #         else:
+            #             d_value = d.split(separator)[loc]
+            #             if d_value[0] == '0':
+            #                 dayFormat = '%d'
+            #     except Exception as e:
+            #         logging.error(f"day_ddOrd - {d}: {e}")
+            #
+            # return dayFormat
 
         # Month Format
         def month_MMorM(values, separator, loc):
-            monthFormat = '%-m'
-            for d in values:
-                try:
-                    if separator is None:
-                        if d[0] == '0':
-                            monthFormat = '%m'
-                    else:
-                        d_value = d.split(separator)[loc]
-                        if d_value[0] == '0':
-                            monthFormat = '%m'
-                except Exception as e:
-                    logging.error(f"month_MMorM - {d}:{e}")
-
-            return monthFormat
+            return "%m"
+            # monthFormat = '%-m'
+            # for d in values:
+            #     try:
+            #         if separator is None:
+            #             if d[0] == '0':
+            #                 monthFormat = '%m'
+            #         else:
+            #             d_value = d.split(separator)[loc]
+            #             if d_value[0] == '0':
+            #                 monthFormat = '%m'
+            #     except Exception as e:
+            #         logging.error(f"month_MMorM - {d}:{e}")
+            #
+            # return monthFormat
 
         # Hour format
         def hour_hOrH(values, separator, loc_hms):
-            hourFormat = '%-H'
-            for d in values:
-
-                if separator is None:
-                    if d[0] == '0':
-                        hourFormat = '%H'
-                else:
-                    hms = d.split(' ')[-1]
-                    hms = hms.split(separator)[loc_hms]
-
-                    if hms[0] == '0':
-                        hourFormat = '%H'
-            return hourFormat
+            return "%H"
+            # hourFormat = '%-H'
+            # for d in values:
+            #
+            #     if separator is None:
+            #         if d[0] == '0':
+            #             hourFormat = '%H'
+            #     else:
+            #         hms = d.split(' ')[-1]
+            #         hms = hms.split(separator)[loc_hms]
+            #
+            #         if hms[0] == '0':
+            #             hourFormat = '%H'
+            # return hourFormat
 
         # Minute format
         def minute_mOrM(values, separator, loc_hms):
-            minuteFormat = '%-M'
-            for d in values:
-                if separator is None:
-                    if d[0] == '0':
-                        minuteFormat = '%M'
-                else:
-                    hms = d.split(' ')[-1]
-                    hms = hms.split(separator)[loc_hms]
-                    if hms[0] == '0':
-                        minuteFormat = '%M'
-            return minuteFormat
+            return "%M"
+            # minuteFormat = '%-M'
+            # for d in values:
+            #     if separator is None:
+            #         if d[0] == '0':
+            #             minuteFormat = '%M'
+            #     else:
+            #         hms = d.split(' ')[-1]
+            #         hms = hms.split(separator)[loc_hms]
+            #         if hms[0] == '0':
+            #             minuteFormat = '%M'
+            # return minuteFormat
 
         # Second format
         def second_sOrS(values, separator, loc_hms):
-            secondFormat = '%-S'
-            for d in values:
-                if separator is None:
-                    if d[0] == '0':
-                        secondFormat = '%S'
-                else:
-                    hms = d.split(' ')[-1]
-                    hms = hms.split(separator)[loc_hms]
-                    if hms[0] == '0':
-                        secondFormat = '%S'
-            return secondFormat
+            return "%S"
+            # secondFormat = '%-S'
+            # for d in values:
+            #     if separator is None:
+            #         if d[0] == '0':
+            #             secondFormat = '%S'
+            #     else:
+            #         hms = d.split(' ')[-1]
+            #         hms = hms.split(separator)[loc_hms]
+            #         if hms[0] == '0':
+            #             secondFormat = '%S'
+            # return secondFormat
 
         # Check if day is first in date
         def dayFirstCheck(values, separator, shortYear, yearLoc):
