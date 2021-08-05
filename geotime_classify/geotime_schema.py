@@ -61,6 +61,14 @@ class subcategory(str, Enum):
     longitude="longitude"
     latitude="latitude"
     date="date"
+    timespan="timespan"
+    country="country"
+    state="state"
+    city="city"
+    town="town"
+    region="region"
+    province="province"
+    territory="territory"
 
 class matchtype(str, Enum):
     """
