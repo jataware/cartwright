@@ -38,21 +38,8 @@ Once it is installed you can instantiate the geotime_classify with the number of
     from geotime_classify import geotime_classify as gc
     GeoTimeClass = gc.GeoTimeClassify(1000)
 
-Now we have our GeoTimeClassify class instantiated we can use the functions available. The first one and most basic is the ***predictions*** function.
-### geotime_classify.predictions(path)
-This returns the geotime_classify model predictions for each of the columns in the csv. 
+Now we have our GeoTimeClassify class instantiated we can use the ***columns_classified*** function. 
 
-    predictions=GeoTimeClass.predictions('pathtocsv')
-    print(predictions)
-
-You should see an array with a dict for each column. The keys in each dict are 
-1. **'column'**: which is the name of the column in the csv you provided,
-2. **'values'**: these are the random sampled values from each column that were used. There will be the same number of these as the number n you instantiated the class with.
-3. **'avg_predictions'**: an array which contains:
-   
-     -'averaged tensor', This is an averaged tensor created by calculating the mean from (n) prediction tensors that the model created.    
-     -'averaged_top_category', Returns the category with the highest match for our averaged tensor.
-4. **'model_predictions'**: Contains the raw model outputs as prediction tensors for each value that was randomly sampled from the column. 
    
  ### geotime_classify.columns_classified(path)
   The next function is ***columns_classified***. This function returns an array that classifies each column in our csv by using a combination of the predictions from the LSTM model along with validation code for each classification. 
