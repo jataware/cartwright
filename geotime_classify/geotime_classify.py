@@ -1467,11 +1467,11 @@ class GeoTimeClassify:
                 if len(array_valid) > len(values) * 0.85:
                     if dayFirst:
 
-                        return build_return_object(format=dayFormat + '/' + monthFormat + '/' + "/%Y", util='Util',
+                        return build_return_object(format=dayFormat + '/' + monthFormat + "/%Y", util='Util',
                                                    dayFirst=dayFirst)
 
                     else:
-                        return build_return_object(format=monthFormat + '/' + dayFormat + '/' + "/%Y", util='Util',
+                        return build_return_object(format=monthFormat + '/' + dayFormat + "/%Y", util='Util',
                                                    dayFirst=dayFirst)
 
                 else:
