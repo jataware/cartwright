@@ -1,10 +1,12 @@
 #script for training models to catch anomalies in spreadsheets not handled well by the system
 
 import os
+from tqdm import tqdm
 from datetime import datetime
 import dateutil.parser as dateparser
 from typing import Callable
 NoneType = type(None)
+
 import pandas as pd
 from pandas import DataFrame
 import numpy as np
@@ -12,8 +14,10 @@ from matplotlib import pyplot as plt
 import torch
 from torch import nn, optim
 from torch.nn import functional as F
-from torch.utils.data import Dataset, TensorDataset, DataLoader
-from tqdm import tqdm
+from torch.utils.data import TensorDataset, DataLoader
+from sklearn.ensemble import IsolationForest
+import pickle
+
 
 import pdb
 
@@ -66,17 +70,18 @@ def main():
     encoder = Encoder(in_channels, latent_channels).cuda()
     decoder = Decoder(latent_channels, in_channels).cuda()
 
-    #check if a saved version of the model exists
+
+    #check if a saved version of the auto-encoder exists, otherwise train a new one
     if os.path.exists('encoder.pt') and os.path.exists('decoder.pt'):
-        print('loading saved model')
+        print('loading saved auto-encoder model')
         encoder.load_state_dict(torch.load('encoder.pt'))
         decoder.load_state_dict(torch.load('decoder.pt'))
     else:
         #train the model
-        optimizer = optim.Adam(nn.ModuleList([encoder, decoder]).parameters(), lr=1e-3)
+        optimizer = optim.Adam(nn.ModuleList([encoder, decoder]).parameters(), lr=5e-4)
 
-        for epoch in range(20000):
-            # print(f'------------------ epoch {epoch} ------------------')
+        for epoch in range(100000):
+            # print(f'------------------ epoch {epoch} ------------------') #don't print since dataset is too small right now
             #train the model
             for (data,) in loader:
                 data = data.to('cuda')
@@ -91,9 +96,42 @@ def main():
         torch.save(encoder.state_dict(), 'encoder.pt')
         torch.save(decoder.state_dict(), 'decoder.pt')
 
+    # set model to eval mode
+    encoder.eval(); decoder.eval()
 
+    #convert all examples in the dataset to latent vectors for the isolation forest
+    latent_vectors = []
+    for (data,) in loader:
+        data = data.to('cuda')
+        latent_vectors.append(encoder(data).detach().cpu().numpy())
+    latent_vectors = np.concatenate(latent_vectors, axis=0)
+
+    #get latent vectors for the anomalous data
+    anomalous_data = torch.stack([
+        csv_to_img('~/Downloads/messy_data_1.csv'),
+        csv_to_img('~/Downloads/messy_data_2.csv'),
+    ]).to('cuda')
+    anomalous_latent_vectors = encoder(anomalous_data).detach().cpu().numpy()
+
+
+    #check if a saved version of the isolation forest exists, otherwise train a new one
+    if os.path.exists('isolation_forest.pkl'):
+        print('loading saved isolation forest model')
+        isolation_forest = pickle.load(open('isolation_forest.pkl', 'rb'))
+    else:
+        #train the model
+        isolation_forest = IsolationForest(contamination=0.01).fit(latent_vectors)
+        pickle.dump(isolation_forest, open('isolation_forest.pkl', 'wb'))
+
+    normal_predictions = isolation_forest.predict(latent_vectors)
+    anomalous_predictions = isolation_forest.predict(anomalous_latent_vectors)
+    print(f'normal: {normal_predictions}')
+    print(f'anomalous: {anomalous_predictions}')
+
+
+
+    #debug show the data and the reconstruction
     with torch.no_grad():
-        encoder.eval(); decoder.eval()
         # test the model
         for (data,) in loader:
             data = data.to('cuda')
@@ -101,28 +139,6 @@ def main():
             for img, img_hat in zip(data, output):
                 imshow(torch.cat([img, img_hat], dim=2))
 
-
-
-    # path = '~/Downloads/messy_data_1.csv'
-    # # path = '~/Downloads/cleaned_data_1.csv'
-    # # path = '~/Downloads/messy_data_2.csv'
-    # # path = '~/Downloads/cleaned_data_2.csv'
-    # sheet = csv_to_img(path)
-
-    # in_channels = sheet.shape[0]
-    # latent_channels = 8
-    # encoder = Encoder(in_channels, latent_channels)
-    # decoder = Decoder(latent_channels, in_channels)
-
-    # #attempt to encode and then decode the image
-    # x = sheet.unsqueeze(0)
-
-
-
-    # encoded = encoder(x)
-    # decoded = decoder(encoded)
-
-    # pdb.set_trace()
 
 
 
