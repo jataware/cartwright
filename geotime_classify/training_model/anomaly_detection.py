@@ -1,17 +1,19 @@
 #script for training models to catch anomalies in spreadsheets not handled well by the system
 
-NoneType = type(None)
+import os
 from datetime import datetime
 import dateutil.parser as dateparser
 from typing import Callable
+NoneType = type(None)
 import pandas as pd
 from pandas import DataFrame
 import numpy as np
 from matplotlib import pyplot as plt
 import torch
-from torch import nn
+from torch import nn, optim
 from torch.nn import functional as F
-# import torchvision
+from torch.utils.data import Dataset, TensorDataset, DataLoader
+from tqdm import tqdm
 
 import pdb
 
@@ -22,27 +24,105 @@ import pdb
 
 
 def main():
-    path = '~/Downloads/messy_data_1.csv'
-    # path = '~/Downloads/cleaned_data_1.csv'
-    # path = '~/Downloads/messy_data_2.csv'
-    # path = '~/Downloads/cleaned_data_2.csv'
-    sheet = csv_to_img(path)
-    # imshow(sheet)
 
-    in_channels = sheet.shape[0]
+    #set up the dataset to train on
+    print('Loading data...')
+    data_paths = [
+        '~/Downloads/cleaned_data_1.csv',
+        '~/Downloads/cleaned_data_2.csv',
+        '~/Downloads/raw_data.csv',
+        '~/Downloads/edrmc_raw.csv',
+        '~/Downloads/flood_area.csv',
+        '~/Downloads/dhs_nutrition.csv',
+        '~/Downloads/2_FAO_Locust_Swarms.csv',
+        '~/Downloads/vdem_2000_2020.csv',
+        '~/Downloads/DTM_IDP_Geocoded_fix.csv',
+        '~/Downloads/maln_inference_c63039d5e4.csv',
+        '~/Downloads/Monthly_Demand_Supply_water_WRI_Gridded.csv',
+        '~/Downloads/NextGEN_PRCP_FCST_TercileProbablity_Jun-Sep_iniMay.csv',
+
+        # '~/Downloads/messy_data_1.csv',
+        # '~/Downloads/messy_data_2.csv',
+    ]
+    data = []
+    for path in tqdm(data_paths):
+        data.append(csv_to_img(path))
+
+    data = torch.stack(data)
+    data.to('cuda')
+
+    #create a dataset from the data
+    dataset = TensorDataset(data)
+    loader = DataLoader(dataset, batch_size=32, shuffle=True)
+
+    # # debug
+    # for (img,) in dataset:
+    #     imshow(img)
+
+
+    # train an auto-encoder on the dataset
+    in_channels = len(datatype_list)
     latent_channels = 8
-    encoder = Encoder(in_channels, latent_channels)
-    decoder = Decoder(latent_channels, in_channels)
+    encoder = Encoder(in_channels, latent_channels).cuda()
+    decoder = Decoder(latent_channels, in_channels).cuda()
 
-    #attempt to encode and then decode the image
-    x = sheet.unsqueeze(0)
+    #check if a saved version of the model exists
+    if os.path.exists('encoder.pt') and os.path.exists('decoder.pt'):
+        print('loading saved model')
+        encoder.load_state_dict(torch.load('encoder.pt'))
+        decoder.load_state_dict(torch.load('decoder.pt'))
+    else:
+        #train the model
+        optimizer = optim.Adam(nn.ModuleList([encoder, decoder]).parameters(), lr=1e-3)
+
+        for epoch in range(20000):
+            # print(f'------------------ epoch {epoch} ------------------')
+            #train the model
+            for (data,) in loader:
+                data = data.to('cuda')
+                optimizer.zero_grad()
+                output = decoder(encoder(data))
+                loss = F.mse_loss(output, data)
+                loss.backward()
+                optimizer.step()
+                print(f'{epoch}: {loss.item()}')
+
+        # save trained model
+        torch.save(encoder.state_dict(), 'encoder.pt')
+        torch.save(decoder.state_dict(), 'decoder.pt')
+
+
+    with torch.no_grad():
+        encoder.eval(); decoder.eval()
+        # test the model
+        for (data,) in loader:
+            data = data.to('cuda')
+            output = decoder(encoder(data))
+            for img, img_hat in zip(data, output):
+                imshow(torch.cat([img, img_hat], dim=2))
 
 
 
-    encoded = encoder(x)
-    decoded = decoder(encoded)
+    # path = '~/Downloads/messy_data_1.csv'
+    # # path = '~/Downloads/cleaned_data_1.csv'
+    # # path = '~/Downloads/messy_data_2.csv'
+    # # path = '~/Downloads/cleaned_data_2.csv'
+    # sheet = csv_to_img(path)
 
-    pdb.set_trace()
+    # in_channels = sheet.shape[0]
+    # latent_channels = 8
+    # encoder = Encoder(in_channels, latent_channels)
+    # decoder = Decoder(latent_channels, in_channels)
+
+    # #attempt to encode and then decode the image
+    # x = sheet.unsqueeze(0)
+
+
+
+    # encoded = encoder(x)
+    # decoded = decoder(encoded)
+
+    # pdb.set_trace()
 
 
 
@@ -68,10 +148,11 @@ datatype_map = {t: i for i, t in enumerate(datatype_list)}
 
 
 def imshow(sheet):
-    #if channel dimension is not 3, resize it to 3 (with interpolation)
+    #ensure on cpu and not attached to gradients
+    sheet = sheet.detach().cpu()
     
     #move color channel last so that matplotlib understands it
-    sheet = torch.transpose(sheet, (1, 2, 0))
+    sheet = sheet.permute(1, 2, 0)
 
     #resize color channel if more than 3
     if sheet.shape[0] != 3:
@@ -104,7 +185,7 @@ def csv_to_img(path: str, *args, **kwargs) -> pd.DataFrame:
     if not path.endswith('.csv'):
         raise ValueError('expected a csv file')
 
-    sheet = pd.read_csv(path, header=None, keep_default_na=False, *args, **kwargs)
+    sheet = pd.read_csv(path, header=None, keep_default_na=False, low_memory=False, *args, **kwargs)
     sheet = np.array(sheet, dtype=object)
     shape = sheet.shape
     dtype = object
@@ -197,7 +278,10 @@ class Decoder(nn.Module):
         for conv in self.convs:
             x = conv(x)
         x = self.final(x)
+        x = F.sigmoid(x)
         return x
+
+
 
 
 if __name__ == '__main__':
