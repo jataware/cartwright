@@ -100,19 +100,34 @@ def main():
     encoder.eval(); decoder.eval()
 
     #convert all examples in the dataset to latent vectors for the isolation forest
-    latent_vectors = []
-    for (data,) in loader:
-        data = data.to('cuda')
-        latent_vectors.append(encoder(data).detach().cpu().numpy())
-    latent_vectors = np.concatenate(latent_vectors, axis=0)
+    with torch.no_grad():
+        normal_latent_vectors = []
+        normal_scores = []
+        for (data,) in loader:
+            data = data.to('cuda')
+            latent = encoder(data)
+            normal_latent_vectors.append(latent)
+            reconstructions = decoder(latent)
+            scores = ((reconstructions - data)**2).mean(dim=(-1,-2,-3))
+            normal_scores.append(scores)
 
-    #get latent vectors for the anomalous data
-    anomalous_data = torch.stack([
-        csv_to_img('~/Downloads/messy_data_1.csv'),
-        csv_to_img('~/Downloads/messy_data_2.csv'),
-    ]).to('cuda')
-    anomalous_latent_vectors = encoder(anomalous_data).detach().cpu().numpy()
+        normal_latent_vectors = torch.cat(normal_latent_vectors, dim=0)
+        normal_scores = torch.cat(normal_scores, dim=0)
+        pdb.set_trace()
+        #get latent vectors for the anomalous data
+        anomalous_data = torch.stack([
+            csv_to_img('~/Downloads/messy_data_1.csv'),
+            csv_to_img('~/Downloads/messy_data_2.csv'),
+        ]).to('cuda')
+        anomalous_latent_vectors = encoder(anomalous_data)
+        anomalous_reconstructions = decoder(anomalous_latent_vectors)
+        anomalous_scores = ((anomalous_reconstructions - anomalous_data)**2).mean(dim=(-1,-2,-3))
 
+        pdb.set_trace()
+        1
+
+    pdb.set_trace()
+    1
 
     #check if a saved version of the isolation forest exists, otherwise train a new one
     if os.path.exists('isolation_forest.pkl'):
@@ -128,7 +143,7 @@ def main():
     print(f'normal: {normal_predictions}')
     print(f'anomalous: {anomalous_predictions}')
 
-
+    pdb.set_trace()
 
     #debug show the data and the reconstruction
     with torch.no_grad():
@@ -294,7 +309,7 @@ class Decoder(nn.Module):
         for conv in self.convs:
             x = conv(x)
         x = self.final(x)
-        x = F.sigmoid(x)
+        x = torch.sigmoid(x)
         return x
 
 
