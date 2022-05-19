@@ -17,13 +17,30 @@ def main():
 class OCNN(nn.Module):
     def __init__(self):
         super().__init__()
-        self.V = nn.Linear(784, 256)
-        self.w = nn.Linear(256, 1)
 
-    def forward(self, x):
+        #encode into class decision
+        self.embed = nn.Linear(784*2, 784) #embed pair down to size of single input
+        self.V = nn.Linear(784, 256)
+        self.w = nn.Linear(256, 2) #second output is for deciding if the pair are clones or random
+
+    def forward(self, x, paired=False):
+        """x and x2 are batches of 784 vectors representing a pair. 
+        The first one receives the class decision
+        an identical-ness decision is made for if the network thinks they are the same input or not
+        """
+        if not paired:
+            assert x.shape[-1] == 784
+            x = torch.cat([x,x], dim=-1)
+        else:
+            assert x.shape[-1] == 2 * 784
+
+        x = F.relu(self.embed(x))
         x = F.relu(self.V(x))
-        x = self.w(x)
-        return x
+        x = torch.tanh(self.w(x)) #TBD if y_hat shouldn't receive tanh here
+
+        y_hat, same_hat = x[:,0], x[:,1]
+
+        return y_hat, same_hat
 
 
 
@@ -94,11 +111,35 @@ def train_model():
         
         for i in range(100):
             optimizer.zero_grad()
-            y_hat = model(normal_train)
-            r = torch.quantile(y_hat, nu)
+            
+            #shuffle normal_train (instead of a proper derangement for next step)
+            perm = torch.randperm(N)
+            normal_train = normal_train[perm]
+
+            #create a shifted copy of the data for paired sameness classification
+            #roll instead of permute to guarantee that no element is paired with itself
+            #TODO: look into if there is a way to generate derangements, which are more random
+            random_shift = torch.randint(1,N,(1,)).item()
+            normal_train_permuted = torch.roll(normal_train, random_shift, dims=0)
+            paired_normal_train = torch.cat([normal_train, normal_train_permuted], dim=-1)
+
+            y_hat, same_hat = model(normal_train) #pair data with itself
+            _, diff_hat = model(paired_normal_train, paired=True) #pair data with its rolled counterpart
+
+            #update r for this iteration    
+            with torch.no_grad():
+                r = torch.quantile(y_hat, nu).item()
+            
+            #one class classification loss
             model_loss = F.relu(r - y_hat).sum() / N / nu
-            param_loss = (model.V.weight ** 2).sum()
-            loss = model_loss + param_loss
+
+            #param loss is l2 norm of all model weights
+            param_loss = (nn.utils.parameters_to_vector(model.parameters()) ** 2).sum() / 2
+            
+            #separability loss, i.e. how well the network can tell different points apart
+            sep_loss = (((same_hat - 1)**2).sum()) + ((diff_hat - -1)**2).sum()
+
+            loss = model_loss + param_loss + sep_loss
             loss.backward()
             optimizer.step()
 
@@ -106,7 +147,8 @@ def train_model():
 
             print(f'{loss.item():.4f}')
 
-        pdb.set_trace()
+        if (epoch+1) % 20 == 0:
+            pdb.set_trace()
 
 
 
