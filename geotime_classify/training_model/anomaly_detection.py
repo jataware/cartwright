@@ -87,11 +87,14 @@ def main():
         decoder.load_state_dict(torch.load('decoder.pt'))
     else:
         #train the model
-        optimizer = optim.Adam(nn.ModuleList([encoder, decoder]).parameters(), lr=5e-4)
+        optimizer = optim.Adam(nn.ModuleList([encoder, decoder]).parameters(), lr=1e-3)
+        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.9)
 
         for epoch in range(100000):
-            print(f'------------------ epoch {epoch} ------------------') #don't print since dataset is too small right now
+            # print(f'------------------ epoch {epoch} ------------------') #don't print since dataset is too small right now
             #train the model
+            total_loss = 0
+            count = 0
             for data in loader:
                 data = data.to('cuda')
                 optimizer.zero_grad()
@@ -99,7 +102,11 @@ def main():
                 loss = F.mse_loss(output, data)
                 loss.backward()
                 optimizer.step()
-                print(f'{loss.item()}')
+                count += 1
+                total_loss += loss.item()
+
+            print(f'epoch: {epoch}, loss: {total_loss / count}')
+            scheduler.step()
 
         # save trained model
         torch.save(encoder.state_dict(), 'encoder.pt')
