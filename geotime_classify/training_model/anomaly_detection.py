@@ -217,18 +217,26 @@ def try_convert(cell):
 
 def ndmap(func: Callable, arr: np.ndarray, shape, dtype) -> np.ndarray:
     """apply a function to each element of an N-Dimensional array array"""    
+    # with Pool(cpu_count()) as pool:
+    #     return np.array([*pool.map(func, arr.flatten())], dtype=dtype).reshape(shape)
+    
     return np.array([*map(func, arr.flatten())], dtype=dtype).reshape(shape)
 
-def csv_to_img(path: str, *args, **kwargs) -> pd.DataFrame:
+def csv_to_img(path: str, *args, max_rows=100_000, **kwargs) -> pd.DataFrame:
     """read in a csv and convert the spreadsheet to a feature image for ML analysis"""
 
     if not path.endswith('.csv'):
         raise ValueError('expected a csv file')
 
     try:
-        
+
         sheet = pd.read_csv(path, header=None, keep_default_na=False, low_memory=False, *args, **kwargs)
         sheet = np.array(sheet, dtype=object)
+
+        #if the sheet is too large, only read the first max_rows rows
+        if sheet.shape[0] > max_rows:
+            sheet = sheet[:max_rows]    
+
         shape = sheet.shape
         dtype = object
         
@@ -327,21 +335,15 @@ class Decoder(nn.Module):
         return x
 
 
-# def save_sheet_data(sheet_path, img_path):
-#     #create image
-#     img = csv_to_img(sheet_path)
-    
-#     #ensure output path exists
-#     dir = os.path.dirname(img_path)
-#     if not os.path.exists(dir):
-#         os.makedirs(dir)
 
-#     #save image as png
-#     torch.save(img, img_path)
-#save the data
 def save_processed_sheet_data(paths_tuple):
     raw_path, out_path = paths_tuple
     if not os.path.exists(out_path):
+        size_mb = os.path.getsize(raw_path)/1e6
+        # if size_mb > 1000:
+        #     print(f'skipping file that is too big: {size_mb:.2f} MB, path: {raw_path}')
+        #     return
+        # print(f'path: {raw_path}, size: {size_mb:.2f} MB')
         img = csv_to_img(raw_path) #create image
         
         #ensure output path exists to write to
@@ -350,6 +352,9 @@ def save_processed_sheet_data(paths_tuple):
             os.makedirs(dir)
 
         torch.save(img, out_path) #save image as png
+
+    # else:
+        # print(f'skipping {raw_path}')
                 
 
 
@@ -380,57 +385,32 @@ class SpreadsheetLoader(Dataset):
                 out_paths.append(out_path)
 
             
+            # #parallel version
             with Pool(processes=cpu_count()) as pool:
                 for _ in tqdm(pool.imap_unordered(save_processed_sheet_data, zip(raw_paths, out_paths), chunksize=1), total=len(raw_paths), desc='saving preprocessed data'):
                     pass
 
-            # for raw_path in raw_paths:
-            #     #check if this image has been saved already in the datapath
-            #     pdb.set_trace()
-            #     out_path = os.path.join(data_root, os.path.relpath(raw_path, raw_root))
-            #     #replace the current suffix with the pt suffix
-            #     out_path = out_path.replace(suffix, pt_suffix)
-            #     if not os.path.exists(out_path):
-            #         save_sheet_data(raw_path, out_path)
-            pdb.set_trace()
+            #non-parallel version
+            # for raw_path, out_path in tqdm(zip(raw_paths, out_paths), total=len(raw_paths), desc='saving preprocessed data'):
+            #     save_processed_sheet_data((raw_path, out_path))
 
 
+        #load the paths to the preprocessed data
         self.paths = []
-        for root, dirs, files in os.walk(datapath):
+        for root, dirs, files in os.walk(data_root):
             for file in files:
-                if file.endswith(suffix):
+                if file.endswith(data_suffix):
                     self.paths.append(os.path.join(root, file))
         
-
-        if preload:
-            print('preloading data...')
-            # self.sheets = [csv_to_img(path) for path in tqdm(self.paths)]
+        print('preloading data...')            
+        self.sheets = [torch.load(path) for path in tqdm(self.paths, desc='loading data', unit='sheets', total=len(self.paths))]
             
-            #preload all the data with multiprocessing, and display
-            # self.sheets = process_map(csv_to_img, self.paths, desc='loading data', n_jobs=cpu_count(), unit='sheets', chunksize=1)
-
-            
-            with Pool(processes=cpu_count()) as pool:
-                for _ in tqdm(pool.imap_unordered(save_sheet_data, self.paths, chunksize=1), total=len(self.paths), desc='loading data'):
-                    pass
-                # self.sheets = list(tqdm(pool.imap_unordered(csv_to_img, self.paths), total=len(self.paths)))
-            
-            # for path in tqdm(self.paths):
-                # self.sheets.append(csv_to_img(path))
-
-
-            # self.__getitem__ = lambda x: self.sheets[x]
-        # else:
-            # self.__getitem__ = lambda x: csv_to_img(self.paths[x])
 
     def __len__(self):
         return len(self.paths)
 
     def __getitem__(self, index):
-        try:
-            return self.sheets[index]
-        except Exception:
-            return csv_to_img(self.paths[index])
+        return self.sheets[index]
 
 
 
