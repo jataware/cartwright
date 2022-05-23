@@ -6,6 +6,7 @@ from datetime import datetime
 import dateutil.parser as dateparser
 from typing import Callable
 NoneType = type(None)
+from multiprocessing import Pool, cpu_count
 
 import pandas as pd
 from pandas import DataFrame
@@ -14,9 +15,11 @@ from matplotlib import pyplot as plt
 import torch
 from torch import nn, optim
 from torch.nn import functional as F
-from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.data import TensorDataset, DataLoader, Dataset
 from sklearn.ensemble import IsolationForest
 import pickle
+import gc as garbage
+# garbage.set_threshold(10) #so that we don't run out of memory
 
 
 import pdb
@@ -30,33 +33,39 @@ import pdb
 def main():
 
     #set up the dataset to train on
-    print('Loading data...')
-    data_paths = [
-        '~/Downloads/cleaned_data_1.csv',
-        '~/Downloads/cleaned_data_2.csv',
-        '~/Downloads/raw_data.csv',
-        '~/Downloads/edrmc_raw.csv',
-        '~/Downloads/flood_area.csv',
-        '~/Downloads/dhs_nutrition.csv',
-        '~/Downloads/2_FAO_Locust_Swarms.csv',
-        '~/Downloads/vdem_2000_2020.csv',
-        '~/Downloads/DTM_IDP_Geocoded_fix.csv',
-        '~/Downloads/maln_inference_c63039d5e4.csv',
-        '~/Downloads/Monthly_Demand_Supply_water_WRI_Gridded.csv',
-        '~/Downloads/NextGEN_PRCP_FCST_TercileProbablity_Jun-Sep_iniMay.csv',
+    dataset = SpreadsheetLoader(
+        data_root='~/Downloads/datasets/spreadsheet_images', 
+        raw_root='~/Downloads/datasets/spreadsheets'
+    )
 
-        # '~/Downloads/messy_data_1.csv',
-        # '~/Downloads/messy_data_2.csv',
-    ]
-    data = []
-    for path in tqdm(data_paths):
-        data.append(csv_to_img(path))
 
-    data = torch.stack(data)
-    data.to('cuda')
+    # print('Loading data...')
+    # data_paths = [
+    #     '~/Downloads/cleaned_data_1.csv',
+    #     '~/Downloads/cleaned_data_2.csv',
+    #     '~/Downloads/raw_data.csv',
+    #     '~/Downloads/edrmc_raw.csv',
+    #     '~/Downloads/flood_area.csv',
+    #     '~/Downloads/dhs_nutrition.csv',
+    #     '~/Downloads/2_FAO_Locust_Swarms.csv',
+    #     '~/Downloads/vdem_2000_2020.csv',
+    #     '~/Downloads/DTM_IDP_Geocoded_fix.csv',
+    #     '~/Downloads/maln_inference_c63039d5e4.csv',
+    #     '~/Downloads/Monthly_Demand_Supply_water_WRI_Gridded.csv',
+    #     '~/Downloads/NextGEN_PRCP_FCST_TercileProbablity_Jun-Sep_iniMay.csv',
+
+    #     # '~/Downloads/messy_data_1.csv',
+    #     # '~/Downloads/messy_data_2.csv',
+    # ]
+    # data = []
+    # for path in tqdm(data_paths):
+    #     data.append(csv_to_img(path))
+
+    # data = torch.stack(data)
+    # data.to('cuda')
 
     #create a dataset from the data
-    dataset = TensorDataset(data)
+    # dataset = TensorDataset(data)
     loader = DataLoader(dataset, batch_size=32, shuffle=True)
 
     # # debug
@@ -81,16 +90,16 @@ def main():
         optimizer = optim.Adam(nn.ModuleList([encoder, decoder]).parameters(), lr=5e-4)
 
         for epoch in range(100000):
-            # print(f'------------------ epoch {epoch} ------------------') #don't print since dataset is too small right now
+            print(f'------------------ epoch {epoch} ------------------') #don't print since dataset is too small right now
             #train the model
-            for (data,) in loader:
+            for data in loader:
                 data = data.to('cuda')
                 optimizer.zero_grad()
                 output = decoder(encoder(data))
                 loss = F.mse_loss(output, data)
                 loss.backward()
                 optimizer.step()
-                print(f'{epoch}: {loss.item()}')
+                print(f'{loss.item()}')
 
         # save trained model
         torch.save(encoder.state_dict(), 'encoder.pt')
@@ -103,7 +112,7 @@ def main():
     with torch.no_grad():
         normal_latent_vectors = []
         normal_scores = []
-        for (data,) in loader:
+        for data in loader:
             data = data.to('cuda')
             latent = encoder(data)
             normal_latent_vectors.append(latent)
@@ -216,37 +225,42 @@ def csv_to_img(path: str, *args, **kwargs) -> pd.DataFrame:
     if not path.endswith('.csv'):
         raise ValueError('expected a csv file')
 
-    sheet = pd.read_csv(path, header=None, keep_default_na=False, low_memory=False, *args, **kwargs)
-    sheet = np.array(sheet, dtype=object)
-    shape = sheet.shape
-    dtype = object
-    
-    #convert all strings that are understood to correct types (just floats for now)
-    sheet = ndmap(try_convert, sheet, shape=shape, dtype=dtype)
+    try:
+        
+        sheet = pd.read_csv(path, header=None, keep_default_na=False, low_memory=False, *args, **kwargs)
+        sheet = np.array(sheet, dtype=object)
+        shape = sheet.shape
+        dtype = object
+        
+        #convert all strings that are understood to correct types (just floats for now)
+        sheet = ndmap(try_convert, sheet, shape=shape, dtype=dtype)
 
-    #replace empty strings with None
-    sheet[sheet == ''] = None
-    
+        #replace empty strings with None
+        sheet[sheet == ''] = None
 
-    #convert array of types to array of datatype indices
-    sheet = ndmap(lambda x: datatype_map[type(x)], sheet, shape=shape, dtype=int)
-    # plt.imshow(sheet); plt.show()
-    
-    #convert the datatype indices to one-hot vectors, creating channels for each data type
-    sheet = ndmap(lambda x: np.eye(len(datatype_list))[x], sheet, shape=(*shape, len(datatype_list)), dtype=np.float32)
+        #convert array of types to array of datatype indices
+        sheet = ndmap(lambda x: datatype_map[type(x)], sheet, shape=shape, dtype=int)
+        # plt.imshow(sheet); plt.show()
+        
+        #convert the datatype indices to one-hot vectors, creating channels for each data type
+        sheet = ndmap(lambda x: np.eye(len(datatype_list))[x], sheet, shape=(*shape, len(datatype_list)), dtype=np.float32)
 
-    #commute the dimensions so that the first dimension is the channel, followed by height, then width
-    sheet = np.transpose(sheet, (2, 0, 1))
-    
-    #convert the array to a tensor
-    sheet = torch.tensor(sheet)
+        #commute the dimensions so that the first dimension is the channel, followed by height, then width
+        sheet = np.transpose(sheet, (2, 0, 1))
+        
+        #convert the array to a tensor
+        sheet = torch.tensor(sheet)
 
-    #stretch to resize to a square 32x32 image
-    sheet = sheet.unsqueeze(0)
-    sheet = F.interpolate(sheet, size=(32, 32), mode='nearest')
-    sheet = sheet.squeeze(0)
+        #stretch to resize to a square 32x32 image
+        sheet = sheet.unsqueeze(0)
+        sheet = F.interpolate(sheet, size=(32, 32), mode='nearest')
+        sheet = sheet.squeeze(0)
 
-    return sheet
+        return sheet
+
+    except Exception as e:
+        print(f'unable to read csv \'{path}\'')
+        raise e
 
 
 class Encoder(nn.Module):
@@ -312,6 +326,111 @@ class Decoder(nn.Module):
         x = torch.sigmoid(x)
         return x
 
+
+# def save_sheet_data(sheet_path, img_path):
+#     #create image
+#     img = csv_to_img(sheet_path)
+    
+#     #ensure output path exists
+#     dir = os.path.dirname(img_path)
+#     if not os.path.exists(dir):
+#         os.makedirs(dir)
+
+#     #save image as png
+#     torch.save(img, img_path)
+#save the data
+def save_processed_sheet_data(paths_tuple):
+    raw_path, out_path = paths_tuple
+    if not os.path.exists(out_path):
+        img = csv_to_img(raw_path) #create image
+        
+        #ensure output path exists to write to
+        dir = os.path.dirname(out_path)
+        if not os.path.exists(dir):
+            os.makedirs(dir)
+
+        torch.save(img, out_path) #save image as png
+                
+
+
+def abspath(path):
+    return os.path.abspath(os.path.expanduser(path))
+
+class SpreadsheetLoader(Dataset):
+    """Load a spreadsheet as a dataset"""
+    def __init__(self, data_root: str, data_suffix='raw_data.pt', raw_suffix='raw_data.csv', raw_root=None):
+
+        data_root = abspath(data_root)
+
+        #convert the raw spreadsheets into images if not done already
+        if raw_root is not None:
+            raw_root = abspath(raw_root)
+            raw_paths = []
+            for root, dirs, files in os.walk(raw_root):
+                for file in files:
+                    if file.endswith(raw_suffix):
+                        raw_paths.append(os.path.join(root, file))
+            
+            #construct the output paths
+            out_paths = []
+            for raw_path in raw_paths:
+                #construct the output path based on the relative path in the raw root directory
+                out_path = os.path.join(data_root, os.path.relpath(raw_path, raw_root))
+                out_path = out_path.replace(raw_suffix, data_suffix)
+                out_paths.append(out_path)
+
+            
+            with Pool(processes=cpu_count()) as pool:
+                for _ in tqdm(pool.imap_unordered(save_processed_sheet_data, zip(raw_paths, out_paths), chunksize=1), total=len(raw_paths), desc='saving preprocessed data'):
+                    pass
+
+            # for raw_path in raw_paths:
+            #     #check if this image has been saved already in the datapath
+            #     pdb.set_trace()
+            #     out_path = os.path.join(data_root, os.path.relpath(raw_path, raw_root))
+            #     #replace the current suffix with the pt suffix
+            #     out_path = out_path.replace(suffix, pt_suffix)
+            #     if not os.path.exists(out_path):
+            #         save_sheet_data(raw_path, out_path)
+            pdb.set_trace()
+
+
+        self.paths = []
+        for root, dirs, files in os.walk(datapath):
+            for file in files:
+                if file.endswith(suffix):
+                    self.paths.append(os.path.join(root, file))
+        
+
+        if preload:
+            print('preloading data...')
+            # self.sheets = [csv_to_img(path) for path in tqdm(self.paths)]
+            
+            #preload all the data with multiprocessing, and display
+            # self.sheets = process_map(csv_to_img, self.paths, desc='loading data', n_jobs=cpu_count(), unit='sheets', chunksize=1)
+
+            
+            with Pool(processes=cpu_count()) as pool:
+                for _ in tqdm(pool.imap_unordered(save_sheet_data, self.paths, chunksize=1), total=len(self.paths), desc='loading data'):
+                    pass
+                # self.sheets = list(tqdm(pool.imap_unordered(csv_to_img, self.paths), total=len(self.paths)))
+            
+            # for path in tqdm(self.paths):
+                # self.sheets.append(csv_to_img(path))
+
+
+            # self.__getitem__ = lambda x: self.sheets[x]
+        # else:
+            # self.__getitem__ = lambda x: csv_to_img(self.paths[x])
+
+    def __len__(self):
+        return len(self.paths)
+
+    def __getitem__(self, index):
+        try:
+            return self.sheets[index]
+        except Exception:
+            return csv_to_img(self.paths[index])
 
 
 
