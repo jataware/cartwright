@@ -69,7 +69,7 @@ def main():
     loader = DataLoader(dataset, batch_size=32, shuffle=True)
 
     # # debug
-    # for (img,) in dataset:
+    # for img in dataset:
     #     imshow(img)
 
 
@@ -88,7 +88,7 @@ def main():
     else:
         #train the model
         optimizer = optim.Adam(nn.ModuleList([encoder, decoder]).parameters(), lr=1e-3)
-        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=100, gamma=0.9)
+        scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.99)
 
         for epoch in range(100000):
             # print(f'------------------ epoch {epoch} ------------------') #don't print since dataset is too small right now
@@ -107,6 +107,11 @@ def main():
 
             print(f'epoch: {epoch}, loss: {total_loss / count}')
             scheduler.step()
+
+            if epoch % 100 == 99:
+                print(f'Saving model...')
+                torch.save(encoder.state_dict(), 'encoder.pt')
+                torch.save(decoder.state_dict(), 'decoder.pt')
 
         # save trained model
         torch.save(encoder.state_dict(), 'encoder.pt')
