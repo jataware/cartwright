@@ -1,6 +1,7 @@
 #script for training models to catch anomalies in spreadsheets not handled well by the system
 
-import os
+from os import walk, makedirs
+from os.path import join, relpath, exists, getsize, dirname, abspath, expanduser
 from tqdm import tqdm
 from datetime import datetime
 import dateutil.parser as dateparser
@@ -16,10 +17,6 @@ import torch
 from torch import nn, optim
 from torch.nn import functional as F
 from torch.utils.data import TensorDataset, DataLoader, Dataset
-from sklearn.ensemble import IsolationForest
-import pickle
-import gc as garbage
-# garbage.set_threshold(10) #so that we don't run out of memory
 
 
 import pdb
@@ -37,41 +34,11 @@ def main():
         data_root='~/Downloads/datasets/spreadsheet_images', 
         raw_root='~/Downloads/datasets/spreadsheets'
     )
-
-
-    # print('Loading data...')
-    # data_paths = [
-    #     '~/Downloads/cleaned_data_1.csv',
-    #     '~/Downloads/cleaned_data_2.csv',
-    #     '~/Downloads/raw_data.csv',
-    #     '~/Downloads/edrmc_raw.csv',
-    #     '~/Downloads/flood_area.csv',
-    #     '~/Downloads/dhs_nutrition.csv',
-    #     '~/Downloads/2_FAO_Locust_Swarms.csv',
-    #     '~/Downloads/vdem_2000_2020.csv',
-    #     '~/Downloads/DTM_IDP_Geocoded_fix.csv',
-    #     '~/Downloads/maln_inference_c63039d5e4.csv',
-    #     '~/Downloads/Monthly_Demand_Supply_water_WRI_Gridded.csv',
-    #     '~/Downloads/NextGEN_PRCP_FCST_TercileProbablity_Jun-Sep_iniMay.csv',
-
-    #     # '~/Downloads/messy_data_1.csv',
-    #     # '~/Downloads/messy_data_2.csv',
-    # ]
-    # data = []
-    # for path in tqdm(data_paths):
-    #     data.append(csv_to_img(path))
-
-    # data = torch.stack(data)
-    # data.to('cuda')
-
-    #create a dataset from the data
-    # dataset = TensorDataset(data)
     loader = DataLoader(dataset, batch_size=32, shuffle=True)
 
-    # # debug
+    # # debug show images from the dataset
     # for img in dataset:
     #     imshow(img)
-
 
     # train an auto-encoder on the dataset
     in_channels = len(datatype_list)
@@ -81,18 +48,15 @@ def main():
 
 
     #check if a saved version of the auto-encoder exists, otherwise train a new one
-    if os.path.exists('encoder.pt') and os.path.exists('decoder.pt'):
-        print('loading saved auto-encoder model')
-        encoder.load_state_dict(torch.load('encoder.pt'))
-        decoder.load_state_dict(torch.load('decoder.pt'))
-    else:
-        #train the model
+    try:
+        load_autoencoder(encoder, decoder)
+    except FileNotFoundError:
+        
+        #train the model from scratch
         optimizer = optim.Adam(nn.ModuleList([encoder, decoder]).parameters(), lr=1e-3)
         scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.99)
 
         for epoch in range(100000):
-            # print(f'------------------ epoch {epoch} ------------------') #don't print since dataset is too small right now
-            #train the model
             total_loss = 0
             count = 0
             for data in loader:
@@ -108,14 +72,11 @@ def main():
             print(f'epoch: {epoch}, loss: {total_loss / count}')
             scheduler.step()
 
-            if epoch % 100 == 99:
-                print(f'Saving model...')
-                torch.save(encoder.state_dict(), 'encoder.pt')
-                torch.save(decoder.state_dict(), 'decoder.pt')
+            if (epoch+1) % 100 == 0:
+                save_autoencoder(encoder, decoder)
 
-        # save trained model
-        torch.save(encoder.state_dict(), 'encoder.pt')
-        torch.save(decoder.state_dict(), 'decoder.pt')
+        # save trained model after end of training
+        save_autoencoder(encoder, decoder)
 
     # set model to eval mode
     encoder.eval(); decoder.eval()
@@ -136,9 +97,24 @@ def main():
         normal_scores = torch.cat(normal_scores, dim=0)
         
         #get latent vectors for the anomalous data
+        print(f'scoring anomalous data...')
         anomalous_data = torch.stack([
-            csv_to_img('~/Downloads/messy_data_1.csv'),
-            csv_to_img('~/Downloads/messy_data_2.csv'),
+            csv_to_img(x) for x in tqdm([
+                '~/Downloads/messy_data_1.csv',
+                '~/Downloads/messy_data_2.csv',
+                '~/Downloads/cleaned_data_1.csv',
+                '~/Downloads/cleaned_data_2.csv',
+                '~/Downloads/raw_data.csv',
+                '~/Downloads/edrmc_raw.csv',
+                '~/Downloads/flood_area.csv',
+                '~/Downloads/dhs_nutrition.csv',
+                '~/Downloads/2_FAO_Locust_Swarms.csv',
+                '~/Downloads/vdem_2000_2020.csv',
+                '~/Downloads/DTM_IDP_Geocoded_fix.csv',
+                '~/Downloads/maln_inference_c63039d5e4.csv',
+                '~/Downloads/Monthly_Demand_Supply_water_WRI_Gridded.csv',
+                '~/Downloads/NextGEN_PRCP_FCST_TercileProbablity_Jun-Sep_iniMay.csv',
+            ])
         ]).to('cuda')
         anomalous_latent_vectors = encoder(anomalous_data)
         anomalous_reconstructions = decoder(anomalous_latent_vectors)
@@ -150,39 +126,7 @@ def main():
         plt.scatter(anomalous_scores.cpu(), np.ones(anomalous_scores.shape[0])*20, c='r', s=200, marker='v')
         plt.show()
 
-        pdb.set_trace()
-        1
-
-    pdb.set_trace()
-    1
-
-    #check if a saved version of the isolation forest exists, otherwise train a new one
-    if os.path.exists('isolation_forest.pkl'):
-        print('loading saved isolation forest model')
-        isolation_forest = pickle.load(open('isolation_forest.pkl', 'rb'))
-    else:
-        #train the model
-        isolation_forest = IsolationForest(contamination=0.01).fit(latent_vectors)
-        pickle.dump(isolation_forest, open('isolation_forest.pkl', 'wb'))
-
-    normal_predictions = isolation_forest.predict(latent_vectors)
-    anomalous_predictions = isolation_forest.predict(anomalous_latent_vectors)
-    print(f'normal: {normal_predictions}')
-    print(f'anomalous: {anomalous_predictions}')
-
-    pdb.set_trace()
-
-    #debug show the data and the reconstruction
-    with torch.no_grad():
-        # test the model
-        for (data,) in loader:
-            data = data.to('cuda')
-            output = decoder(encoder(data))
-            for img, img_hat in zip(data, output):
-                imshow(torch.cat([img, img_hat], dim=2))
-
-
-
+        pdb.set_trace(); 1
 
 
 def toNone(s):
@@ -200,9 +144,6 @@ datatype_converters = {
 }
 datatype_list = [*datatype_converters.keys()]
 datatype_map = {t: i for i, t in enumerate(datatype_list)}
-
-
-
 
 
 def imshow(sheet):
@@ -240,7 +181,7 @@ def ndmap(func: Callable, arr: np.ndarray, shape, dtype) -> np.ndarray:
     
     return np.array([*map(func, arr.flatten())], dtype=dtype).reshape(shape)
 
-def csv_to_img(path: str, *args, max_rows=100_000, **kwargs) -> pd.DataFrame:
+def csv_to_img(path: str, *args, max_rows=100_000, **kwargs) -> torch.Tensor:
     """read in a csv and convert the spreadsheet to a feature image for ML analysis"""
 
     if not path.endswith('.csv'):
@@ -356,12 +297,29 @@ class Decoder(nn.Module):
         x = torch.sigmoid(x)
         return x
 
+def save_autoencoder(encoder: Encoder, decoder: Decoder, root_dir='models/autoencoder', verbose=True):
+    #ensure root_dir exists
+    if not exists(root_dir):
+        makedirs(root_dir)
+    
+    if verbose: print(f'saving autoencoder to {root_dir}')
+    torch.save(encoder.state_dict(), join(root_dir, 'encoder.pt'))
+    torch.save(decoder.state_dict(), join(root_dir, 'decoder.pt'))
+
+def load_autoencoder(encoder: Encoder, decoder: Decoder, root_dir='models/autoencoder', verbose=True):
+    #ensure the model exists
+    if exists(join(root_dir, 'encoder.pt')) and exists(join(root_dir, 'decoder.pt')):
+        if verbose: print(f'loading saved auto-encoder model from {root_dir}')
+        encoder.load_state_dict(torch.load(join(root_dir, 'encoder.pt')))
+        decoder.load_state_dict(torch.load(join(root_dir, 'decoder.pt')))
+    else:
+        raise FileNotFoundError(f'No saved autoencoder model found in directory {root_dir}')
 
 
 def save_processed_sheet_data(paths_tuple):
     raw_path, out_path = paths_tuple
-    if not os.path.exists(out_path):
-        size_mb = os.path.getsize(raw_path)/1e6
+    if not exists(out_path):
+        size_mb = getsize(raw_path)/1e6
         # if size_mb > 1000:
         #     print(f'skipping file that is too big: {size_mb:.2f} MB, path: {raw_path}')
         #     return
@@ -369,9 +327,9 @@ def save_processed_sheet_data(paths_tuple):
         img = csv_to_img(raw_path) #create image
         
         #ensure output path exists to write to
-        dir = os.path.dirname(out_path)
-        if not os.path.exists(dir):
-            os.makedirs(dir)
+        dir = dirname(out_path)
+        if not exists(dir):
+            makedirs(dir)
 
         torch.save(img, out_path) #save image as png
 
@@ -379,30 +337,26 @@ def save_processed_sheet_data(paths_tuple):
         # print(f'skipping {raw_path}')
                 
 
-
-def abspath(path):
-    return os.path.abspath(os.path.expanduser(path))
-
 class SpreadsheetLoader(Dataset):
     """Load a spreadsheet as a dataset"""
     def __init__(self, data_root: str, data_suffix='raw_data.pt', raw_suffix='raw_data.csv', raw_root=None):
 
-        data_root = abspath(data_root)
+        data_root = abspath(expanduser(data_root))
 
         #convert the raw spreadsheets into images if not done already
         if raw_root is not None:
-            raw_root = abspath(raw_root)
+            raw_root = abspath(expanduser(raw_root))
             raw_paths = []
-            for root, dirs, files in os.walk(raw_root):
+            for root, dirs, files in walk(raw_root):
                 for file in files:
                     if file.endswith(raw_suffix):
-                        raw_paths.append(os.path.join(root, file))
+                        raw_paths.append(join(root, file))
             
             #construct the output paths
             out_paths = []
             for raw_path in raw_paths:
                 #construct the output path based on the relative path in the raw root directory
-                out_path = os.path.join(data_root, os.path.relpath(raw_path, raw_root))
+                out_path = join(data_root, relpath(raw_path, raw_root))
                 out_path = out_path.replace(raw_suffix, data_suffix)
                 out_paths.append(out_path)
 
@@ -419,10 +373,10 @@ class SpreadsheetLoader(Dataset):
 
         #load the paths to the preprocessed data
         self.paths = []
-        for root, dirs, files in os.walk(data_root):
+        for root, dirs, files in walk(data_root):
             for file in files:
                 if file.endswith(data_suffix):
-                    self.paths.append(os.path.join(root, file))
+                    self.paths.append(join(root, file))
         
         print('preloading data...')            
         self.sheets = [torch.load(path) for path in tqdm(self.paths, desc='loading data', unit='sheets', total=len(self.paths))]
