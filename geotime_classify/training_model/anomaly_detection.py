@@ -75,7 +75,7 @@ def main():
 
     # train an auto-encoder on the dataset
     in_channels = len(datatype_list)
-    latent_channels = 8
+    latent_channels = 32
     encoder = Encoder(in_channels, latent_channels).cuda()
     decoder = Decoder(latent_channels, in_channels).cuda()
 
@@ -134,7 +134,7 @@ def main():
 
         normal_latent_vectors = torch.cat(normal_latent_vectors, dim=0)
         normal_scores = torch.cat(normal_scores, dim=0)
-        pdb.set_trace()
+        
         #get latent vectors for the anomalous data
         anomalous_data = torch.stack([
             csv_to_img('~/Downloads/messy_data_1.csv'),
@@ -143,6 +143,12 @@ def main():
         anomalous_latent_vectors = encoder(anomalous_data)
         anomalous_reconstructions = decoder(anomalous_latent_vectors)
         anomalous_scores = ((anomalous_reconstructions - anomalous_data)**2).mean(dim=(-1,-2,-3))
+
+        #plot a histogram of the normal scores, and points of the anomalous scores on top
+        plt.figure()
+        plt.hist(normal_scores.cpu())
+        plt.scatter(anomalous_scores.cpu(), np.ones(anomalous_scores.shape[0])*20, c='r', s=200, marker='v')
+        plt.show()
 
         pdb.set_trace()
         1
@@ -297,6 +303,8 @@ class Encoder(nn.Module):
         self.convs = nn.ModuleList([
             nn.Sequential(
                 nn.BatchNorm2d(working_channels),
+                nn.Conv2d(in_channels=working_channels, out_channels=working_channels, kernel_size=3, padding=1),
+                nn.Conv2d(in_channels=working_channels, out_channels=working_channels, kernel_size=3, padding=1),
                 nn.Conv2d(in_channels=working_channels, out_channels=working_channels, kernel_size=3, stride=2, padding=1),
                 nn.ReLU(),
                 nn.Dropout(0.5)
@@ -329,6 +337,8 @@ class Decoder(nn.Module):
             nn.Sequential(
                 nn.BatchNorm2d(working_channels) if _ != 0 else nn.Identity(),
                 nn.ConvTranspose2d(in_channels=working_channels, out_channels=working_channels, kernel_size=2, stride=2, padding=0),
+                nn.Conv2d(in_channels=working_channels, out_channels=working_channels, kernel_size=3, padding=1),
+                nn.Conv2d(in_channels=working_channels, out_channels=working_channels, kernel_size=3, padding=1),
                 nn.ReLU(),
                 nn.Dropout(0.5)
             )
