@@ -94,7 +94,10 @@ def main():
             reconstructions = detector(data)
             scores = detector.score(reconstructions, data, reduce_batch_dim=False)
             normal_scores.append(scores)
+
+        #save the normal data scores for later to compute quartiles
         normal_scores = torch.cat(normal_scores, dim=0)
+        torch.save(normal_scores, 'models/autoencoder/scores.pt')
         
         #get reconstruction scores for the anomalous data
         print(f'scoring anomalous data...')
@@ -173,7 +176,6 @@ def try_convert(cell):
 def ndmap(func: Callable, arr: np.ndarray, shape, dtype) -> np.ndarray:
     """apply a function to each element of an N-Dimensional array array"""    
     return np.array([*map(func, arr.flatten())], dtype=dtype).reshape(shape)
-
 
 
 class Encoder(nn.Module):
@@ -267,7 +269,7 @@ class AnomalyDetector(nn.Module):
             if verbose: print(f'loading saved auto-encoder model from {self.root_dir}')
             self.encoder.load_state_dict(torch.load(self.encoder_path))
             self.decoder.load_state_dict(torch.load(self.decoder_path))
-            # self.scores = torch.load(self.scores_path)
+            self.scores = torch.load(self.scores_path)
         else:
             raise FileNotFoundError(f'No saved autoencoder model found in directory {self.root_dir}')
     
