@@ -1,4 +1,17 @@
-#script for training models to catch anomalies in spreadsheets not handled well by the system
+"""
+script for training models to catch anomalies in spreadsheets not handled well by the system
+
+
+How to use externally:
+from anomaly_detection import AnomalyDetector
+
+detector = AnomalyDetector()
+detector.load_autoencoder()
+img = detector.csv_to_img('path/to/you/data.csv')
+score, percentile = detector.rate(img)
+"""
+
+
 
 from os import walk, makedirs
 from os.path import join, relpath, exists, getsize, dirname, abspath, expanduser
@@ -31,18 +44,13 @@ def main():
 
     #set up the dataset to train on
     dataset = SpreadsheetLoader(
-        data_root='~/Downloads/datasets/spreadsheet_images', 
-        raw_root='~/Downloads/datasets/spreadsheets'
+        data_root='~/Downloads/datasets/spreadsheet_images',    #preprocessed images from spreadsheets
+        raw_root='~/Downloads/datasets/spreadsheets'            #raw spreadsheets
     )
     loader = DataLoader(dataset, batch_size=32, shuffle=True)
 
-    # # debug show images from the dataset
-    # for img in dataset:
-    #     imshow(img)
-
     # train an auto-encoder on the dataset
     detector = AnomalyDetector().cuda()
-
 
     #check if a saved version of the auto-encoder exists, otherwise train a new one
     try:
@@ -78,20 +86,17 @@ def main():
     # set model to eval mode
     detector.eval()
 
-    #convert all examples in the dataset to latent vectors for the isolation forest
+    #compute reconstruction scores for each image in the dataset
     with torch.no_grad():
-        # normal_latent_vectors = []
         normal_scores = []
         for data in loader:
             data = data.to('cuda')
             reconstructions = detector(data)
             scores = detector.score(reconstructions, data, reduce_batch_dim=False)
             normal_scores.append(scores)
-
-        # normal_latent_vectors = torch.cat(normal_latent_vectors, dim=0)
         normal_scores = torch.cat(normal_scores, dim=0)
         
-        #get latent vectors for the anomalous data
+        #get reconstruction scores for the anomalous data
         print(f'scoring anomalous data...')
         anomalous_data = torch.stack([
             AnomalyDetector.csv_to_img(x) for x in tqdm([
@@ -124,12 +129,12 @@ def main():
         1
 
 
+
 def toNone(s):
     """convert an empty string to None, or throw an exception"""
     if s == '':
         return None
     raise Exception('unexpected value')
-
 
 datatype_converters = {
     NoneType: toNone,
@@ -154,10 +159,6 @@ def imshow(sheet):
 
     plt.imshow(sheet); plt.show()
 
-#WIP
-# if path.endswith('.xlsx'):
-#     sheet = pd.read_excel(path, *args, **kwargs)
-
 
 def try_convert(cell):
     """Attempt to convert the string from a cell into a concrete type"""
@@ -171,9 +172,6 @@ def try_convert(cell):
 
 def ndmap(func: Callable, arr: np.ndarray, shape, dtype) -> np.ndarray:
     """apply a function to each element of an N-Dimensional array array"""    
-    # with Pool(cpu_count()) as pool:
-    #     return np.array([*pool.map(func, arr.flatten())], dtype=dtype).reshape(shape)
-    
     return np.array([*map(func, arr.flatten())], dtype=dtype).reshape(shape)
 
 
@@ -291,6 +289,14 @@ class AnomalyDetector(nn.Module):
         # img = csv_to_img(csv_path)
         pdb.set_trace()
 
+    
+    #TODO
+    #@staticmethod
+    #def xlsx_to_img(xlsx_path):
+    # if path.endswith('.xlsx'):
+    #     sheet = pd.read_excel(path, *args, **kwargs)
+
+
     @staticmethod
     def csv_to_img(path: str, *args, max_rows=100_000, **kwargs) -> torch.Tensor:
         """read in a csv and convert the spreadsheet to a feature image for ML analysis"""
@@ -346,11 +352,6 @@ def save_processed_sheet_data(paths_tuple):
     """Simple loop for dumping the data from a csv file into a preprocessed torch tensor"""
     raw_path, out_path = paths_tuple
     if not exists(out_path):
-        size_mb = getsize(raw_path)/1e6
-        # if size_mb > 1000:
-        #     print(f'skipping file that is too big: {size_mb:.2f} MB, path: {raw_path}')
-        #     return
-        # print(f'path: {raw_path}, size: {size_mb:.2f} MB')
         img = AnomalyDetector.csv_to_img(raw_path) #create image
         
         #ensure output path exists to write to
@@ -359,10 +360,7 @@ def save_processed_sheet_data(paths_tuple):
             makedirs(dir)
 
         torch.save(img, out_path) #save image as png
-
-    # else:
-        # print(f'skipping {raw_path}')
-                
+       
 
 class SpreadsheetLoader(Dataset):
     """Load a spreadsheet as a dataset"""
