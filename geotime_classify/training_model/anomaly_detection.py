@@ -41,19 +41,16 @@ def main():
     #     imshow(img)
 
     # train an auto-encoder on the dataset
-    in_channels = len(datatype_list)
-    latent_channels = 32
-    encoder = Encoder(in_channels, latent_channels).cuda()
-    decoder = Decoder(latent_channels, in_channels).cuda()
+    detector = AnomalyDetector().cuda()
 
 
     #check if a saved version of the auto-encoder exists, otherwise train a new one
     try:
-        load_autoencoder(encoder, decoder)
+        detector.load_autoencoder()
     except FileNotFoundError:
         
         #train the model from scratch
-        optimizer = optim.Adam(nn.ModuleList([encoder, decoder]).parameters(), lr=1e-3)
+        optimizer = optim.Adam(detector.parameters(), lr=1e-3)
         scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.99)
 
         for epoch in range(100000):
@@ -62,8 +59,8 @@ def main():
             for data in loader:
                 data = data.to('cuda')
                 optimizer.zero_grad()
-                output = decoder(encoder(data))
-                loss = F.mse_loss(output, data)
+                output = detector(data) #decoder(encoder(data))
+                loss = detector.score(output, data)
                 loss.backward()
                 optimizer.step()
                 count += 1
@@ -73,33 +70,31 @@ def main():
             scheduler.step()
 
             if (epoch+1) % 100 == 0:
-                save_autoencoder(encoder, decoder)
+                detector.save_autoencoder()
 
         # save trained model after end of training
-        save_autoencoder(encoder, decoder)
+        detector.save_autoencoder()
 
     # set model to eval mode
-    encoder.eval(); decoder.eval()
+    detector.eval()
 
     #convert all examples in the dataset to latent vectors for the isolation forest
     with torch.no_grad():
-        normal_latent_vectors = []
+        # normal_latent_vectors = []
         normal_scores = []
         for data in loader:
             data = data.to('cuda')
-            latent = encoder(data)
-            normal_latent_vectors.append(latent)
-            reconstructions = decoder(latent)
-            scores = ((reconstructions - data)**2).mean(dim=(-1,-2,-3))
+            reconstructions = detector(data)
+            scores = detector.score(reconstructions, data, reduce_batch_dim=False)
             normal_scores.append(scores)
 
-        normal_latent_vectors = torch.cat(normal_latent_vectors, dim=0)
+        # normal_latent_vectors = torch.cat(normal_latent_vectors, dim=0)
         normal_scores = torch.cat(normal_scores, dim=0)
         
         #get latent vectors for the anomalous data
         print(f'scoring anomalous data...')
         anomalous_data = torch.stack([
-            csv_to_img(x) for x in tqdm([
+            AnomalyDetector.csv_to_img(x) for x in tqdm([
                 '~/Downloads/messy_data_1.csv',
                 '~/Downloads/messy_data_2.csv',
                 '~/Downloads/cleaned_data_1.csv',
@@ -116,9 +111,8 @@ def main():
                 '~/Downloads/NextGEN_PRCP_FCST_TercileProbablity_Jun-Sep_iniMay.csv',
             ])
         ]).to('cuda')
-        anomalous_latent_vectors = encoder(anomalous_data)
-        anomalous_reconstructions = decoder(anomalous_latent_vectors)
-        anomalous_scores = ((anomalous_reconstructions - anomalous_data)**2).mean(dim=(-1,-2,-3))
+        anomalous_reconstructions = detector(anomalous_data)
+        anomalous_scores = detector.score(anomalous_reconstructions, anomalous_data, reduce_batch_dim=False)
 
         #plot a histogram of the normal scores, and points of the anomalous scores on top
         plt.figure()
@@ -126,7 +120,8 @@ def main():
         plt.scatter(anomalous_scores.cpu(), np.ones(anomalous_scores.shape[0])*20, c='r', s=200, marker='v')
         plt.show()
 
-        pdb.set_trace(); 1
+        pdb.set_trace()
+        1
 
 
 def toNone(s):
@@ -181,53 +176,6 @@ def ndmap(func: Callable, arr: np.ndarray, shape, dtype) -> np.ndarray:
     
     return np.array([*map(func, arr.flatten())], dtype=dtype).reshape(shape)
 
-def csv_to_img(path: str, *args, max_rows=100_000, **kwargs) -> torch.Tensor:
-    """read in a csv and convert the spreadsheet to a feature image for ML analysis"""
-
-    if not path.endswith('.csv'):
-        raise ValueError('expected a csv file')
-
-    try:
-
-        sheet = pd.read_csv(path, header=None, keep_default_na=False, low_memory=False, *args, **kwargs)
-        sheet = np.array(sheet, dtype=object)
-
-        #if the sheet is too large, only read the first max_rows rows
-        if sheet.shape[0] > max_rows:
-            sheet = sheet[:max_rows]    
-
-        shape = sheet.shape
-        dtype = object
-        
-        #convert all strings that are understood to correct types (just floats for now)
-        sheet = ndmap(try_convert, sheet, shape=shape, dtype=dtype)
-
-        #replace empty strings with None
-        sheet[sheet == ''] = None
-
-        #convert array of types to array of datatype indices
-        sheet = ndmap(lambda x: datatype_map[type(x)], sheet, shape=shape, dtype=int)
-        # plt.imshow(sheet); plt.show()
-        
-        #convert the datatype indices to one-hot vectors, creating channels for each data type
-        sheet = ndmap(lambda x: np.eye(len(datatype_list))[x], sheet, shape=(*shape, len(datatype_list)), dtype=np.float32)
-
-        #commute the dimensions so that the first dimension is the channel, followed by height, then width
-        sheet = np.transpose(sheet, (2, 0, 1))
-        
-        #convert the array to a tensor
-        sheet = torch.tensor(sheet)
-
-        #stretch to resize to a square 32x32 image
-        sheet = sheet.unsqueeze(0)
-        sheet = F.interpolate(sheet, size=(32, 32), mode='nearest')
-        sheet = sheet.squeeze(0)
-
-        return sheet
-
-    except Exception as e:
-        print(f'unable to read csv \'{path}\'')
-        raise e
 
 
 class Encoder(nn.Module):
@@ -297,26 +245,105 @@ class Decoder(nn.Module):
         x = torch.sigmoid(x)
         return x
 
-def save_autoencoder(encoder: Encoder, decoder: Decoder, root_dir='models/autoencoder', verbose=True):
-    #ensure root_dir exists
-    if not exists(root_dir):
-        makedirs(root_dir)
+
+class AnomalyDetector(nn.Module):
+    def __init__(self, latent_channels=32, root_dir='models/autoencoder'):
+        super().__init__()
+        in_channels = len(datatype_list)
+        self.encoder = Encoder(in_channels, latent_channels)
+        self.decoder = Decoder(latent_channels, in_channels)
+
+        self.root_dir = root_dir
+        self.encoder_path = join(root_dir, 'encoder.pt')
+        self.decoder_path = join(root_dir, 'decoder.pt')
+        self.scores_path = join(root_dir, 'scores.pt') #scores of all data that was trained. for generating percentile scores
+       
+    def forward(self, x):
+        x = self.encoder(x)
+        x = self.decoder(x)
+        return x
     
-    if verbose: print(f'saving autoencoder to {root_dir}')
-    torch.save(encoder.state_dict(), join(root_dir, 'encoder.pt'))
-    torch.save(decoder.state_dict(), join(root_dir, 'decoder.pt'))
+    def load_autoencoder(self, verbose=True):
+        #ensure the model exists
+        if exists(self.encoder_path) and exists(self.decoder_path):
+            if verbose: print(f'loading saved auto-encoder model from {self.root_dir}')
+            self.encoder.load_state_dict(torch.load(self.encoder_path))
+            self.decoder.load_state_dict(torch.load(self.decoder_path))
+            # self.scores = torch.load(self.scores_path)
+        else:
+            raise FileNotFoundError(f'No saved autoencoder model found in directory {self.root_dir}')
+    
+    def save_autoencoder(self, verbose=True):
+        #ensure root_dir exists
+        if not exists(self.root_dir):
+            makedirs(self.root_dir)
+        
+        if verbose: print(f'saving autoencoder to {self.root_dir}')
+        torch.save(self.encoder.state_dict(), self.encoder_path)
+        torch.save(self.decoder.state_dict(), self.decoder_path)
 
-def load_autoencoder(encoder: Encoder, decoder: Decoder, root_dir='models/autoencoder', verbose=True):
-    #ensure the model exists
-    if exists(join(root_dir, 'encoder.pt')) and exists(join(root_dir, 'decoder.pt')):
-        if verbose: print(f'loading saved auto-encoder model from {root_dir}')
-        encoder.load_state_dict(torch.load(join(root_dir, 'encoder.pt')))
-        decoder.load_state_dict(torch.load(join(root_dir, 'decoder.pt')))
-    else:
-        raise FileNotFoundError(f'No saved autoencoder model found in directory {root_dir}')
+    def score(self, data: torch.Tensor, reconstructions: torch.Tensor, reduce_batch_dim=True):
+        reduction_dims = (*range(not reduce_batch_dim, len(data.shape)),)
+        return ((reconstructions - data)**2).mean(dim=reduction_dims)
 
+    def rate(self, img):
+        #load the data
+        # img = csv_to_img(csv_path)
+        pdb.set_trace()
+
+    @staticmethod
+    def csv_to_img(path: str, *args, max_rows=100_000, **kwargs) -> torch.Tensor:
+        """read in a csv and convert the spreadsheet to a feature image for ML analysis"""
+
+        if not path.endswith('.csv'):
+            raise ValueError('expected a csv file')
+
+        try:
+
+            sheet = pd.read_csv(path, header=None, keep_default_na=False, low_memory=False, *args, **kwargs)
+            sheet = np.array(sheet, dtype=object)
+
+            #if the sheet is too large, only read the first max_rows rows
+            if sheet.shape[0] > max_rows:
+                sheet = sheet[:max_rows]    
+
+            shape = sheet.shape
+            dtype = object
+            
+            #convert all strings that are understood to correct types (just floats for now)
+            sheet = ndmap(try_convert, sheet, shape=shape, dtype=dtype)
+
+            #replace empty strings with None
+            sheet[sheet == ''] = None
+
+            #convert array of types to array of datatype indices
+            sheet = ndmap(lambda x: datatype_map[type(x)], sheet, shape=shape, dtype=int)
+            # plt.imshow(sheet); plt.show()
+            
+            #convert the datatype indices to one-hot vectors, creating channels for each data type
+            sheet = ndmap(lambda x: np.eye(len(datatype_list))[x], sheet, shape=(*shape, len(datatype_list)), dtype=np.float32)
+
+            #commute the dimensions so that the first dimension is the channel, followed by height, then width
+            sheet = np.transpose(sheet, (2, 0, 1))
+            
+            #convert the array to a tensor
+            sheet = torch.tensor(sheet)
+
+            #stretch to resize to a square 32x32 image
+            sheet = sheet.unsqueeze(0)
+            sheet = F.interpolate(sheet, size=(32, 32), mode='nearest')
+            sheet = sheet.squeeze(0)
+
+            return sheet
+
+        except Exception as e:
+            print(f'unable to read csv \'{path}\'')
+            raise e
+
+        
 
 def save_processed_sheet_data(paths_tuple):
+    """Simple loop for dumping the data from a csv file into a preprocessed torch tensor"""
     raw_path, out_path = paths_tuple
     if not exists(out_path):
         size_mb = getsize(raw_path)/1e6
@@ -324,7 +351,7 @@ def save_processed_sheet_data(paths_tuple):
         #     print(f'skipping file that is too big: {size_mb:.2f} MB, path: {raw_path}')
         #     return
         # print(f'path: {raw_path}, size: {size_mb:.2f} MB')
-        img = csv_to_img(raw_path) #create image
+        img = AnomalyDetector.csv_to_img(raw_path) #create image
         
         #ensure output path exists to write to
         dir = dirname(out_path)
