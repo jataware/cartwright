@@ -15,6 +15,7 @@ score, percentile = detector.rate(img)
 
 from os import walk, makedirs
 from os.path import join, relpath, exists, getsize, dirname, abspath, expanduser
+import re
 from tqdm import tqdm
 from datetime import datetime
 import dateutil.parser as dateparser
@@ -25,6 +26,7 @@ from multiprocessing import Pool, cpu_count
 import pandas as pd
 from pandas import DataFrame
 import numpy as np
+from scipy.stats import percentileofscore
 from matplotlib import pyplot as plt
 import torch
 from torch import nn, optim
@@ -119,8 +121,9 @@ def main():
                 '~/Downloads/NextGEN_PRCP_FCST_TercileProbablity_Jun-Sep_iniMay.csv',
             ])
         ]).to('cuda')
-        anomalous_reconstructions = detector(anomalous_data)
-        anomalous_scores = detector.score(anomalous_reconstructions, anomalous_data, reduce_batch_dim=False)
+        # anomalous_reconstructions = detector(anomalous_data)
+        # anomalous_scores = detector.score(anomalous_reconstructions, anomalous_data, reduce_batch_dim=False)
+        anomalous_scores, anomalous_percentiles = detector.rate(anomalous_data)
 
         #plot a histogram of the normal scores, and points of the anomalous scores on top
         plt.figure()
@@ -286,10 +289,21 @@ class AnomalyDetector(nn.Module):
         reduction_dims = (*range(not reduce_batch_dim, len(data.shape)),)
         return ((reconstructions - data)**2).mean(dim=reduction_dims)
 
-    def rate(self, img):
-        #load the data
-        # img = csv_to_img(csv_path)
-        pdb.set_trace()
+    def rate(self, data):
+        if len(data.shape) == 3:
+            data = data.unsqueeze(0)
+        assert len(data.shape) == 4, 'data must be a tensor of shape ([batch,] channels, height, width)'
+
+        #get the reconstruction of the data
+        reconstructions = self.forward(data)
+
+        #score the reconstruction
+        scores = self.score(data, reconstructions, reduce_batch_dim=False)
+
+        #get the percentile of the score relative to self.scores
+        percentiles = torch.tensor([percentileofscore(self.scores.cpu(), score.item(), kind='weak') for score in scores]) / 100
+
+        return scores, percentiles
 
     
     #TODO
