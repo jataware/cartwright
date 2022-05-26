@@ -14,7 +14,7 @@ score, percentile = detector.rate(img)
 
 
 from os import walk, makedirs
-from os.path import join, relpath, exists, getsize, dirname, abspath, expanduser
+from os.path import join, relpath, exists, getsize, dirname, abspath, expanduser, split
 import re
 from tqdm import tqdm
 from datetime import datetime
@@ -47,9 +47,20 @@ def main():
     #set up the dataset to train on
     dataset = SpreadsheetLoader(
         data_root='~/Downloads/datasets/spreadsheet_images',    #preprocessed images from spreadsheets
-        raw_root='~/Downloads/datasets/spreadsheets'            #raw spreadsheets
+        raw_root='~/Downloads/datasets/spreadsheets',           #raw spreadsheets
+        raw_suffix='raw_data.csv',
+        data_suffix='raw_data.pt'
     )
     loader = DataLoader(dataset, batch_size=32, shuffle=True)
+    
+    #dataset of spreadsheets from google
+    wild_dataset = SpreadsheetLoader(
+        data_root='~/Downloads/datasets/wild_spreadsheet_images/Crop_production',    #preprocessed images from spreadsheets
+        raw_root='~/Downloads/datasets/wild_spreadsheets/Crop_production',           #raw spreadsheets
+        raw_suffix='.csv',
+        data_suffix='.pt'
+    )
+
 
     # train an auto-encoder on the dataset
     detector = AnomalyDetector().cuda()
@@ -103,24 +114,25 @@ def main():
         
         #get reconstruction scores for the anomalous data
         print(f'scoring anomalous data...')
-        anomalous_data = torch.stack([
-            AnomalyDetector.csv_to_img(x) for x in tqdm([
-                '~/Downloads/messy_data_1.csv',
-                '~/Downloads/messy_data_2.csv',
-                '~/Downloads/cleaned_data_1.csv',
-                '~/Downloads/cleaned_data_2.csv',
-                '~/Downloads/raw_data.csv',
-                '~/Downloads/edrmc_raw.csv',
-                '~/Downloads/flood_area.csv',
-                '~/Downloads/dhs_nutrition.csv',
-                '~/Downloads/2_FAO_Locust_Swarms.csv',
-                '~/Downloads/vdem_2000_2020.csv',
-                '~/Downloads/DTM_IDP_Geocoded_fix.csv',
-                '~/Downloads/maln_inference_c63039d5e4.csv',
-                '~/Downloads/Monthly_Demand_Supply_water_WRI_Gridded.csv',
-                '~/Downloads/NextGEN_PRCP_FCST_TercileProbablity_Jun-Sep_iniMay.csv',
-            ])
-        ]).to('cuda')
+        # anomalous_data = torch.stack([
+        #     AnomalyDetector.csv_to_img(x) for x in tqdm([
+        #         '~/Downloads/messy_data_1.csv',
+        #         '~/Downloads/messy_data_2.csv',
+        #         '~/Downloads/cleaned_data_1.csv',
+        #         '~/Downloads/cleaned_data_2.csv',
+        #         '~/Downloads/raw_data.csv',
+        #         '~/Downloads/edrmc_raw.csv',
+        #         '~/Downloads/flood_area.csv',
+        #         '~/Downloads/dhs_nutrition.csv',
+        #         '~/Downloads/2_FAO_Locust_Swarms.csv',
+        #         '~/Downloads/vdem_2000_2020.csv',
+        #         '~/Downloads/DTM_IDP_Geocoded_fix.csv',
+        #         '~/Downloads/maln_inference_c63039d5e4.csv',
+        #         '~/Downloads/Monthly_Demand_Supply_water_WRI_Gridded.csv',
+        #         '~/Downloads/NextGEN_PRCP_FCST_TercileProbablity_Jun-Sep_iniMay.csv',
+        #     ])
+        # ]).to('cuda')
+        anomalous_data = torch.stack([sheet for sheet in wild_dataset]).to('cuda')
         # anomalous_reconstructions = detector(anomalous_data)
         # anomalous_scores = detector.score(anomalous_reconstructions, anomalous_data, reduce_batch_dim=False)
         anomalous_scores, anomalous_percentiles = detector.rate(anomalous_data)
@@ -128,7 +140,18 @@ def main():
         #plot a histogram of the normal scores, and points of the anomalous scores on top
         plt.figure()
         plt.hist(normal_scores.cpu())
-        plt.scatter(anomalous_scores.cpu(), np.ones(anomalous_scores.shape[0])*20, c='r', s=200, marker='v')
+        plt.scatter(anomalous_scores.cpu(), np.ones(anomalous_scores.shape[0])*0, c='r', s=200, marker='^')
+
+        #annotate the scatter plot with the filenames of each point, rotated by 45 degrees
+        for score, path in zip(anomalous_scores, wild_dataset.paths):
+            plt.annotate(
+                split(path)[1], 
+                xy=(score, 10), 
+                # xytext=(score, 20), 
+                rotation=90,
+                ha='center',
+            )
+
         plt.show()
 
         pdb.set_trace()
@@ -380,7 +403,7 @@ def save_processed_sheet_data(paths_tuple):
 
 class SpreadsheetLoader(Dataset):
     """Load a spreadsheet as a dataset"""
-    def __init__(self, data_root: str, data_suffix='raw_data.pt', raw_suffix='raw_data.csv', raw_root=None):
+    def __init__(self, data_root: str, data_suffix='.pt', raw_suffix='.csv', raw_root=None):
 
         data_root = abspath(expanduser(data_root))
 
