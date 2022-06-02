@@ -7,6 +7,7 @@ from anomaly_detection import AnomalyDetector
 
 detector = AnomalyDetector()
 detector.load_autoencoder()
+detector.eval()
 img = detector.csv_to_img('path/to/you/data.csv')
 score, percentile = detector.rate(img)
 """
@@ -133,7 +134,7 @@ def main():
         #     ])
         # ]).to('cuda')
         anomalous_data = torch.stack([sheet for sheet in wild_dataset]).to('cuda')
-        # anomalous_reconstructions = detector(anomalous_data)
+        anomalous_reconstructions = detector(anomalous_data)
         # anomalous_scores = detector.score(anomalous_reconstructions, anomalous_data, reduce_batch_dim=False)
         anomalous_scores, anomalous_percentiles = detector.rate(anomalous_data)
 
@@ -175,7 +176,14 @@ datatype_list = [*datatype_converters.keys()]
 datatype_map = {t: i for i, t in enumerate(datatype_list)}
 
 
-def imshow(sheet):
+def imshow(sheet, show=True):
+    sheet = sheet_tensor_to_img(sheet)
+    plt.imshow(sheet)
+    if show:
+        plt.show()
+
+
+def sheet_tensor_to_img(sheet):
     #ensure on cpu and not attached to gradients
     sheet = sheet.detach().cpu()
     
@@ -186,8 +194,7 @@ def imshow(sheet):
     if sheet.shape[0] != 3:
         sheet = F.interpolate(sheet, size=3, mode='linear', align_corners=False)
 
-    plt.imshow(sheet); plt.show()
-
+    return sheet
 
 def try_convert(cell):
     """Attempt to convert the string from a cell into a concrete type"""
