@@ -7,7 +7,6 @@ from anomaly_detection import AnomalyDetector
 
 detector = AnomalyDetector()
 detector.load_autoencoder()
-detector.eval()
 img = detector.csv_to_img('path/to/you/data.csv')
 score, percentile = detector.rate(img)
 """
@@ -303,6 +302,7 @@ class AnomalyDetector(nn.Module):
             self.encoder.load_state_dict(torch.load(self.encoder_path))
             self.decoder.load_state_dict(torch.load(self.decoder_path))
             self.scores = torch.load(self.scores_path)
+            self.eval()
         else:
             raise FileNotFoundError(f'No saved autoencoder model found in directory {self.root_dir}')
     
@@ -315,6 +315,30 @@ class AnomalyDetector(nn.Module):
         torch.save(self.encoder.state_dict(), self.encoder_path)
         torch.save(self.decoder.state_dict(), self.decoder_path)
 
+    @staticmethod
+    def entropy(img, bins=10):
+        """measure the 2D shannon entropy of an image"""
+
+        #if torch, convert to numpy
+        if isinstance(img, torch.Tensor):
+            img = img.cpu().numpy()
+
+        assert len(img.shape) == 2, 'image must be 2D'
+
+        #take the 2-pixel partial finite differences of the image in x and y (padding to keep the original shape)
+        dx = img[2:] - img[:-2]; dx = np.concatenate([np.zeros_like(dx[:1]), dx, np.zeros_like(dx[:1])], axis=0)
+        dy = img[:,2:] - img[:,:-2]; dy = np.concatenate([np.zeros_like(dy[:,:1]), dy, np.zeros_like(dy[:,:1])], axis=1)
+
+        #compute the 2D histogram, i.e. the joint pdf of dx and dy
+        hist, xedges, yedges = np.histogram2d(dx.flatten(), dy.flatten(), bins=bins, range=[[-1,1], [-1,1]])
+        hist /= hist.sum()
+
+        entropy = -(hist * np.log2(hist + 1e-10)).sum()
+
+        return entropy
+
+
+    
     def score(self, data: torch.Tensor, reconstructions: torch.Tensor, reduce_batch_dim=True):
         reduction_dims = (*range(not reduce_batch_dim, len(data.shape)),)
         return ((reconstructions - data)**2).mean(dim=reduction_dims)
