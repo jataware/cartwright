@@ -316,7 +316,7 @@ class AnomalyDetector(nn.Module):
         torch.save(self.decoder.state_dict(), self.decoder_path)
 
     @staticmethod
-    def entropy(img, bins=10):
+    def entropy(img, bins=4):
         """measure the 2D shannon entropy of an image"""
 
         #if torch, convert to numpy
