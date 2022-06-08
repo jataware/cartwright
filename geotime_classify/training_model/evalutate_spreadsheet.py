@@ -15,13 +15,117 @@ from anomaly_detection import AnomalyDetector, sheet_tensor_to_img, imshow
 import pdb
 
 
+# def main2():
+    
+
+#     detector = AnomalyDetector()
+#     detector.load_autoencoder()
+#     detector.cuda()
+
+#     if not True:    
+#         csv_path = p('/home/david/Downloads/datasets/spreadsheet_web_scraping_results/percentiles/90-100/57/data.csv')
+#         img = detector.csv_to_img(csv_path).cuda()
+#         img = img[0] #collect the empty channel of the data
+
+#     else:
+#         img_path = p('~/Downloads/Lenna.png')
+#         # img_path = p('~/Downloads/2aysZ.png')
+#         # img_path = p('~/Downloads/hPjHn.png')
+#         img = plt.imread(img_path)
+#         img = torch.from_numpy(img).float()
+#         img = img.cuda()
+
+#         #convert to grayscale
+#         img = img.mean(dim=2)
+#         img = (img-img.min())/(img.max() - img.min())
+
+#     for b in [2, 4, 8, 16, 32, 64, 128, 256]:
+#         print(f'{b} bins lenna: ', detector.entropy(img, bins=b))
+#     pdb.set_trace()
+
+#     # plt.imshow(img.cpu().numpy(), cmap='gray')
+#     # plt.show()
+
+
+#     #take the 2-pixel partial finite differences of the image in x and y (padding to keep the original shape)
+#     dx = img[2:] - img[:-2]; dx = torch.cat([torch.zeros_like(dx[:1]), dx, torch.zeros_like(dx[:1])], dim=0)
+#     dy = img[:,2:] - img[:,:-2]; dy = torch.cat([torch.zeros_like(dy[:,:1]), dy, torch.zeros_like(dy[:,:1])], dim=1)
+
+#     #reshape dx/dy into 1D vectors
+#     dx_vec = dx.view(-1).cpu().numpy()
+#     dy_vec = dy.view(-1).cpu().numpy()
+
+#     #compute the 2D histogram of the derivatives using numpy
+#     bins = 5
+#     hist, xedges, yedges = np.histogram2d(dx_vec, dy_vec, bins=bins, range=[[-1,1], [-1,1]])
+#     hist /= hist.sum()
+    
+#     #compute the entropy per bin in the histogram
+#     entropy = torch.tensor(hist * np.log(hist + 1e-10)).cuda()
+
+#     #map each dx/dy pair to a bin in the histogram
+#     # ndx = (dx - dx.min()) / (dx.max() - dx.min())
+#     # ndy = (dy - dy.min()) / (dy.max() - dy.min())
+#     # x = (ndx * bins).clamp(0, bins-1).long()
+#     # y = (ndy * bins).clamp(0, bins-1).long()
+#     # x = np.digitize(dx, )
+    
+#     #generate an image of the per-pixel entropy
+#     entropy_img = entropy[x, y]
+#     entropy_img = (entropy_img - entropy_img.min()) / (entropy_img.max() - entropy_img.min())
+
+#     plt.imshow(torch.cat([img, entropy_img], dim=1).cpu(), cmap='gray')
+#     plt.show()
+
+#     #plot the original image, but for each pixel, plot the entropy of the 2D histogram
+#     #plot the histogram
+#     # plt.figure()
+#     # plt.scatter(dx.cpu().numpy(), dy.cpu().numpy())
+#     # plt.figure()
+#     # plt.imshow(np.log(hist+1e-6), extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]], origin='lower', cmap='magma')
+#     # plt.show()
+    
+#     #convert dx/dy to integer -255 <= x <= 255 range
+#     # dx = (dx * 255).round()
+#     # dy = (dy * 255).round()
+#     pdb.set_trace()
+
+#     #generate a 256x256 image representing a 2D histogram of the gradient values
+
+
+
+#     #take the magnitude of the finite differences
+#     pdb.set_trace()
+#     mag = (dx**2 + dy**2).sqrt()
+
+#     #plot the magnitude
+#     plt.imshow(mag.cpu().numpy(), cmap='gray')
+#     plt.show()
+    
+
+
+#     pdb.set_trace()
+
+#     #take the 2-pixel finite difference of the test image
+#     img_diff = img[:,:,:2] - img[:,:,1:-1]
+    
+    
+#     #######TESTING/DEBUG#######
+#     detector = AnomalyDetector()
+#     detector.load_autoencoder()
+#     detector.cuda()
+#     csv_path = p('/home/david/Downloads/datasets/spreadsheet_web_scraping_results/percentiles/90-100/1/data.csv')
+#     img = detector.csv_to_img(csv_path).cuda()
+#     entropy = detector.empty_entropy(img)
+#     pdb.set_trace()
+#     1
+#     ###########################
 
 def main():
 
     #ML model for scoring each spreadsheet
     detector = AnomalyDetector()
     detector.load_autoencoder()
-    detector.eval()
     detector.cuda()
 
     #path to raw data + output location
@@ -195,7 +299,7 @@ def screenshot_spreadsheet(path):
 
     return img
 
-
 if __name__ == '__main__':
+    # main2()
     main()
     sct.close()
