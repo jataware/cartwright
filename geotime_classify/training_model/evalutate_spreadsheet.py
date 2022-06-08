@@ -128,6 +128,8 @@ def main():
     detector.load_autoencoder()
     detector.cuda()
 
+    entropies = []
+
     #path to raw data + output location
     data_path = p('~/Downloads/datasets/spreadsheet_web_scraping/')
     save_path = p('~/Downloads/datasets/spreadsheet_web_scraping_results/')
@@ -142,11 +144,11 @@ def main():
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
 
-        #save the screenshot
-        sct_path = os.path.join(save_dir, 'screenshot.png')
-        if not os.path.exists(sct_path):
-            img = screenshot_spreadsheet(path)
-            plt.imsave(sct_path, img)
+        # #save the screenshot
+        # sct_path = os.path.join(save_dir, 'screenshot.png')
+        # if not os.path.exists(sct_path):
+        #     img = screenshot_spreadsheet(path)
+        #     plt.imsave(sct_path, img)
 
         #copy the csv file
         csv_path = os.path.join(save_dir, 'data.csv')
@@ -165,14 +167,17 @@ def main():
                     reconstruction = detector(img[None])[0]
                     score, percentile = detector.rate(img)
                     score, percentile = score.item(), percentile.item()
+                    entropy = detector.entropy(img[0], bins=2)
                     
                 #save the image and the reconstruction
                 plt.figure()
                 imshow(img, show=False)
                 plt.savefig(img_path)
+                plt.close()
                 plt.figure()
                 imshow(reconstruction, show=False)
                 plt.savefig(rec_path)
+                plt.close()
 
                 #save a histogram of the score relative to the training data
                 plt.figure()
@@ -180,10 +185,14 @@ def main():
                 plt.scatter([score], [0], c='r', s=200, marker='^')
                 plt.annotate(filename, xy=(score, 10), rotation=90, ha='center')
                 plt.savefig(hist_path)
+                plt.close()
 
                 #save a text file with the filename, score, and percentile
                 with open(result_path, 'w') as f:
-                    f.write(f'filename: {filename}\nscore: {score}\npercentile: {percentile}')
+                    f.write(f'filename: {filename}\nscore: {score}\npercentile: {percentile}\nentropy: {entropy}')
+
+                #save the entropy
+                entropies.append(entropy)
 
             except Exception as e:
                 print(f'{filename} failed: {e}')
@@ -195,6 +204,13 @@ def main():
     #finally, sort all the spreadsheets into folders of percentile ranges
     #TODO->make it just put them in the final folder in the first place
     sort_by_percentile(save_path)
+
+    #plot a histogram of the entropies
+    plt.figure()
+    plt.hist(entropies)
+    plt.show()
+
+    pdb.set_trace()
 
 
 def histogram_of_scores(save_path):
