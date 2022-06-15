@@ -5,10 +5,19 @@ script for training models to catch anomalies in spreadsheets not handled well b
 How to use externally:
 from anomaly_detection import AnomalyDetector
 
+#instantiate the model
 detector = AnomalyDetector()
 detector.load_autoencoder()
+
+#load a spreadsheet+convert to image
 img = detector.csv_to_img('path/to/you/data.csv')
+
+#to get raw scores/percentiles
 score, percentile = detector.rate(img)
+
+#or, to get 'low', 'medium', or 'high' classification (thresholds are optional)
+result = detector.classify(img, low_threshold=0.33, high_threshold=0.66)
+
 """
 
 
@@ -19,7 +28,7 @@ import re
 from tqdm import tqdm
 from datetime import datetime
 import dateutil.parser as dateparser
-from typing import Callable
+from typing import Callable, List, Union
 NoneType = type(None)
 from multiprocessing import Pool, cpu_count
 
@@ -359,6 +368,20 @@ class AnomalyDetector(nn.Module):
 
         return scores, percentiles
 
+    
+    def classify(self, data, low_threshold=0.33, high_threshold=0.66) -> Union[str, List[str]]:
+        """classify the data as low, medium, or high probability of being anomalous
+        returns a (python) list of "low", "medium", or "high"
+        """
+        #compute the score
+        _, percentiles = self.rate(data)
+        classes = ['low' if percentile < low_threshold else 'medium' if percentile < high_threshold else 'high' for percentile in percentiles]
+
+        #strip extra dimension if it was just a single image passed in
+        if len(classes) == 1:
+            classes = classes[0]
+
+        return classes
     
     #TODO
     #@staticmethod
