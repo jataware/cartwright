@@ -16,7 +16,7 @@ img = detector.csv_to_img('path/to/you/data.csv')
 score, percentile = detector.rate(img)
 
 #or, to get 'low', 'medium', or 'high' classification (thresholds are optional)
-result = detector.classify(img, low_threshold=0.33, high_threshold=0.66)
+result = detector.classify(img, low_threshold=0.33, high_threshold=0.66, entropy_threshold=0.15)
 
 """
 
@@ -369,7 +369,7 @@ class AnomalyDetector(nn.Module):
         return scores, percentiles
 
     
-    def classify(self, data, low_threshold=0.33, high_threshold=0.66, entropy_threshold=0.2) -> Union[str, List[str]]:
+    def classify(self, data, low_threshold=0.33, high_threshold=0.66, entropy_threshold=0.15) -> Union[str, List[str]]:
         """
         classify the data as low, medium, or high probability of being anomalous
         returns a list of "low", "medium", or "high" (or single string if only one image passed in)
