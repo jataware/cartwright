@@ -369,16 +369,36 @@ class AnomalyDetector(nn.Module):
         return scores, percentiles
 
     
-    def classify(self, data, low_threshold=0.33, high_threshold=0.66) -> Union[str, List[str]]:
-        """classify the data as low, medium, or high probability of being anomalous
-        returns a (python) list of "low", "medium", or "high"
+    def classify(self, data, low_threshold=0.33, high_threshold=0.66, entropy_threshold=0.2) -> Union[str, List[str]]:
         """
+        classify the data as low, medium, or high probability of being anomalous
+        returns a list of "low", "medium", or "high" (or single string if only one image passed in)
+        """
+        LOW=0
+        MEDIUM=1
+        HIGH=2
+        options = ('low', 'medium', 'high')
+
+        #handle single image
+        multiple = len(data.shape) > 3
+        if not multiple:
+            data = data.unsqueeze(0)
+
         #compute the score
         _, percentiles = self.rate(data)
-        classes = ['low' if percentile < low_threshold else 'medium' if percentile < high_threshold else 'high' for percentile in percentiles]
+        classes = [LOW if percentile < low_threshold else MEDIUM if percentile < high_threshold else HIGH for percentile in percentiles]
+
+        #measure the entropy of the data
+        entropies = [self.entropy(img[0], bins=2) for img in data]
+
+        #adjust classifications down one level if the entropy is high
+        classes = [c - 1 if c > LOW and e > entropy_threshold else c for (e, c) in zip(entropies, classes)]
+
+        #convert to strings
+        classes = [options[c] for c in classes]
 
         #strip extra dimension if it was just a single image passed in
-        if len(classes) == 1:
+        if not multiple:
             classes = classes[0]
 
         return classes
