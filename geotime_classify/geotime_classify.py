@@ -1164,6 +1164,17 @@ class GeoTimeClassify:
                 logging.error(f'date_arrow_4 error: {e}')
                 return build_return_standard_object(category=None, subcategory=None, match_type=None)
 
+        def date_arrow_5(values):
+            try:
+                array_valid = date_arrow(values, separator="none")
+                if len(array_valid) > len(values) * 0.85:
+                    return build_return_object(format="%Y%m%d", util='arrow', dayFirst=None)
+                else:
+                    return build_return_standard_object(category=None, subcategory=None, match_type=None)
+            except Exception as e:
+                logging.error(f'date_arrow_1 error: {e}')
+                return build_return_standard_object(category=None, subcategory=None, match_type=None)
+
         def iso_time(values):
             try:
                 array_valid, dayFirst = date_util(values, separator="none", shortyear=False, yearloc=None)
@@ -2375,6 +2386,7 @@ class GeoTimeClassify:
                 "date_%Y-%m": date_arrow_2,
                 "date_%Y/%m": date_arrow_3,
                 "date_%Y.%m": date_arrow_4,
+                "date_%Y%m%d": date_arrow_5,
                 "date_%m-%d-%Y": date_util_1,
                 "date_%m-%d-%y": date_util_2,
                 "date_%m_%d_%Y": date_util_3,
