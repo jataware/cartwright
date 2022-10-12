@@ -44,6 +44,7 @@ def detect_resolution(times:np.ndarray) -> Optional[TimeResolution]:
     durations = np.array([getattr(TimeUnits, name).value for name in names])
     unit_errors = np.abs(durations - avg)/durations
     closest = np.argmin(unit_errors)
+    unit = getattr(TimeUnits, names[closest])
     errors = np.abs(1 - deltas / durations[closest]) #errors in terms of the closest unit
 
     #TODO: could do some sort of thresholding to determine if it matched any of the durations or was something else
@@ -52,4 +53,4 @@ def detect_resolution(times:np.ndarray) -> Optional[TimeResolution]:
     # print(f'{deltas/durations[closest]}')
     # print('=========================================')
 
-    return TimeResolution(uniformity, names[closest], avg/durations[closest], errors.mean())
+    return TimeResolution(uniformity, unit, avg/durations[closest], errors.mean())
