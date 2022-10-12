@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import unicode_literals, print_function, division
+from geotime_classify import utilities
 
 import torch
 import torch.autograd as autograd
@@ -2680,6 +2681,23 @@ class GeoTimeClassify:
 
         return index_nan
 
+    def predict_temporal_resolution(self, df:pd.DataFrame, final: geotime_schema.Classifications) -> geotime_schema.Classifications:
+        for classification in final.classifications:
+            
+            if classification.category != geotime_schema.category.time:
+                continue
+            if classification.format is None:
+                continue
+
+            #convert the datetime strings in the dataframe to unix timestamps using the classification format
+            times = df[classification.column].to_list()
+            times = [datetime.datetime.strptime(s, classification.format).timestamp() for s in times]
+            times = np.array(times)
+            
+            classification.time_resolution = utilities.detect_resolution(times)
+
+        return final
+    
     def columns_classified(self, path):
         logging.info('starting classification')
         df = self.read_in_csv(path)
@@ -2690,6 +2708,7 @@ class GeoTimeClassify:
         output = self.assign_heuristic_function_enhanced(preds, fuzzyMatchColumns)
         fuzzyMatch = self.fuzzymatchColumns(output)
         final = self.final_step(fuzzyMatch)
+        final = self.predict_temporal_resolution(df, final)
         return final
 
     def get_Fake_Data(self):
