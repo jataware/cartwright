@@ -6,7 +6,7 @@ def detect_resolution(times:np.ndarray) -> Optional[TimeResolution]:
     """
     Detect the resolution of temporal data.
     
-    @param times: a numpy array of unix times in SECONDS (may have duplicates)
+    @param times: a numpy array of unix times in [SECONDS] (may have duplicates)
     @return: (optional) TimeResolution(uniformity, unit_name, avg_density, avg_error) where 
         - uniformity is a Uniformity enum 
         - unit_name is a TimeUnits enum
