@@ -105,12 +105,12 @@ def time_resolution_whole_pipeline(unit:TimeUnit, uniformity:Uniformity, num_row
 
 
 def tests():
-    # yield testoncsv
-    # yield test_time_resolution_in_pipeline
+    yield testoncsv
+    yield test_time_resolution_in_pipeline
 
-    # for uniformity in Uniformity:
-    #     for unit in [*TimeUnit][1:]: #skip milliseconds b/c precision isn't high enough
-    #         yield f'time_resolution_algorithm({unit},{uniformity})', lambda: time_resolution_algorithm(unit, uniformity)
+    for uniformity in Uniformity:
+        for unit in [*TimeUnit][1:]: #skip milliseconds b/c precision isn't high enough
+            yield f'time_resolution_algorithm({unit},{uniformity})', lambda: time_resolution_algorithm(unit, uniformity)
     
     for uniformity in Uniformity:
         for unit in [*TimeUnit][1:]:
