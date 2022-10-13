@@ -108,7 +108,7 @@ class Uniformity(Enum):
             return 'not uniform'
 
 
-class TimeUnits(float, Enum):
+class TimeUnit(float, Enum):
     millisecond = 1e-3
     second = 1
     minute = 60 * second
@@ -125,7 +125,7 @@ class TimeUnits(float, Enum):
 @dataclass
 class TimeResolution:
     uniformity: Uniformity
-    unit: TimeUnits
+    unit: TimeUnit
     density: float
     error: float
 

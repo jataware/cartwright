@@ -1,6 +1,6 @@
 import numpy as np
 from typing import Optional
-from geotime_classify.geotime_schema import TimeUnits, Uniformity, TimeResolution
+from geotime_classify.geotime_schema import TimeUnit, Uniformity, TimeResolution
 
 def detect_resolution(times:np.ndarray) -> Optional[TimeResolution]:
     """
@@ -23,34 +23,24 @@ def detect_resolution(times:np.ndarray) -> Optional[TimeResolution]:
     deltas = times[1:] - times[:-1]
 
     #compute the average delta
-    # avg = stats.mode(deltas)[0][0]
-    # avg = np.mean(deltas)
     avg = np.median(deltas)
 
     #if all data within 1% of the mode, assume uniform
     uniformity_score = np.abs(deltas - avg)
-    if np.all(uniformity_score == 0.0):
-        print('perfectly uniform')
+    if np.all(uniformity_score < 1e-9 * avg):
         uniformity = Uniformity.PERFECT
     elif uniformity_score.max() < 0.01 * avg:
-        print('uniform to within 1%')
         uniformity = Uniformity.UNIFORM
     else:
-        print('not uniform')
         uniformity = Uniformity.NOT_UNIFORM
 
     #find the closest duration unit
-    names = [*TimeUnits.__members__.keys()]
-    durations = np.array([getattr(TimeUnits, name).value for name in names])
+    names = [*TimeUnit.__members__.keys()]
+    durations = np.array([getattr(TimeUnit, name).value for name in names])
     unit_errors = np.abs(durations - avg)/durations
     closest = np.argmin(unit_errors)
-    unit = getattr(TimeUnits, names[closest])
+    unit = getattr(TimeUnit, names[closest])
     errors = np.abs(1 - deltas / durations[closest]) #errors in terms of the closest unit
 
-    #TODO: could do some sort of thresholding to determine if it matched any of the durations or was something else
-    # print(f'`{names[closest]}` matches average delta with {unit_errors[closest]*100:.2f}% error')
-    # print(f'all deltas ({names[closest]}s):')
-    # print(f'{deltas/durations[closest]}')
-    # print('=========================================')
-
+    #return the results
     return TimeResolution(uniformity, unit, avg/durations[closest], errors.mean())

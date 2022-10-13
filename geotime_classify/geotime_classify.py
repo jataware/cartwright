@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from __future__ import unicode_literals, print_function, division
-from geotime_classify import utilities
+from geotime_classify import time_resolution
 
 import torch
 import torch.autograd as autograd
@@ -2694,7 +2694,7 @@ class GeoTimeClassify:
             times = [datetime.datetime.strptime(s, classification.format).timestamp() for s in times]
             times = np.array(times)
             
-            classification.time_resolution = utilities.detect_resolution(times)
+            classification.time_resolution = time_resolution.detect_resolution(times)
 
         return final
     
