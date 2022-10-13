@@ -2682,19 +2682,24 @@ class GeoTimeClassify:
         return index_nan
 
     def predict_temporal_resolution(self, df:pd.DataFrame, final: geotime_schema.Classifications) -> geotime_schema.Classifications:
+        found_time = False
         for classification in final.classifications:
             
             if classification.category != geotime_schema.category.time:
                 continue
             if classification.format is None:
                 continue
+            found_time = True
 
             #convert the datetime strings in the dataframe to unix timestamps using the classification format
             times = df[classification.column].to_list()
-            times = [datetime.datetime.strptime(s, classification.format).timestamp() for s in times]
+            times = [datetime.datetime.strptime(s, classification.format).replace(tzinfo=datetime.timezone.utc).timestamp() for s in times]
             times = np.array(times)
             
             classification.time_resolution = time_resolution.detect_resolution(times)
+
+        if not found_time:
+            logging.warning("No time columns found to predict temporal resolution")
 
         return final
     

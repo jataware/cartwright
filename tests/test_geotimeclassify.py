@@ -1,8 +1,10 @@
+from datetime import datetime
 from geotime_classify import geotime_classify
 import os
 import numpy as np
 import pandas as pd
 import timeit
+import time
 
 import pdb
 
@@ -11,6 +13,9 @@ from geotime_classify.geotime_schema import TimeUnit, Uniformity
 #disable logging for tests
 import logging
 logging.disable(logging.CRITICAL)
+
+#seed the random number generator
+np.random.seed(0)
 
 def testoncsv():
     t= geotime_classify.GeoTimeClassify(20)
@@ -24,7 +29,8 @@ def test_time_resolution_in_pipeline():
     assert time_res.unit == TimeUnit.year
 
 
-def time_resolution_simple(unit:TimeUnit, uniformity:Uniformity, num_rows=int(2e6)):
+def time_resolution_algorithm(unit:TimeUnit, uniformity:Uniformity, num_rows=int(1e6)):
+
     #generate some fake data
     times = np.ones(num_rows,dtype=np.float64) * unit
     times = times.cumsum()
@@ -44,11 +50,15 @@ def time_resolution_simple(unit:TimeUnit, uniformity:Uniformity, num_rows=int(2e
     assert res.uniformity == uniformity, f'failed to detect {uniformity} uniformity for {unit}, instead got {res.uniformity}'
 
 
-def time_resolution_whole_pipeline(unit:TimeUnit, uniformity:Uniformity, num_rows=int(2e6)):
+def time_resolution_whole_pipeline(unit:TimeUnit, uniformity:Uniformity, num_rows=int(1e6)):
     #generate some fake data
     times = np.ones(num_rows,dtype=np.float64) * unit
     times = times.cumsum()
-    times += np.random.randint(-62110893896, 253395464342) #1 CE - 9999 CE (maximum allowed by pandas)
+    times += np.random.randint(datetime(1000,1,1).timestamp(), datetime(3000,1,1).timestamp())
+
+    #remove any times more than the maximum datetime (year 9999)
+    times = times[times < datetime(9999,1,1).timestamp()]
+    num_rows = len(times)
 
     if uniformity == Uniformity.PERFECT:
         pass
@@ -84,28 +94,27 @@ def time_resolution_whole_pipeline(unit:TimeUnit, uniformity:Uniformity, num_row
     time_cols = [c for c in res.classifications if c.category == 'time']
     assert len(time_cols) == 1, f'expected 1 time column, got {len(time_cols)}'
     time_res = time_cols[0].time_resolution
-    # print(time_res)
+    assert time_res is not None, 'time resolution information was not detected'
 
-    try:
-        assert time_res.unit == unit, f'failed to detect {unit}, instead got {time_res.unit}'
-        assert time_res.uniformity == uniformity, f'failed to detect {uniformity} uniformity for {unit}, instead got {time_res.uniformity}'
-    except Exception as e:
-        pdb.set_trace()
-        raise e
+
+    assert time_res.unit == unit, f'failed to detect {unit}, instead got {time_res.unit}'
+    assert time_res.uniformity == uniformity, f'failed to detect {uniformity} uniformity for {unit}, instead got {time_res.uniformity}'
+
     os.remove('test.csv')
+    del df, res, t
 
 
 def tests():
-    yield testoncsv
-    yield test_time_resolution_in_pipeline
+    # yield testoncsv
+    # yield test_time_resolution_in_pipeline
 
-    for uniformity in Uniformity:
-        for unit in [*TimeUnit][1:]: #skip milliseconds b/c precision isn't high enough
-            yield f'time_resolution_simple({unit},{uniformity})', lambda: time_resolution_simple(unit, uniformity)
+    # for uniformity in Uniformity:
+    #     for unit in [*TimeUnit][1:]: #skip milliseconds b/c precision isn't high enough
+    #         yield f'time_resolution_algorithm({unit},{uniformity})', lambda: time_resolution_algorithm(unit, uniformity)
     
     for uniformity in Uniformity:
         for unit in [*TimeUnit][1:]:
-            yield f'time_resolution_whole_pipeline({unit}:{uniformity})', lambda: time_resolution_whole_pipeline(unit, uniformity)
+            yield f'time_resolution_whole_pipeline({unit},{uniformity})', lambda: time_resolution_whole_pipeline(unit, uniformity)
 
 
 if __name__ == "__main__":
@@ -120,6 +129,7 @@ if __name__ == "__main__":
             print(f'PASSED {name}: {t.timeit(1):.04f} (seconds)')
         except Exception as e:
             print(f'FAILED {name}: {e}')
+    time.sleep(1)
 
     print('Completed all tests')
     
