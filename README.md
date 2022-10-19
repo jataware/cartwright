@@ -51,12 +51,14 @@ Now we have our GeoTimeClassify class instantiated we can use the ***columns_cla
   Possible information returned for each column are:
   1. **'column'**:Column name in csv
   2. **'classification'**: an array with a few possible values:
-	  A. *'category'*: The final classified name for the column** most important return
-	  B. *'subcategory'*: This will be returned if there is addition sub categories for the classification. E.g. [{'Category': 'Geo', 'type': 'Latitude (number)'}]
-	  C. *'format'*: If the column is classified as a date it will give the best guess at the format for that date column. 
-	  D. *'parser'*: This lets you know what parser was used for determining if it was a valid date or not. The two options are 'Arrow' and 'Util' which represent the arrow and dateutil libraries respectively. 
-	  E. *'dayFirst'*: A boolean value. If the column is classified as a date the validation code will try to test if day or month come first in the format, which is necessary for accurate date standardization. 
-      F. *'match_type'*: How the classification was made. LSTM for the model, fuzzy for fuzzywuzzy match on column headers.
+      - *'category'*: The final classified name for the column** most important return
+      - *'subcategory'*: This will be returned if there is addition sub categories for the classification. E.g. [{'Category': 'Geo', 'type': 'Latitude (number)'}]
+      - *'format'*: If the column is classified as a date it will give the best guess at the format for that date column. 
+      - *'time_resolution'*: for temporal columns, the automatically detected density of timestamps in this column.
+      - *'parser'*: This lets you know what parser was used for determining if it was a valid date or not. The two options are 'Arrow' and 'Util' which represent the arrow and dateutil libraries respectively.
+      - *'dayFirst'*: A boolean value. If the column is classified as a date the validation code will try to test if day or month come first in the format, which is necessary for accurate date standardization.
+      - *'match_type'*: How the classification was made. LSTM for the model, fuzzy for fuzzywuzzy match on column headers.
+
 5. **'fuzzyColumn'**: This is returned if the column name is similar enough to any word in a list of interest. Shown below.
     [  
     "Date",  
@@ -118,6 +120,7 @@ The workflow consists of four main sections.
 1. Geotime Classify Model
 2. Heuristic Functions
 3. Column Header Fuzzy Match
+4. Automatic Temporal Resolution Detection
 
 
 Workflow overview
@@ -155,6 +158,37 @@ The heuristic functions ingest the prediction classifications from the model alo
 
 ## Column Header Fuzzy Match
 This is the most simple part of the workflow. For each column header we try to match that string to a word of interest. If there is a high match ratio the code returns the word of interest. For more info you can see Fuzzywuzzy docs [here](https://pypi.org/project/fuzzywuzzy/).
+
+
+## Automatic Temporal Resolution Detection
+If a dataset contains data at evenly spaced intervals, the resolution is automatically detected according to the following process:
+1. convert all unique dates/times to unix timestamps
+2. sort the timestamps and compute the delta time between each
+3. find the median of the deltas
+4. characterize the uniformity of the deltas
+    - if all deltas are identical (to within some small ϵ), mark as `PERFECT`
+    - if the maximum deviation from the median is less than 1% the magnitude of the median, mark as (approximate) `UNIFORM`
+    - otherwise mark as `NOT_UNIFORM`
+5. if the deltas are perfectly or approximately uniform, find the closest matching time unit from a preset list:
+    - ~~`millisecond` (1e-3 * second)~~
+    - `second` (1)
+    - `minute` (60 * second)
+    - `hour` (60 * minute)
+    - `day` (24 * hour)
+    - `week` (7 * day)
+    - `year` (365 * day)
+    - `month` (year / 12)
+    - `decade` (10 * year + 2 * day)
+    - `century` (100 * year + 24 * day)
+    - `millennium` (1000 * year + 242 * day)
+
+    in the future, temporal units will be drawn from a more comprehensive units ontology
+6. convert the median delta to a proportion of the matched unit, and set as the temporal unit for the dataset
+
+Currently milliseconds may experience issues due to floating point precision errors, and thus may not be detected by this process.
+
+time resolutions are represented by a `TimeResolution` object with values: `uniformity` enum, `unit` enum, `density` value (in the unit given), and mean `error` value. If the detection process fails, the object will be `None`
+
 
 
 ## Retraining geotime_classify with github repo
