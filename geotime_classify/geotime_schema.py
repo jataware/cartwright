@@ -1,4 +1,5 @@
-from enum import Enum, IntEnum
+from dataclasses import dataclass
+from enum import Enum, IntEnum, auto
 from pydantic import BaseModel, constr, Field
 from typing import List, Optional
 
@@ -92,6 +93,43 @@ class Parser(str,Enum):
     Util="Util"
     arrow="arrow"
 
+
+class Uniformity(Enum):
+    PERFECT = auto()
+    UNIFORM = auto()
+    NOT_UNIFORM = auto()
+
+    def description(self):
+        if self == Uniformity.PERFECT:
+            return 'perfectly uniform'
+        elif self == Uniformity.UNIFORM:
+            return 'uniform to within 1%'
+        elif self == Uniformity.NOT_UNIFORM:
+            return 'not uniform'
+
+
+class TimeUnit(float, Enum):
+    millisecond = 1e-3
+    second = 1
+    minute = 60 * second
+    hour = 60 * minute
+    day = 24 * hour
+    week = 7 * day
+    year = 365 * day
+    month = year / 12
+    decade = 10 * year + 2 * day
+    century = 100 * year + 24 * day
+    millennium = 1000 * year + 242 * day
+
+
+@dataclass
+class TimeResolution:
+    uniformity: Uniformity
+    unit: TimeUnit
+    density: float
+    error: float
+
+
 class Classification(BaseModel):
     """
         Classification is the classifciation information for one column.
@@ -100,6 +138,7 @@ class Classification(BaseModel):
     category: Optional[category]
     subcategory: Optional[subcategory]
     format: str = Field(default=None, description='the date represented in strftime format')
+    time_resolution: Optional[TimeResolution]
     match_type: List[matchtype]
     Parser: Optional[Parser]
     DayFirst: bool = Field(default=None, description='Boolean: if day is first in date format' )
