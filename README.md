@@ -1,5 +1,7 @@
 # Geotime Classify
 
+![Tests](https://github.com/jataware/geotime_classify/actions/workflows/tests.yml/badge.svg)
+
 This model is a recurrent neural network that uses LSTM to learn text classification. The goal of this project was for a given spreadsheet where we expect some kind of geospatial and temporal columns, can we automatically infer things like:
 
 -   Country
