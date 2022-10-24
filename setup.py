@@ -36,7 +36,7 @@ setup(
     url='https://github.com/jataware/geotime_classify',
     packages=find_packages(),
     package_dir={'geotime_classify': 'geotime_classify'},
-    package_data={'geotime_classify': ['models/*','datasets/*']},
+    package_data={'geotime_classify': ['models/*','datasets/*', 'py.typed']},
     py_modules=['geotime_schema'],
     # include_package_data=True,
     zip_safe=False,
@@ -66,8 +66,10 @@ setup(
     install_requires=read_file('requirements.txt', lambda f: list(
             filter(bool, map(str.strip, f)))),
 
-
-    extras_require={"dev": ["pytest>=3.7", "twine>=3.3.0"]},
+    extras_require={
+        "dev": read_file('requirements-dev.txt', lambda f: list(
+            filter(bool, map(str.strip, f)))),
+    },
     setup_requires=[
         'pytest-runner',
     ],

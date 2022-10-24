@@ -19,6 +19,8 @@ logging.disable(logging.CRITICAL)
 np.random.seed(0)
 
 
+DEFAULT_NUM_ROWS = 200#int(1e6)
+
 
 """
 Run tests with pytest in the root directory of the project
@@ -45,7 +47,7 @@ Run tests with pytest in the root directory of the project
         *[(unit, uniformity) for uniformity in Uniformity for unit in TimeUnit if unit != TimeUnit.millisecond],
     ]
 )
-def test_time_resolution_algorithm(unit:TimeUnit, uniformity:Uniformity, num_rows=int(1e6)):
+def test_time_resolution_algorithm(unit:TimeUnit, uniformity:Uniformity, num_rows=DEFAULT_NUM_ROWS):
 
     #generate some fake data
     times = np.ones(num_rows,dtype=np.float64) * unit
@@ -79,7 +81,7 @@ def test_time_resolution_algorithm(unit:TimeUnit, uniformity:Uniformity, num_row
         *[(unit, uniformity) for uniformity in Uniformity for unit in TimeUnit if unit > TimeUnit.minute], #all units greater than minute pass all the tests
     ]
 )
-def test_time_resolution_whole_pipeline(unit:TimeUnit, uniformity:Uniformity, num_rows=int(1e6)):
+def test_time_resolution_whole_pipeline(unit:TimeUnit, uniformity:Uniformity, num_rows=DEFAULT_NUM_ROWS):
     #generate some fake data
     times = np.ones(num_rows,dtype=np.float64) * unit
     times = times.cumsum()
