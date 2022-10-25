@@ -89,7 +89,7 @@ def test_time_resolution_whole_pipeline(unit:TimeUnit, uniformity:Uniformity, nu
     times = np.ones(num_rows,dtype=np.float64) * unit
     times = times.cumsum()
     min_time = (datetime(1971,1,1) if os.name == 'nt' else datetime(1000,1,1)).timestamp() #windows can't convert dates before 1970 
-    max_time = datetime(2500,1,1).timestamp()
+    max_time = datetime(2100,1,1).timestamp()
     times += np.random.randint(min_time, max_time, dtype=np.int64)
 
     #remove any times more than the maximum datetime (9999 is the max unix datetime. windows only goes to 3001)
