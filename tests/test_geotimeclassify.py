@@ -78,7 +78,10 @@ def test_time_resolution_algorithm(unit:TimeUnit, uniformity:Uniformity, num_row
         pytest.param(TimeUnit.minute, Uniformity.PERFECT),
         pytest.param(TimeUnit.minute, Uniformity.UNIFORM, marks=pytest.mark.xfail(reason="for some reason, uniformity is detected as not uniform")),
         pytest.param(TimeUnit.minute, Uniformity.NOT_UNIFORM),
-        *[(unit, uniformity) for uniformity in Uniformity for unit in TimeUnit if unit > TimeUnit.minute], #all units greater than minute pass all the tests
+        pytest.param(TimeUnit.millennium, Uniformity.PERFECT, marks=pytest.mark.xfail(reason="Windows doesn't support a large enough range of timestamps")),
+        pytest.param(TimeUnit.millennium, Uniformity.UNIFORM, marks=pytest.mark.xfail(reason="Windows doesn't support a large enough range of timestamps")),
+        pytest.param(TimeUnit.millennium, Uniformity.NOT_UNIFORM, marks=pytest.mark.xfail(reason="Windows doesn't support a large enough range of timestamps")),
+        *[(unit, uniformity) for uniformity in Uniformity for unit in TimeUnit if TimeUnit.minute < unit < TimeUnit.millennium], #all units greater than minute pass all the tests
     ]
 )
 def test_time_resolution_whole_pipeline(unit:TimeUnit, uniformity:Uniformity, num_rows=DEFAULT_NUM_ROWS):
@@ -86,11 +89,11 @@ def test_time_resolution_whole_pipeline(unit:TimeUnit, uniformity:Uniformity, nu
     times = np.ones(num_rows,dtype=np.float64) * unit
     times = times.cumsum()
     min_time = (datetime(1971,1,1) if os.name == 'nt' else datetime(1000,1,1)).timestamp() #windows can't convert dates before 1970 
-    max_time = datetime(3000,1,1).timestamp()
+    max_time = datetime(2500,1,1).timestamp()
     times += np.random.randint(min_time, max_time, dtype=np.int64)
 
-    #remove any times more than the maximum datetime (year 9999)
-    times = times[times < datetime(9999,1,1).timestamp()]
+    #remove any times more than the maximum datetime (9999 is the max unix datetime. windows only goes to 3001)
+    times = times[times < datetime(3000,1,1).timestamp()]
     num_rows = len(times)
 
     if uniformity == Uniformity.PERFECT:
