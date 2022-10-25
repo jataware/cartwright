@@ -52,7 +52,7 @@ def test_time_resolution_algorithm(unit:TimeUnit, uniformity:Uniformity, num_row
     #generate some fake data
     times = np.ones(num_rows,dtype=np.float64) * unit
     times = times.cumsum()
-    times += np.random.randint(-377711962054, 379654882584) #10,000 BCE - 14,000 CE
+    times += np.random.randint(-377711962054, 379654882584, dtype=np.int64) #10,000 BCE - 14,000 CE
 
     if uniformity == Uniformity.PERFECT:
         pass
@@ -85,7 +85,7 @@ def test_time_resolution_whole_pipeline(unit:TimeUnit, uniformity:Uniformity, nu
     #generate some fake data
     times = np.ones(num_rows,dtype=np.float64) * unit
     times = times.cumsum()
-    times += np.random.randint(datetime(1000,1,1).timestamp(), datetime(3000,1,1).timestamp())
+    times += np.random.randint(datetime(1000,1,1).timestamp(), datetime(3000,1,1).timestamp(), dtype=np.int64)
 
     #remove any times more than the maximum datetime (year 9999)
     times = times[times < datetime(9999,1,1).timestamp()]
