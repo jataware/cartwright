@@ -8,4 +8,4 @@ joblib==1.0.1
 torch>=1.8
 torchvision>=0.9
 pydantic==1.8.2
-python-Levenshtein==0.12.2
+python-Levenshtein==0.20.7
