@@ -19,7 +19,7 @@ logging.disable(logging.CRITICAL)
 np.random.seed(0)
 
 
-DEFAULT_NUM_ROWS = int(1e6)
+DEFAULT_NUM_ROWS = 200#int(1e6)
 
 
 """
