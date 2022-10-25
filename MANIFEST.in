@@ -4,10 +4,12 @@ graft tests
 include .editorconfig
 
 include AUTHORS.rst
-include CHANGELOG.rst
+include CHANGELOG.md
 include CONTRIBUTING.rst
 include LICENSE
-include README.rst
+include README.md
+include requirements.txt
+include requirements-dev.txt
 include geotime_classify/models/LSTM_RNN_Geotime_Classify_v_0.07_dict.pth
 include geotime_classify/datasets/city.csv
 include geotime_classify/datasets/continent_code.csv
