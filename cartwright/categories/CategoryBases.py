@@ -17,33 +17,40 @@ from cartwright.utils import (
     fuzzy_match,
 )
 
-country_lookup = pd.read_csv(
-    pkg_resources.resource_stream(__name__, "../resources/country_lookup.csv"),
-    encoding="latin-1",
-)
-city_lookup = pd.read_csv(
-    pkg_resources.resource_stream(__name__, "../resources/city_lookup.csv"),
-    encoding="latin-1",
-)
-state_lookup = pd.read_csv(
-    pkg_resources.resource_stream(__name__, "../resources/states_provinces_lookup.csv"),
-    encoding="latin-1",
-)
-cont_lookup = pd.read_csv(
-    pkg_resources.resource_stream(__name__, "../resources/continent_lookup.csv"),
-    encoding="latin-1",
-)
 
+#TODO: better name for this class? e.g. GeoRef or something
+class Lookup:
+    country = pd.read_csv(
+        pkg_resources.resource_stream(__name__, "../resources/country_lookup.csv"),
+        encoding="latin-1",
+    )
+    city = pd.read_csv(
+        pkg_resources.resource_stream(__name__, "../resources/city_lookup.csv"),
+        encoding="latin-1",
+    )
+    state = pd.read_csv(
+        pkg_resources.resource_stream(__name__, "../resources/states_provinces_lookup.csv"),
+        encoding="latin-1",
+    )
+    continent = pd.read_csv(
+        pkg_resources.resource_stream(__name__, "../resources/continent_lookup.csv"),
+        encoding="latin-1",
+    )
+
+    #make instantiating this class impossible
+    def __new__(cls):
+        raise Exception("This class is a singleton. All properties are attached to the class itself.")
 
 
 
 class CategoryBase:
     def __init__(
         self,
-        country_lookup=country_lookup,
-        city_lookup=city_lookup,
-        state_lookup=state_lookup,
-        cont_lookup=cont_lookup,
+        #TODO: should this just be no parameters, and these are set directly in init?
+        country_lookup=Lookup.country,
+        city_lookup=Lookup.city,
+        state_lookup=Lookup.state,
+        cont_lookup=Lookup.continent,
     ):
         self.fake = Faker()
         self.country_lookup = country_lookup
@@ -57,7 +64,7 @@ class CategoryBase:
         self.cont_lookup = cont_lookup
         self.cont_names = np.asarray(self.cont_lookup["continent_name"])
         self.cont_codes=self.cont_lookup['continent_code'].unique()
-        self.cont_codes[1]='NA'
+        self.cont_codes[1]='NA' #fix continent code NA for north america converted to nan
 
     def class_name(self):
         return self.__class__.__name__
