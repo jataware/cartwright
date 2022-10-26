@@ -285,6 +285,24 @@ class DateBase(CategoryBase):
             "Saturday",
             "Sunday",
         ]
+        self.threshold=.85
+
+    def validate_series(self, series):
+        valid_samples=0
+        for sample in series:
+            try:
+                if self.validate(sample):
+                    valid_samples+=1
+
+            except Exception as e:
+                print(e)
+        return valid_samples,len(series)
+
+    def validate(self, value):
+        return self.is_date_(value, day_first=self.day_first)
+
+    def pass_validation(self, number_validated, number_of_samples):
+        return self.threshold_check(number_validated,number_of_samples,self.threshold, self.day_first)
 
     def month_day_format(self, values, dayFirst=True, separator="-", day_month_locs=[]):
 
@@ -438,41 +456,57 @@ class DateBase(CategoryBase):
                 logging.error(f"date_util - {date}: {e}")
         return util_dates, dayFirst
 
-    def validate_month_day(self, values):
-        try:
-            month_day_results = []
-            for i, md in enumerate(values):
-                try:
-                    if str.isdigit(md):
-                        if 12 >= int(md) >= 1:
-                            month_day_results.append("month_day")
-                        elif 12 < int(md) <= 31:
-                            month_day_results.append("day")
-                        else:
-                            month_day_results.append("failed")
-                    else:
-                        logging.warning("Month_day test: Not a valid digit")
-                except Exception as e:
-                    logging.error(f"month_day_f - {md}: {e}")
+    def is_date_(self, date, day_first):
+        dateUtil = dateutil.parser.parse(str(date), dayfirst=day_first)
+        if isinstance(dateUtil, datetime.date):
+            return True
 
-            if "failed" in month_day_results:
-                return build_return_standard_object(
-                    category=None, subcategory=None, match_type=None
-                )
-            elif "day" in month_day_results:
-                return build_return_date_object(
-                    format=self.day_ddOrd(values), dayFirst=None
-                )
-            elif "month_day" in month_day_results:
-                return build_return_date_object(
-                    format=self.month_MMorM(values), dayFirst=None
-                )
-            else:
-                return build_return_standard_object(
-                    category=None, subcategory=None, match_type=None
-                )
-        except Exception as e:
-            return self.exception_category(e)
+    def is_date_arrow(self,date):
+        dateArrow = arrow.get(str(date), normalize_whitespace=True).datetime
+
+        if isinstance(dateArrow, datetime.date):
+            return True
+
+    def threshold_check(self, number_validated, number_of_samples, threshold, day_first):
+        if number_validated >= number_of_samples * threshold:
+            return build_return_date_object(format=self.return_label()[5:], dayFirst=day_first)()
+        raise
+
+    # def validate_month_day(self, values):
+    #     try:
+    #         month_day_results = []
+    #         for i, md in enumerate(values):
+    #             try:
+    #                 if str.isdigit(md):
+    #                     if 12 >= int(md) >= 1:
+    #                         month_day_results.append("month_day")
+    #                     elif 12 < int(md) <= 31:
+    #                         month_day_results.append("day")
+    #                     else:
+    #                         month_day_results.append("failed")
+    #                 else:
+    #                     logging.warning("Month_day test: Not a valid digit")
+    #             except Exception as e:
+    #                 logging.error(f"month_day_f - {md}: {e}")
+    #
+    #         if "failed" in month_day_results:
+    #             return build_return_standard_object(
+    #                 category=None, subcategory=None, match_type=None
+    #             )
+    #         elif "day" in month_day_results:
+    #             return build_return_date_object(
+    #                 format=self.day_ddOrd(values), dayFirst=None
+    #             )
+    #         elif "month_day" in month_day_results:
+    #             return build_return_date_object(
+    #                 format=self.month_MMorM(values), dayFirst=None
+    #             )
+    #         else:
+    #             return build_return_standard_object(
+    #                 category=None, subcategory=None, match_type=None
+    #             )
+    #     except Exception as e:
+    #         return self.exception_category(e)
 
     def validate_day_name(self, values):
         try:

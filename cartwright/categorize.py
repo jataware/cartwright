@@ -31,67 +31,98 @@ import logging
 from .LSTM import PaddedTensorDataset
 from .CartWrightBase import CartWrightBase
 
-from .utils import days_of_the_week , \
-                  months_of_the_year , \
-                  columns_to_classify_and_skip_if_found , \
-                  columns_to_classify_if_found , \
-                  character_tokins, \
-                  fuzzy_match,fuzzy_ratio,\
-                  build_return_standard_object
-from cartwright.category_helpers import return_all_category_classes_and_labels, generate_label_id
+from .utils import (
+    days_of_the_week,
+    months_of_the_year,
+    columns_to_classify_and_skip_if_found,
+    columns_to_classify_if_found,
+    character_tokins,
+    fuzzy_match,
+    fuzzy_ratio,
+    build_return_standard_object,
+)
+from cartwright.category_helpers import (
+    return_all_category_classes_and_labels,
+    generate_label_id,
+)
 
 
 # Set log level and formatter
 logging.getLogger().setLevel(level="ERROR")
-logging.basicConfig(format='%(levelname)s - %(asctime)s %(message)s')
+logging.basicConfig(format="%(levelname)s - %(asctime)s %(message)s")
 
 
 def timeout():
-    return build_return_standard_object(category="timeout", subcategory=None, match_type=[])
+    return build_return_standard_object(
+        category="timeout", subcategory=None, match_type=[]
+    )
 
 
-def skipped( column, fuzzy_matched):
+def skipped(column, fuzzy_matched):
     category = None
     subcategory = None
     match_type = None
     try:
         for match in fuzzy_matched:
-            if column == match['header']:
-                match_type = 'fuzzy'
+            if column == match["header"]:
+                match_type = "fuzzy"
                 category = "geo"
-                subcategory = match['value']
+                subcategory = match["value"]
 
-        return build_return_standard_object(category=category, subcategory=subcategory, match_type=match_type)
+        return build_return_standard_object(
+            category=category, subcategory=subcategory, match_type=match_type
+        )
     except Exception as e:
-        logging.error(f'Skipped validation error: {e}')
-        return build_return_standard_object(category=None, subcategory=None, match_type=None)
+        logging.error(f"Skipped validation error: {e}")
+        return build_return_standard_object(
+            category=None, subcategory=None, match_type=None
+        )
 
 
 class CartwrightClassify(CartWrightBase):
     def __init__(self, number_of_samples, seconds_to_finish=40):
         super().__init__()
         self.model.load_state_dict(
-            torch.load(pkg_resources.resource_stream(__name__, 'models/LSTM_RNN_CartWright_v_0.0.0.1_dict.pth')))
+            torch.load(
+                pkg_resources.resource_stream(
+                    __name__, "models/LSTM_RNN_CartWright_v_0.0.0.1_dict.pth"
+                )
+            )
+        )
         self.model.eval()
         self.number_of_random_samples = number_of_samples
         #       prediction tensors with the best match being less than predictionLimit will not be returned
         self.predictionLimit = -4.5
-        self.country_lookup = pd.read_csv(pkg_resources.resource_stream(__name__, 'resources/country_lookup.csv'),
-                                          encoding='latin-1')
-        self.city_lookup = pd.read_csv(pkg_resources.resource_stream(__name__, 'resources/city.csv'),
-                                       encoding='latin-1')
+        self.country_lookup = pd.read_csv(
+            pkg_resources.resource_stream(__name__, "resources/country_lookup.csv"),
+            encoding="latin-1",
+        )
+        self.city_lookup = pd.read_csv(
+            pkg_resources.resource_stream(__name__, "resources/city.csv"),
+            encoding="latin-1",
+        )
         self.city_lookup = np.asarray(self.city_lookup["city"])
-        self.state_lookup = pd.read_csv(pkg_resources.resource_stream(__name__, 'resources/states_provinces_lookup.csv'),
-                                        encoding='latin-1')
+        self.state_lookup = pd.read_csv(
+            pkg_resources.resource_stream(
+                __name__, "resources/states_provinces_lookup.csv"
+            ),
+            encoding="latin-1",
+        )
         self.state_lookup = np.asarray(self.state_lookup["state_name"])
         self.country_name = np.asarray(self.country_lookup["country_name"])
         self.iso3_lookup = np.asarray(self.country_lookup["Alpha-3_Code"])
         self.iso2_lookup = np.asarray(self.country_lookup["Alpha-2_Code"])
-        self.cont_lookup = pd.read_csv(pkg_resources.resource_stream(__name__, 'resources/continent_lookup.csv'),
-                                       encoding='latin-1')
+        self.cont_lookup = pd.read_csv(
+            pkg_resources.resource_stream(__name__, "resources/continent_lookup.csv"),
+            encoding="latin-1",
+        )
         self.cont_lookup = np.asarray(self.cont_lookup["continent_name"])
-        self.fake_data = pd.read_csv(pkg_resources.resource_stream(__name__, 'datasets/Fake_data.csv'), #cartwright/datasets/Fake_data.csv
-                                    encoding='latin-1')
+        self.fake_data = pd.read_csv(
+            pkg_resources.resource_stream(
+                __name__, "datasets/Fake_data.csv"
+            ),  # cartwright/datasets/Fake_data.csv
+            encoding="latin-1",
+        )
         self.seconds_to_finish = seconds_to_finish
         self.days_of_week = days_of_the_week
         self.month_of_year = months_of_the_year
@@ -100,18 +131,18 @@ class CartwrightClassify(CartWrightBase):
         self.label2id = generate_label_id(self.all_labels)
         self.n_categories = len(self.label2id)
 
-
     def evaluate_test_set(self, test):
         predictions = []
 
         for batch, targets, lengths, raw_data in self.create_dataset(
-                test, batch_size=1
+            test, batch_size=1
         ):
             batch, targets, lengths = self.sort_batch(batch, targets, lengths)
             # print(batch,targets,lengths)
             # print(torch.autograd.Variable(batch))
             pred = self.model(torch.autograd.Variable(batch), lengths.cpu().numpy())
             pred_idx = torch.max(pred, 1)[1]
+
             def get_key(val):
                 for key, value in self.label2id.items():
                     if val == value:
@@ -156,16 +187,16 @@ class CartwrightClassify(CartWrightBase):
             "averaged_tensor": out,
             "averaged_top_category": {True: "None", False: topcat}[
                 maxValue < self.predictionLimit
-                ],
+            ],
         }
 
     def return_data(self):
         return self.cont_lookup
 
     def predictions(self, index_remove):
-        logging.info('Start LSTM predictions ...')
+        logging.info("Start LSTM predictions ...")
         print("starting lstm")
-        column_value_object = self.generate_column_values_dict( index_remove)
+        column_value_object = self.generate_column_values_dict(index_remove)
         self.column_value_object = column_value_object
         predictionList = []
         for i, column in enumerate(column_value_object):
@@ -211,32 +242,35 @@ class CartwrightClassify(CartWrightBase):
         count = 0
         timesUp = time.perf_counter()
         while currentTime - timesUp < self.seconds_to_finish and count < len(predictions):
-            category=None
-            class_=None
+            category_name = None
+            category_obj = None
             try:
-                if predictions[count]['values'] == 'Skipped':
+                if predictions[count]["values"] == "Skipped":
                     pass
                 else:
+                    series = self.column_value_object[predictions[count]["column"]]
                     # find category form prediction
-                    category = predictions[count]["avg_predictions"]["averaged_top_category"]
+                    category_name = predictions[count]["avg_predictions"]["averaged_top_category"]
                     # map to correct class
-                    class_ = self.all_classes[category]
-                    array_of_valid = []
-                    for sample in self.column_value_object[predictions[count]["column"]]:
-                        try:
-                            # validate a sample
-                            array_of_valid.append(class_.validate(sample))
-                        except Exception as e:
-                            class_.exception_category()
-
+                    category_obj = self.all_classes[category_name]
+                    valid_sample_count, total_sample_count = category_obj.validate_series(series=series)
                     # Need to check the array of valid somehow
+                    try:
+                        final_categorization = category_obj.pass_validation(
+                            valid_sample_count,
+                            total_sample_count,
+                        )
+                    except Exception as e:
+                        final_categorization = build_return_standard_object(
+                            category=None, subcategory=None, match_type=None
+                        )
 
                     final_column_classification.append(
-                        add_obj({"column": predictions[count]["column"]},
-                                class_.validate(
-                                    self.column_value_object[predictions[count]["column"]]
-                                )))
-
+                        add_obj(
+                            {"column": predictions[count]["column"]},
+                            final_categorization,
+                        )
+                    )
             except Exception as e:
                 logging.error(f"While loop failed: {e}")
             count += 1
@@ -247,11 +281,12 @@ class CartwrightClassify(CartWrightBase):
         additionalColumnClassified = []
         for i, pred in enumerate(predictions):
             try:
-                if pred['values'] == 'Skipped':
+                if pred["values"] == "Skipped":
                     final_column_classification.append(
-                        add_obj({"column": pred["column"]}, skipped(
-                            pred['column'], fuzzy_matched
-                        ))
+                        add_obj(
+                            {"column": pred["column"]},
+                            skipped(pred["column"], fuzzy_matched),
+                        )
                     )
                     if i > count:
                         additionalColumnClassified.append(i)
@@ -280,10 +315,17 @@ class CartwrightClassify(CartWrightBase):
                     for key in keyValue:
                         if fuzzy_match(str(pred["column"]), str(key), 85):
                             T, ratio = fuzzy_ratio(str(pred["column"]), str(key), 85)
-                            predictions[i]['match_type'].append('fuzzy')
+                            predictions[i]["match_type"].append("fuzzy")
                             predictions[i]["fuzzyColumn"] = []
                             predictions[i]["fuzzyColumn"].append(
-                                {"matchedKey": str(key), "fuzzyCategory": columns_to_classify_if_found[y][key], "ratio": ratio})
+                                {
+                                    "matchedKey": str(key),
+                                    "fuzzyCategory": columns_to_classify_if_found[y][
+                                        key
+                                    ],
+                                    "ratio": ratio,
+                                }
+                            )
 
                 except Exception as e:
                     logging.error(f"fuzzy_match_columns - {keyValue}: {e}")
@@ -293,15 +335,18 @@ class CartwrightClassify(CartWrightBase):
                 if len(pred2["fuzzyColumn"]) > 1:
                     ind = 0
                     bestRatio = 0
-                    for i, fmatch in pred2['fuzzyColumn']:
+                    for i, fmatch in pred2["fuzzyColumn"]:
                         if fmatch["ratio"] > bestRatio:
                             bestRatio = fmatch["ratio"]
                             ind = i
-                    pred2['fuzzyColumn'] = pred2['fuzzyColumn'][ind]
+                    pred2["fuzzyColumn"] = pred2["fuzzyColumn"][ind]
                 else:
-                    pred2['fuzzyColumn'] = pred2['fuzzyColumn'][0]
+                    pred2["fuzzyColumn"] = pred2["fuzzyColumn"][0]
             except Exception as e:
-                logging.warning(pred2['column'], f"fuzzy_match_columns - Column has no fuzzy match: {e}")
+                logging.warning(
+                    pred2["column"],
+                    f"fuzzy_match_columns - Column has no fuzzy match: {e}",
+                )
 
         return predictions
 
@@ -316,7 +361,14 @@ class CartwrightClassify(CartWrightBase):
                         T, ratio = fuzzy_ratio(header, str(key), 90)
                         index_to_not_process.append(i)
                         array_of_columnMatch_index.append(
-                            {'index': i, 'header': header, 'key': key, 'value': keyValue[key], 'ratio': ratio})
+                            {
+                                "index": i,
+                                "header": header,
+                                "key": key,
+                                "value": keyValue[key],
+                                "ratio": ratio,
+                            }
+                        )
                     else:
                         pass
 
@@ -326,38 +378,66 @@ class CartwrightClassify(CartWrightBase):
         classifiedObjs = []
         for tstep in t:
 
-            tstep['match_type'] = list(set(tstep['match_type']))
-            tstep['match_type'] = [i for i in tstep['match_type'] if i]
-            categoryValue=tstep["category"]
-            subcategoryValue=tstep["subcategory"]
+            tstep["match_type"] = list(set(tstep["match_type"]))
+            tstep["match_type"] = [i for i in tstep["match_type"] if i]
+            categoryValue = tstep["category"]
+            subcategoryValue = tstep["subcategory"]
             fuzzyCol = None
             try:
-                fuzzyCol = tstep['fuzzyColumn']
+                fuzzyCol = tstep["fuzzyColumn"]
                 if categoryValue == None:
-                    if fuzzyCol['fuzzyCategory'] in ["Year", "Date", "Datetime", "Timestamp", "Epoch", "Time", "Month"]:
-                        categoryValue="time"
-                        subcategoryValue="date"
-                    elif fuzzyCol["fuzzyCategory"] in ["Geo", "Coordinates", "Location", "Address"]:
-                        categoryValue ="geo"
-                        subcategoryValue=None
-                    elif fuzzyCol["fuzzyCategory"] in ["Country", "CountryName", "CountryCode"]:
+                    if fuzzyCol["fuzzyCategory"] in [
+                        "Year",
+                        "Date",
+                        "Datetime",
+                        "Timestamp",
+                        "Epoch",
+                        "Time",
+                        "Month",
+                    ]:
+                        categoryValue = "time"
+                        subcategoryValue = "date"
+                    elif fuzzyCol["fuzzyCategory"] in [
+                        "Geo",
+                        "Coordinates",
+                        "Location",
+                        "Address",
+                    ]:
+                        categoryValue = "geo"
+                        subcategoryValue = None
+                    elif fuzzyCol["fuzzyCategory"] in [
+                        "Country",
+                        "CountryName",
+                        "CountryCode",
+                    ]:
                         categoryValue = "geo"
                         subcategoryValue = "country"
-                    elif fuzzyCol["fuzzyCategory"] in ["State", "Town", "City", "Region", "Province", "Territory"]:
-                        categoryValue="geo"
-                        subcategoryValue=fuzzyCol["fuzzyCategory"].lower()
+                    elif fuzzyCol["fuzzyCategory"] in [
+                        "State",
+                        "Town",
+                        "City",
+                        "Region",
+                        "Province",
+                        "Territory",
+                    ]:
+                        categoryValue = "geo"
+                        subcategoryValue = fuzzyCol["fuzzyCategory"].lower()
                     else:
                         pass
 
             except Exception as e:
                 logging.info(tstep, f"final_step - Column has no fuzzy match:{e}")
 
-            classifiedObj = schemas.Classification(column=tstep['column'], category=categoryValue,
-                                                          subcategory=subcategoryValue,
-                                                          format=tstep['format'],
-                                                          match_type=tstep['match_type'], Parser=tstep['Parser'],
-                                                          DayFirst=tstep['DayFirst'],
-                                                          fuzzyColumn=fuzzyCol)
+            classifiedObj = schemas.Classification(
+                column=tstep["column"],
+                category=categoryValue,
+                subcategory=subcategoryValue,
+                format=tstep["format"],
+                match_type=tstep["match_type"],
+                Parser=tstep["Parser"],
+                DayFirst=tstep["DayFirst"],
+                fuzzyColumn=fuzzyCol,
+            )
             classifiedObjs.append(classifiedObj)
         return schemas.Classifications(classifications=classifiedObjs)
 
@@ -371,7 +451,9 @@ class CartwrightClassify(CartWrightBase):
 
         return index_nan
 
-    def predict_temporal_resolution(self, final: schemas.Classifications) -> schemas.Classifications:
+    def predict_temporal_resolution(
+        self, final: schemas.Classifications
+    ) -> schemas.Classifications:
         found_time = False
         for classification in final.classifications:
             try:
@@ -382,22 +464,29 @@ class CartwrightClassify(CartWrightBase):
                     continue
                 found_time = True
 
-                #convert the datetime strings in the dataframe to unix timestamps using the classification format
+                # convert the datetime strings in the dataframe to unix timestamps using the classification format
                 times = self.df[classification.column].to_list()
-                times = [datetime.datetime.strptime(str(time_), classification.format).replace(tzinfo=datetime.timezone.utc).timestamp() for time_ in times]
+                times = [
+                    datetime.datetime.strptime(str(time_), classification.format)
+                    .replace(tzinfo=datetime.timezone.utc)
+                    .timestamp()
+                    for time_ in times
+                ]
                 times = np.array(times)
 
-                classification.time_resolution = time_resolution.detect_resolution(times)
+                classification.time_resolution = time_resolution.detect_resolution(
+                    times
+                )
             except Exception as e:
-                print(f'error {e}')
+                print(f"error {e}")
 
         if not found_time:
             logging.warning("No time columns found to predict temporal resolution")
 
         return final
-    
+
     def columns_classified(self, path):
-        logging.info('starting classification')
+        logging.info("starting classification")
         self.read_in_csv(path)
         index_remove, fuzzyMatchColumns = self.skip_matched_columns()
         columns_na = self.find_NANs()
@@ -406,9 +495,8 @@ class CartwrightClassify(CartWrightBase):
         output = self.assign_heuristic_function(preds, fuzzyMatchColumns)
         fuzzyMatch = self.fuzzy_match_columns(output)
         final = self.final_step(fuzzyMatch)
-        final = self.predict_temporal_resolution( final)
+        final = self.predict_temporal_resolution(final)
         return final
-
 
     def show_values(self):
         print(self.model)
@@ -431,9 +519,10 @@ class CartwrightClassify(CartWrightBase):
         # print(self.label2id.items())
         # print(self.n_categories)
 
-if __name__ == '__main__':
-    gc=CartwrightClassify(10)
-    preds=gc.columns_classified('datasets/Fake_data.csv')
+
+if __name__ == "__main__":
+    gc = CartwrightClassify(10)
+    preds = gc.columns_classified("datasets/Fake_data.csv")
     # preds=gc.vectorized_array(['hi','there'])
     print(preds)
     # print(gc.pad_sequences(preds, torch.LongTensor([len(s) for s in preds])) )
