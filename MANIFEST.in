@@ -1,4 +1,4 @@
-graft geotime_classify
+graft cartwright
 graft tests
 
 include .editorconfig
@@ -10,13 +10,11 @@ include LICENSE
 include README.md
 include requirements.txt
 include requirements-dev.txt
-include geotime_classify/models/LSTM_RNN_Geotime_Classify_v_0.07_dict.pth
-include geotime_classify/datasets/city.csv
-include geotime_classify/datasets/continent_code.csv
-include geotime_classify/datasets/country.csv
-include geotime_classify/datasets/country_lookup.csv
-include geotime_classify/datasets/county_cc_c_number.csv
-include geotime_classify/datasets/NA_states_provinces.csv
+include cartwright/models/LSTM_RNN_Geotime_Classify_v_0.07_dict.pth
+include cartwright/resources/city.csv
+include cartwright/resources/continent_lookup.csv
+include cartwright/resources/country_lookup.csv
+include cartwright/resources/states_provinces_lookup.csv
 
 include tox.ini
 

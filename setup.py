@@ -35,9 +35,9 @@ setup(
     author_email='kyle@jataware.com',
     url='https://github.com/jataware/geotime_classify',
     packages=find_packages(),
-    package_dir={'geotime_classify': 'geotime_classify'},
-    package_data={'geotime_classify': ['models/*','datasets/*', 'py.typed']},
-    py_modules=['geotime_schema'],
+    package_dir={'cartwright': 'cartwright'},
+    package_data={'cartwright': ['models/*','datasets/*', 'py.typed']},
+    py_modules=['schemas'],
     # include_package_data=True,
     zip_safe=False,
 

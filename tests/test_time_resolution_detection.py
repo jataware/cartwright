@@ -1,6 +1,7 @@
 from datetime import datetime
-from geotime_classify import geotime_classify
-from geotime_classify.geotime_schema import TimeUnit, Uniformity
+from cartwright import time_resolution
+from cartwright.categorize import CartwrightClassify
+from cartwright.schemas import TimeUnit, Uniformity
 import os
 import numpy as np
 import pandas as pd
@@ -49,7 +50,7 @@ def test_time_resolution_algorithm(unit:TimeUnit, uniformity:Uniformity, num_row
         times += np.random.uniform(-0.1,0.1,num_rows)*unit
 
     #run the test
-    res = geotime_classify.time_resolution.detect_resolution(times)
+    res = time_resolution.detect_resolution(times)
     assert res.unit == unit, f'failed to detect {unit}, instead got {res.unit}'
     assert res.uniformity == uniformity, f'failed to detect {uniformity} uniformity for {unit}, instead got {res.uniformity}'
 
@@ -103,7 +104,7 @@ def test_time_resolution_whole_pipeline(unit:TimeUnit, uniformity:Uniformity, nu
     df.to_csv('test.csv',index=False, date_format='%m/%d/%Y %H:%M:%S')
 
     #run geotime
-    t = geotime_classify.GeoTimeClassify(20)
+    t = CartwrightClassify(20)
     res = t.columns_classified('test.csv')
     if res is None:
         raise Exception('geotime failed to classify the test data')
@@ -121,3 +122,8 @@ def test_time_resolution_whole_pipeline(unit:TimeUnit, uniformity:Uniformity, nu
     assert time_res is not None, 'time resolution information was not detected'
     assert time_res.unit == unit, f'failed to detect {unit}, instead got {time_res.unit}'
     assert time_res.uniformity == uniformity, f'failed to detect {uniformity} uniformity for {unit}, instead got {time_res.uniformity}'
+
+
+
+if __name__ == '__main__':
+    test_time_resolution_whole_pipeline(TimeUnit.week, Uniformity.PERFECT)

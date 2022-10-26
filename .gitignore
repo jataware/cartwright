@@ -8,3 +8,6 @@ dist
 
 .coverage
 .tox
+
+#temporary csv made during tests
+test.csv
