@@ -4,7 +4,6 @@ from geotime_classify.geotime_schema import TimeUnit, Uniformity
 import os
 import numpy as np
 import pandas as pd
-from typing import Callable, Iterator, Tuple, Union
 import pytest
 
 
@@ -25,18 +24,6 @@ DEFAULT_NUM_ROWS = 200#int(1e6)
 """
 Run tests with pytest in the root directory of the project
 """
-
-
-# def testoncsv():
-#     t= geotime_classify.GeoTimeClassify(20)
-#     assert t.columns_classified(os.getcwd()+'/geotime_classify/datasets/Test_1.csv')
-
-# def test_time_resolution_in_pipeline():
-#     t = geotime_classify.GeoTimeClassify(20)
-#     res = t.columns_classified(os.getcwd()+'/examples/example_1.csv')
-#     time_res = res.classifications[0].time_resolution
-#     assert time_res.uniformity == Uniformity.NOT_UNIFORM
-#     assert time_res.unit == TimeUnit.year
 
 
 @pytest.mark.parametrize("unit,uniformity", 
