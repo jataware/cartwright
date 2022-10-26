@@ -78,10 +78,7 @@ def test_time_resolution_algorithm(unit:TimeUnit, uniformity:Uniformity, num_row
         pytest.param(TimeUnit.minute, Uniformity.PERFECT),
         pytest.param(TimeUnit.minute, Uniformity.UNIFORM, marks=pytest.mark.xfail(reason="for some reason, uniformity is detected as not uniform")),
         pytest.param(TimeUnit.minute, Uniformity.NOT_UNIFORM),
-        pytest.param(TimeUnit.millennium, Uniformity.PERFECT, marks=pytest.mark.xfail(reason="Windows doesn't support a large enough range of timestamps")),
-        pytest.param(TimeUnit.millennium, Uniformity.UNIFORM, marks=pytest.mark.xfail(reason="Windows doesn't support a large enough range of timestamps")),
-        pytest.param(TimeUnit.millennium, Uniformity.NOT_UNIFORM, marks=pytest.mark.xfail(reason="Windows doesn't support a large enough range of timestamps")),
-        *[(unit, uniformity) for uniformity in Uniformity for unit in TimeUnit if TimeUnit.minute < unit < TimeUnit.millennium], #all units greater than minute pass all the tests
+        *[(unit, uniformity) for uniformity in Uniformity for unit in TimeUnit if TimeUnit.minute < unit], #all units greater than minute pass all the tests
     ]
 )
 def test_time_resolution_whole_pipeline(unit:TimeUnit, uniformity:Uniformity, num_rows=DEFAULT_NUM_ROWS):
@@ -116,7 +113,7 @@ def test_time_resolution_whole_pipeline(unit:TimeUnit, uniformity:Uniformity, nu
     df['feat4'] = np.random.uniform(-10000,10000,num_rows)
 
     #save the dataframe to a csv
-    df.to_csv('test.csv',index=False)
+    df.to_csv('test.csv',index=False, date_format='%m/%d/%Y %H:%M:%S')
 
     #run geotime
     t = geotime_classify.GeoTimeClassify(20)
