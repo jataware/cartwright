@@ -214,13 +214,14 @@ class CartwrightClassify(CartWrightBase):
             category=None
             class_=None
             print(predictions[count])
-            category=predictions[count]["avg_predictions"]["averaged_top_category"]
-            class_ = self.all_classes[category]
+
 
             try:
                 if predictions[count]['values'] == 'Skipped':
                     pass
                 else:
+                    category = predictions[count]["avg_predictions"]["averaged_top_category"]
+                    class_ = self.all_classes[category]
                     final_column_classification.append(
                         add_obj({"column": predictions[count]["column"]},
                                 class_.validate(
