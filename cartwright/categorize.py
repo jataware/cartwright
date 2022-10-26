@@ -213,15 +213,24 @@ class CartwrightClassify(CartWrightBase):
         while currentTime - timesUp < self.seconds_to_finish and count < len(predictions):
             category=None
             class_=None
-            print(predictions[count])
-
-
             try:
                 if predictions[count]['values'] == 'Skipped':
                     pass
                 else:
+                    # find category form prediction
                     category = predictions[count]["avg_predictions"]["averaged_top_category"]
+                    # map to correct class
                     class_ = self.all_classes[category]
+                    array_of_valid = []
+                    for sample in self.column_value_object[predictions[count]["column"]]:
+                        try:
+                            # validate a sample
+                            array_of_valid.append(class_.validate(sample))
+                        except Exception as e:
+                            class_.exception_category()
+
+                    # Need to check the array of valid somehow
+
                     final_column_classification.append(
                         add_obj({"column": predictions[count]["column"]},
                                 class_.validate(
