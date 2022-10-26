@@ -18,50 +18,32 @@ from cartwright.utils import (
 )
 
 
-#TODO: better name for this class? e.g. GeoRef or something
-class Lookup:
-    country = pd.read_csv(
+class CategoryBase:
+    #global/static variables
+    country_lookup = pd.read_csv(
         pkg_resources.resource_stream(__name__, "../resources/country_lookup.csv"),
         encoding="latin-1",
     )
-    city = pd.read_csv(
+    city_lookup = pd.read_csv(
         pkg_resources.resource_stream(__name__, "../resources/city_lookup.csv"),
         encoding="latin-1",
     )
-    state = pd.read_csv(
+    state_lookup = pd.read_csv(
         pkg_resources.resource_stream(__name__, "../resources/states_provinces_lookup.csv"),
         encoding="latin-1",
     )
-    continent = pd.read_csv(
+    cont_lookup = pd.read_csv(
         pkg_resources.resource_stream(__name__, "../resources/continent_lookup.csv"),
         encoding="latin-1",
     )
+    fake = Faker()
 
-    #make instantiating this class impossible
-    def __new__(cls):
-        raise Exception("This class is a singleton. All properties are attached to the class itself.")
-
-
-
-class CategoryBase:
-    def __init__(
-        self,
-        #TODO: should this just be no parameters, and these are set directly in init?
-        country_lookup=Lookup.country,
-        city_lookup=Lookup.city,
-        state_lookup=Lookup.state,
-        cont_lookup=Lookup.continent,
-    ):
-        self.fake = Faker()
-        self.country_lookup = country_lookup
-        self.city_lookup = city_lookup
+    def __init__(self):
         self.city_lookup = np.asarray(self.city_lookup["city"])
-        self.state_lookup = state_lookup
         self.state_lookup = np.asarray(self.state_lookup["state_name"])
         self.country_name = np.asarray(self.country_lookup["country_name"])
         self.iso3_lookup = np.asarray(self.country_lookup["Alpha-3_Code"])
         self.iso2_lookup = np.asarray(self.country_lookup["Alpha-2_Code"])
-        self.cont_lookup = cont_lookup
         self.cont_names = np.asarray(self.cont_lookup["continent_name"])
         self.cont_codes=self.cont_lookup['continent_code'].unique()
         self.cont_codes[1]='NA' #fix continent code NA for north america converted to nan
