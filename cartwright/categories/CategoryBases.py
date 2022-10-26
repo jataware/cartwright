@@ -17,47 +17,36 @@ from cartwright.utils import (
     fuzzy_match,
 )
 
-country_lookup = pd.read_csv(
-    pkg_resources.resource_stream(__name__, "../resources/country_lookup.csv"),
-    encoding="latin-1",
-)
-city_lookup = pd.read_csv(
-    pkg_resources.resource_stream(__name__, "../resources/city_lookup.csv"),
-    encoding="latin-1",
-)
-state_lookup = pd.read_csv(
-    pkg_resources.resource_stream(__name__, "../resources/states_provinces_lookup.csv"),
-    encoding="latin-1",
-)
-cont_lookup = pd.read_csv(
-    pkg_resources.resource_stream(__name__, "../resources/continent_lookup.csv"),
-    encoding="latin-1",
-)
-
-
-
 
 class CategoryBase:
-    def __init__(
-        self,
-        country_lookup=country_lookup,
-        city_lookup=city_lookup,
-        state_lookup=state_lookup,
-        cont_lookup=cont_lookup,
-    ):
-        self.fake = Faker()
-        self.country_lookup = country_lookup
-        self.city_lookup = city_lookup
+    #global/static variables
+    country_lookup = pd.read_csv(
+        pkg_resources.resource_stream(__name__, "../resources/country_lookup.csv"),
+        encoding="latin-1",
+    )
+    city_lookup = pd.read_csv(
+        pkg_resources.resource_stream(__name__, "../resources/city_lookup.csv"),
+        encoding="latin-1",
+    )
+    state_lookup = pd.read_csv(
+        pkg_resources.resource_stream(__name__, "../resources/states_provinces_lookup.csv"),
+        encoding="latin-1",
+    )
+    cont_lookup = pd.read_csv(
+        pkg_resources.resource_stream(__name__, "../resources/continent_lookup.csv"),
+        encoding="latin-1",
+    )
+    fake = Faker()
+
+    def __init__(self):
         self.city_lookup = np.asarray(self.city_lookup["city"])
-        self.state_lookup = state_lookup
         self.state_lookup = np.asarray(self.state_lookup["state_name"])
         self.country_name = np.asarray(self.country_lookup["country_name"])
         self.iso3_lookup = np.asarray(self.country_lookup["Alpha-3_Code"])
         self.iso2_lookup = np.asarray(self.country_lookup["Alpha-2_Code"])
-        self.cont_lookup = cont_lookup
         self.cont_names = np.asarray(self.cont_lookup["continent_name"])
         self.cont_codes=self.cont_lookup['continent_code'].unique()
-        self.cont_codes[1]='NA'
+        self.cont_codes[1]='NA' #fix continent code NA for north america converted to nan
 
     def class_name(self):
         return self.__class__.__name__
