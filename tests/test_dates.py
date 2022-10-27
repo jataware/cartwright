@@ -67,8 +67,8 @@ date_classes = [
 def test_generate_single_date(name, num_samples=1000):
     cls = t.all_classes[name]
     examples = [cls.generate_training_data() for _ in range(num_samples)]
-    pdb.set_trace()
-    cls.validate(example)
+    # pdb.set_trace()
+    # cls.validate(example)
 
 
 if __name__ == '__main__':
