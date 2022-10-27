@@ -40,5 +40,11 @@
 #     #TODO: call the looping validator
 #     #TODO: categorize.assign_heuristic_function probably needs to be broken out so that the loop validation can be called directly without needing any of the other results/spreadsheet stuff/etc
 
+# #def test_whole_pipeline_synthetic():
+# #generate data, save to csv and then have whole pipeline read it
+
+# #def test_whole_pipeline_real():
+# #find real data and then have whole pipeline read it
+
 # if __name__ == '__main__':
 #     test_generate_single_geo(geo_classes[0])
