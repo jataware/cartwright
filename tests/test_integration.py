@@ -4,7 +4,7 @@ from cartwright.categorize import CartwrightClassify
 
 @pytest.mark.parametrize('filepath',
     [
-        pytest.param('examples/example_2.csv', marks=pytest.mark.xfail(reason='refactor has broken integration'))
+        pytest.param('examples/example_2.csv')#, marks=pytest.mark.xfail(reason='refactor has broken integration'))
     ]
 )
 def test_simple_integration(filepath):
