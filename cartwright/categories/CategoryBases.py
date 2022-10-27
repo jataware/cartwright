@@ -52,7 +52,6 @@ class CategoryBase:
         return self.__class__.__name__
 
     def get_fake_date(self, lab):
-        lab = lab[5:]
         return str(self.fake.date(pattern=lab))
 
     def return_label(self):
@@ -265,17 +264,27 @@ class GeoBase(CategoryBase):
 class DateBase(CategoryBase):
     def __init__(self):
         super().__init__()
-        self.days_of_the_week = [
-            "Monday",
-            "Tuesday",
-            "Wednesday",
-            "Thursday",
-            "Friday",
-            "Saturday",
-            "Sunday",
-        ]
-        self.threshold=.85
+        # self.days_of_the_week = [
+        #     "Monday",
+        #     "Tuesday",
+        #     "Wednesday",
+        #     "Thursday",
+        #     "Friday",
+        #     "Saturday",
+        #     "Sunday",
+        # ]
+        self.threshold = 0.85
+        self.format = None
 
+    def return_label(self):
+        if self.format:
+            return f'date_{self.format}'
+        return self.class_name()
+
+    def generate_training_data(self):
+        assert self.format is not None, "Format must be set before generating training data. Or this method should be overridden."
+        return self.format, self.get_fake_date(self.format)
+    
     def validate_series(self, series):
         valid_samples=0
         for sample in series:
@@ -288,7 +297,7 @@ class DateBase(CategoryBase):
         return valid_samples,len(series)
 
     def validate(self, value):
-        return self.is_date_(value, day_first=self.day_first)
+        return self.is_date_(value)
 
     def pass_validation(self, number_validated, number_of_samples):
         return self.threshold_check(number_validated,number_of_samples,self.threshold, self.day_first)
@@ -445,10 +454,12 @@ class DateBase(CategoryBase):
                 logging.error(f"date_util - {date}: {e}")
         return util_dates, dayFirst
 
-    def is_date_(self, date, day_first):
-        dateUtil = dateutil.parser.parse(str(date), dayfirst=day_first)
-        if isinstance(dateUtil, datetime.date):
-            return True
+    def is_date_(self, date):
+        #try to parse the date according to the format
+        #if it parsed, return True, otherwise an exception will be raised
+        datetime.datetime.strptime(date, self.format)
+        return True 
+
 
     def is_date_arrow(self,date):
         dateArrow = arrow.get(str(date), normalize_whitespace=True).datetime
@@ -458,7 +469,7 @@ class DateBase(CategoryBase):
 
     def threshold_check(self, number_validated, number_of_samples, threshold, day_first):
         if number_validated >= number_of_samples * threshold:
-            return build_return_date_object(format=self.return_label()[5:], dayFirst=day_first)()
+            return build_return_date_object(format=self.return_label(), dayFirst=day_first)()
         raise
 
     # def validate_month_day(self, values):

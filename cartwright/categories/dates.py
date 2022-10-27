@@ -7,6 +7,9 @@ class unix_time(DateBase):
     def __init__(self):
         super().__init__()
 
+    def return_label(self):
+        return 'unix_time'
+    
     def generate_training_data(self):
         return self.class_name(), str(getattr(self.fake, self.class_name())())
 
@@ -51,8 +54,8 @@ class unix_time(DateBase):
 class date_Ymd_1(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%Y-%m-%d"
-        self.day_first = False
+        # self.format="date_%Y-%m-%d"
+        self.format="%Y-%m-%d"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -75,8 +78,8 @@ class date_Ymd_1(DateBase):
 class date_Ymd_2(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%Y_%m_%d"
-        self.day_first=False
+        # self.format="date_%Y_%m_%d"
+        self.format="%Y_%m_%d"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -97,8 +100,8 @@ class date_Ymd_2(DateBase):
 class date_Ymd_3(DateBase):
     def __init__(self):
         super().__init__()
-        self.format = "date_%Y/%m/%d"
-        self.day_first = False
+        # self.format = "date_%Y/%m/%d"
+        self.format = "%Y/%m/%d"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -121,8 +124,8 @@ class date_Ymd_3(DateBase):
 class date_Ymd_4(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%Y.%m.%d"
-        self.day_first = False
+        # self.format="date_%Y.%m.%d"
+        self.format="%Y.%m.%d"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -146,7 +149,7 @@ class date_Ymd_5(DateBase):
     def __init__(self):
         super().__init__()
         self.format="date_%Y%m%d"
-        self.day_first = False
+        self.format="%Y%m%d"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -169,8 +172,8 @@ class date_Ymd_5(DateBase):
 class date_Ymd_6(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%Y-%m-%d %H:%M:%S"
-        self.day_first = False
+        # self.format="date_%Y-%m-%d %H:%M:%S"
+        self.format="%Y-%m-%d %H:%M:%S"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -201,8 +204,8 @@ class date_Ymd_6(DateBase):
 class date_Ymd_7(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%Y/%m/%d %H:%M:%S"
-        self.day_first = False
+        # self.format="date_%Y/%m/%d %H:%M:%S"
+        self.format="%Y/%m/%d %H:%M:%S"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -233,8 +236,8 @@ class date_Ymd_7(DateBase):
 class date_Ymd_8(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%Y_%m_%d %H:%M:%S"
-        self.day_first = False
+        # self.format="date_%Y_%m_%d %H:%M:%S"
+        self.format="%Y_%m_%d %H:%M:%S"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -261,8 +264,8 @@ class date_Ymd_8(DateBase):
 class date_Ymd_9(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%Y.%m.%d %H:%M:%S"
-        self.day_first = False
+        # self.format="date_%Y.%m.%d %H:%M:%S"
+        self.format="%Y.%m.%d %H:%M:%S"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -291,8 +294,8 @@ class date_Ymd_9(DateBase):
 class date_mdy_1(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%m-%d-%Y"
-        self.day_first = False
+        # self.format="date_%m-%d-%Y"
+        self.format="%m-%d-%Y"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -314,8 +317,8 @@ class date_mdy_1(DateBase):
 class date_mdy_2(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%m-%d-%y"
-        self.day_first = False
+        # self.format="date_%m-%d-%y"
+        self.format="%m-%d-%y"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -338,8 +341,8 @@ class date_mdy_2(DateBase):
 class date_mdy_3(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%m_%d_%Y"
-        self.day_first = False
+        # self.format="date_%m_%d_%Y"
+        self.format="%m_%d_%Y"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -359,8 +362,8 @@ class date_mdy_3(DateBase):
 class date_mdy_4(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%m_%d_%y"
-        self.day_first = False
+        # self.format="date_%m_%d_%y"
+        self.format="%m_%d_%y"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -381,8 +384,8 @@ class date_mdy_4(DateBase):
 class date_mdy_5(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%m/%d/%Y"
-        self.day_first = False
+        # self.format="date_%m/%d/%Y"
+        self.format="%m/%d/%Y"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -405,8 +408,8 @@ class date_mdy_5(DateBase):
 class date_mdy_6(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%m/%d/%y"
-        self.day_first = False
+        # self.format="date_%m/%d/%y"
+        self.format="%m/%d/%y"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -428,8 +431,8 @@ class date_mdy_6(DateBase):
 class date_mdy_7(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%m.%d.%Y"
-        self.day_first = False
+        # self.format="date_%m.%d.%Y"
+        self.format="%m.%d.%Y"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -451,8 +454,8 @@ class date_mdy_7(DateBase):
 class date_mdy_8(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%m.%d.%y"
-        self.day_first = False
+        # self.format="date_%m.%d.%y"
+        self.format="%m.%d.%y"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -475,8 +478,8 @@ class date_mdy_8(DateBase):
 class date_mdy_9(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%m-%d-%Y %H:%M:%S"
-        self.day_first = False
+        # self.format="date_%m-%d-%Y %H:%M:%S"
+        self.format="%m-%d-%Y %H:%M:%S"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -505,8 +508,8 @@ class date_mdy_9(DateBase):
 class date_mdy_10(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%m/%d/%Y %H:%M:%S"
-        self.day_first = False
+        # self.format="date_%m/%d/%Y %H:%M:%S"
+        self.format="%m/%d/%Y %H:%M:%S"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -534,8 +537,8 @@ class date_mdy_10(DateBase):
 class date_mdy_11(DateBase):
     def __init__(self):
         super().__init__()
-        self.format = "date_%m_%d_%Y %H:%M:%S"
-        self.day_first = False
+        # self.format = "date_%m_%d_%Y %H:%M:%S"
+        self.format = "%m_%d_%Y %H:%M:%S"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -562,8 +565,8 @@ class date_mdy_11(DateBase):
 class date_mdy_12(DateBase):
     def __init__(self):
         super().__init__()
-        self.format = "date_%m.%d.%Y %H:%M:%S"
-        self.day_first = False
+        # self.format = "date_%m.%d.%Y %H:%M:%S"
+        self.format = "%m.%d.%Y %H:%M:%S"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -594,8 +597,8 @@ class date_mdy_12(DateBase):
 class date_dmy_1(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%d-%m-%Y"
-        self.day_first = True
+        # self.format="date_%d-%m-%Y"
+        self.format="%d-%m-%Y"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -616,8 +619,8 @@ class date_dmy_1(DateBase):
 class date_dmy_2(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%d-%m-%y"
-        self.day_first = True
+        # self.format="date_%d-%m-%y"
+        self.format="%d-%m-%y"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -639,8 +642,8 @@ class date_dmy_2(DateBase):
 class date_dmy_3(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%d_%m_%Y"
-        self.day_first = True
+        # self.format="date_%d_%m_%Y"
+        self.format="%d_%m_%Y"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -660,8 +663,8 @@ class date_dmy_3(DateBase):
 class date_dmy_4(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%d_%m_%y"
-        self.day_first = True
+        # self.format="date_%d_%m_%y"
+        self.format="%d_%m_%y"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -680,8 +683,8 @@ class date_dmy_4(DateBase):
 class date_dmy_5(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%d/%m/%Y"
-        self.day_first = True
+        # self.format="date_%d/%m/%Y"
+        self.format="%d/%m/%Y"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -702,8 +705,8 @@ class date_dmy_5(DateBase):
 class date_dmy_6(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%d/%m/%y"
-        self.day_first = True
+        # self.format="date_%d/%m/%y"
+        self.format="%d/%m/%y"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -724,8 +727,8 @@ class date_dmy_6(DateBase):
 class date_dmy_7(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%d.%m.%Y"
-        self.day_first = True
+        # self.format="date_%d.%m.%Y"
+        self.format="%d.%m.%Y"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -746,8 +749,8 @@ class date_dmy_7(DateBase):
 class date_dmy_8(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%d.%m.%y"
-        self.day_first = True
+        # self.format="date_%d.%m.%y"
+        self.format="%d.%m.%y"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -768,8 +771,8 @@ class date_dmy_8(DateBase):
 class date_dmy_9(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%d-%m-%Y %H:%M:%S"
-        self.day_first = True
+        # self.format="date_%d-%m-%Y %H:%M:%S"
+        self.format="%d-%m-%Y %H:%M:%S"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -797,8 +800,8 @@ class date_dmy_9(DateBase):
 class date_dmy_10(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%d/%m/%Y %H:%M:%S"
-        self.day_first = True
+        # self.format="date_%d/%m/%Y %H:%M:%S"
+        self.format="%d/%m/%Y %H:%M:%S"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -826,8 +829,8 @@ class date_dmy_10(DateBase):
 class date_dmy_11(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%d_%m_%Y %H:%M:%S"
-        self.day_first = True
+        # self.format="date_%d_%m_%Y %H:%M:%S"
+        self.format="%d_%m_%Y %H:%M:%S"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -854,8 +857,8 @@ class date_dmy_11(DateBase):
 class date_dmy_12(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%d.%m.%Y %H:%M:%S"
-        self.day_first = True
+        # self.format="date_%d.%m.%Y %H:%M:%S"
+        self.format="%d.%m.%Y %H:%M:%S"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -883,8 +886,8 @@ class date_dmy_12(DateBase):
 class date_yd_1(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%Y%d"
-        self.day_first=None
+        # self.format="date_%Y%d"
+        self.format="%Y%d"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -906,8 +909,8 @@ class date_yd_1(DateBase):
 class date_ym_1(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%Y-%m"
-        self.day_first = None
+        # self.format="date_%Y-%m"
+        self.format="%Y-%m"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -942,7 +945,8 @@ class date_ym_1(DateBase):
 class date_ym_2(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%Y/%m"
+        # self.format="date_%Y/%m"
+        self.format="%Y/%m"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -981,7 +985,8 @@ class date_ym_2(DateBase):
 class date_ym_3(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%Y.%m"
+        # self.format="date_%Y.%m"
+        self.format="%Y.%m"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -1022,7 +1027,8 @@ class date_ym_3(DateBase):
 class date_ym_4(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%Y_%m"
+        # self.format="date_%Y_%m"
+        self.format="%Y_%m"
 
     def generate_training_data(self):
         return self.format, self.get_fake_date(self.format)
@@ -1063,8 +1069,8 @@ class date_ym_4(DateBase):
 class iso8601(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%Y-%m-%dT%H%M%S"
-        self.day_first=False
+        # self.format="date_%Y-%m-%dT%H%M%S"
+        self.format="%Y-%m-%dT%H%M%S"
 
     def generate_training_data(self):
         return self.class_name(), str(getattr(self.fake, self.class_name())())
@@ -1084,8 +1090,8 @@ class iso8601(DateBase):
 class date_long_dmdy(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%A, %B %d, %y"
-        self.day_first=True
+        # self.format="date_%A, %B %d, %y"
+        self.format="%A, %B %d, %y"
 
     def generate_training_data(self):
         dayExample = str(getattr(self.fake, "day_of_month")())
@@ -1161,7 +1167,6 @@ class date_long_mdyt_m(DateBase):
     def __init__(self):
         super().__init__()
         self.format='%m/%d/%y HH:mm:ss'
-        self.day_first=False
 
     def generate_training_data(self):
         dateExample = str(self.fake.date(pattern='%m/%d/%y'))
@@ -1190,7 +1195,6 @@ class date_long_dmonthY(DateBase):
     def __init__(self):
         super().__init__()
         self.format="%d %B %Y"
-        self.day_first=True
 
     def generate_training_data(self):
         dayExample = self.fake.day_of_month()
@@ -1214,7 +1218,6 @@ class date_long_dmonthy(DateBase):
     def __init__(self):
         super().__init__()
         self.format = "%d %B %y"
-        self.day_first = True
 
     def generate_training_data(self):
         dayExample = self.fake.day_of_month()
