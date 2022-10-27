@@ -49,16 +49,13 @@ class unix_time(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 ## ymd
 #'2020-08-10'
 class date_Ymd_1(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%Y-%m-%d"
         self.format="%Y-%m-%d"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
 
 
     # def validate(self, values):
@@ -78,13 +75,7 @@ class date_Ymd_1(DateBase):
 class date_Ymd_2(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%Y_%m_%d"
         self.format="%Y_%m_%d"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
-
-
 
     # def validate(self,values):
     #     try:
@@ -96,16 +87,12 @@ class date_Ymd_2(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 #'1987/11/11'
 class date_Ymd_3(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format = "date_%Y/%m/%d"
         self.format = "%Y/%m/%d"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
-
 
     # def validate(self, values):
     #     try:
@@ -124,13 +111,7 @@ class date_Ymd_3(DateBase):
 class date_Ymd_4(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%Y.%m.%d"
         self.format="%Y.%m.%d"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
-
-
 
     # def validate(self, values):
     #     try:
@@ -144,19 +125,15 @@ class date_Ymd_4(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 #'19760605'
 class date_Ymd_5(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="date_%Y%m%d"
         self.format="%Y%m%d"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
 
     def validate(self, value):
         return self.is_date_arrow(value)
-
 
     # def validate(self, values):
     #     try:
@@ -172,13 +149,7 @@ class date_Ymd_5(DateBase):
 class date_Ymd_6(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%Y-%m-%d %H:%M:%S"
         self.format="%Y-%m-%d %H:%M:%S"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
-
-
 
     # def validate(self, values):
     #     try:
@@ -200,16 +171,12 @@ class date_Ymd_6(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 #'2021/06/01 14:22:56'
 class date_Ymd_7(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%Y/%m/%d %H:%M:%S"
         self.format="%Y/%m/%d %H:%M:%S"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
-
 
     # def validate(self, values):
     #     try:
@@ -236,12 +203,7 @@ class date_Ymd_7(DateBase):
 class date_Ymd_8(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%Y_%m_%d %H:%M:%S"
         self.format="%Y_%m_%d %H:%M:%S"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
-
 
     # def validate(self, values):
     #     try:
@@ -260,15 +222,12 @@ class date_Ymd_8(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 #'1995.04.15 12:38:54'
 class date_Ymd_9(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%Y.%m.%d %H:%M:%S"
         self.format="%Y.%m.%d %H:%M:%S"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
 
     # def validate(self,values):
     #     try:
@@ -289,17 +248,13 @@ class date_Ymd_9(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 ### mdy
 #'03-10-2017'
 class date_mdy_1(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%m-%d-%Y"
         self.format="%m-%d-%Y"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
-
 
     # def validate(self, values):
     #     try:
@@ -313,16 +268,12 @@ class date_mdy_1(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 #'03-10-17'
 class date_mdy_2(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%m-%d-%y"
         self.format="%m-%d-%y"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
-
 
     # def validate(self, values):
     #     try:
@@ -341,12 +292,7 @@ class date_mdy_2(DateBase):
 class date_mdy_3(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%m_%d_%Y"
         self.format="%m_%d_%Y"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
-
 
     # def validate(self, values):
     #     try:
@@ -358,16 +304,12 @@ class date_mdy_3(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 #'03_10_17'
 class date_mdy_4(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%m_%d_%y"
         self.format="%m_%d_%y"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
-
 
     # def validate(self, values):
     #     try:
@@ -384,12 +326,7 @@ class date_mdy_4(DateBase):
 class date_mdy_5(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%m/%d/%Y"
         self.format="%m/%d/%Y"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
-
 
     # def validate(self, values):
     #     try:
@@ -408,12 +345,7 @@ class date_mdy_5(DateBase):
 class date_mdy_6(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%m/%d/%y"
         self.format="%m/%d/%y"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
-
 
     # def validate(self, values):
     #     try:
@@ -427,16 +359,12 @@ class date_mdy_6(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 #'03.10.2017'
 class date_mdy_7(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%m.%d.%Y"
         self.format="%m.%d.%Y"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
-
 
     # def validate(self, values):
     #     try:
@@ -450,16 +378,12 @@ class date_mdy_7(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 #'03.10.17'
 class date_mdy_8(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%m.%d.%y"
         self.format="%m.%d.%y"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
-
 
     # def validate(self, values):
     #     try:
@@ -478,12 +402,7 @@ class date_mdy_8(DateBase):
 class date_mdy_9(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%m-%d-%Y %H:%M:%S"
         self.format="%m-%d-%Y %H:%M:%S"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
-
 
     # def validate(self, values):
     #     try:
@@ -504,15 +423,12 @@ class date_mdy_9(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 #'03/10/17 10:28:37'
 class date_mdy_10(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%m/%d/%Y %H:%M:%S"
         self.format="%m/%d/%Y %H:%M:%S"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
 
     # def validate(self, values):
     #     try:
@@ -533,16 +449,12 @@ class date_mdy_10(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 # '03_10_17 10:28:37'
 class date_mdy_11(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format = "date_%m_%d_%Y %H:%M:%S"
         self.format = "%m_%d_%Y %H:%M:%S"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
-
 
     # def validate(self, values):
     #     try:
@@ -561,16 +473,12 @@ class date_mdy_11(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 # '03.10.17 10:28:37'
 class date_mdy_12(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format = "date_%m.%d.%Y %H:%M:%S"
         self.format = "%m.%d.%Y %H:%M:%S"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
-
 
     # def validate(self, values):
     #     try:
@@ -597,11 +505,7 @@ class date_mdy_12(DateBase):
 class date_dmy_1(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%d-%m-%Y"
         self.format="%d-%m-%Y"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
 
     # def validate(self, values):
     #     try:
@@ -615,15 +519,12 @@ class date_dmy_1(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 #'28-02-96'
 class date_dmy_2(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%d-%m-%y"
         self.format="%d-%m-%y"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
 
     # def validate(self, values):
     #     try:
@@ -642,11 +543,7 @@ class date_dmy_2(DateBase):
 class date_dmy_3(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%d_%m_%Y"
         self.format="%d_%m_%Y"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
 
     # def validate(self, values):
     #     try:
@@ -663,11 +560,7 @@ class date_dmy_3(DateBase):
 class date_dmy_4(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%d_%m_%y"
         self.format="%d_%m_%y"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
 
     # def validate(self, values):
     #     try:
@@ -679,15 +572,12 @@ class date_dmy_4(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 #'28/02/1996'
 class date_dmy_5(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%d/%m/%Y"
         self.format="%d/%m/%Y"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
 
     # def validate(self, values):
     #     try:
@@ -701,15 +591,12 @@ class date_dmy_5(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 #'28/02/96'
 class date_dmy_6(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%d/%m/%y"
-        self.format="%d/%m/%y"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
+        self.format="%d/%m/%y"    
 
     # def validate(self, values):
     #     try:
@@ -723,15 +610,12 @@ class date_dmy_6(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 #'28.02.1996'
 class date_dmy_7(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%d.%m.%Y"
         self.format="%d.%m.%Y"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
 
     # def validate(self, values):
     #     try:
@@ -745,15 +629,12 @@ class date_dmy_7(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 #'28.02.96'
 class date_dmy_8(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%d.%m.%y"
         self.format="%d.%m.%y"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
 
     # def validate(self, values):
     #     try:
@@ -767,15 +648,12 @@ class date_dmy_8(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 #'28-02-1996 08:20:47'
 class date_dmy_9(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%d-%m-%Y %H:%M:%S"
         self.format="%d-%m-%Y %H:%M:%S"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
 
     # def validate(self, values):
     #     try:
@@ -796,15 +674,12 @@ class date_dmy_9(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 #'28/02/1996 08:20:47'
 class date_dmy_10(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%d/%m/%Y %H:%M:%S"
         self.format="%d/%m/%Y %H:%M:%S"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
 
     # def validate(self, values):
     #     try:
@@ -825,15 +700,12 @@ class date_dmy_10(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 #'28_02_1996 08:20:47'
 class date_dmy_11(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%d_%m_%Y %H:%M:%S"
         self.format="%d_%m_%Y %H:%M:%S"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
 
     # def validate(self, values):
     #     try:
@@ -857,11 +729,7 @@ class date_dmy_11(DateBase):
 class date_dmy_12(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%d.%m.%Y %H:%M:%S"
         self.format="%d.%m.%Y %H:%M:%S"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
 
     # def validate(self, values):
     #     try:
@@ -882,15 +750,12 @@ class date_dmy_12(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 #### Yd / Ym
 class date_yd_1(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%Y%d"
         self.format="%Y%d"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
 
     def validate(self, value):
         return self.is_date_arrow(value)
@@ -909,11 +774,7 @@ class date_yd_1(DateBase):
 class date_ym_1(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%Y-%m"
         self.format="%Y-%m"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
 
     def validate(self, value):
         year_month = value.split('-')
@@ -923,7 +784,6 @@ class date_ym_1(DateBase):
             if str.isdigit(str(yearval)):
                 if 1800 < int(yearval) < 2100:
                     return value
-
 
     # def validate(self, values):
     #     try:
@@ -941,15 +801,12 @@ class date_ym_1(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 #'2008/12'
 class date_ym_2(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%Y/%m"
         self.format="%Y/%m"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
 
     def validate(self, value):
         year_month = value.split('/')
@@ -985,11 +842,7 @@ class date_ym_2(DateBase):
 class date_ym_3(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%Y.%m"
         self.format="%Y.%m"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
 
     def validate(self, value):
         year_month = value.split('.')
@@ -1000,6 +853,7 @@ class date_ym_3(DateBase):
                 if str.isdigit(str(yearval)):
                     if 1800 < int(yearval) < 2100:
                         return value
+
     # def validate(self, values):
     #     try:
     #         array_valid = self.date_arrow(values, separator=".")
@@ -1027,11 +881,7 @@ class date_ym_3(DateBase):
 class date_ym_4(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%Y_%m"
         self.format="%Y_%m"
-
-    def generate_training_data(self):
-        return self.format, self.get_fake_date(self.format)
 
     def validate(self, value):
         year_month = value.split('_')
@@ -1069,12 +919,10 @@ class date_ym_4(DateBase):
 class iso8601(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%Y-%m-%dT%H%M%S"
         self.format="%Y-%m-%dT%H%M%S"
 
     def generate_training_data(self):
         return self.class_name(), str(getattr(self.fake, self.class_name())())
-
 
     # def validate(self, values):
     #     try:
@@ -1085,12 +933,12 @@ class iso8601(DateBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
+
 ## Long dates
 # 'Thursday, November 23, 1999'
 class date_long_dmdy(DateBase):
     def __init__(self):
         super().__init__()
-        # self.format="date_%A, %B %d, %y"
         self.format="%A, %B %d, %y"
 
     def generate_training_data(self):
@@ -1110,6 +958,7 @@ class date_long_dmdy(DateBase):
     #         return build_return_standard_object(category=None, subcategory=None, match_type=None)
     #     except Exception as e:
     #         return self.exception_category(e)
+
 
 #'November 23, 1999'
 class date_long_mdy(DateBase):

@@ -508,25 +508,25 @@ class DateBase(CategoryBase):
     #     except Exception as e:
     #         return self.exception_category(e)
 
-    def validate_day_name(self, values):
-        try:
-            logging.info("Start day validation ...")
-            day_array_valid = []
-            for day in values:
-                for d in self.days_of_the_week:
-                    try:
-                        day_array_valid.append(fuzzy_match(str(day), str(d), ratio=85))
-                    except Exception as e:
-                        logging.error(f"day_name_f - {d}: {e}")
+    # def validate_day_name(self, values):
+    #     try:
+    #         logging.info("Start day validation ...")
+    #         day_array_valid = []
+    #         for day in values:
+    #             for d in self.days_of_the_week:
+    #                 try:
+    #                     day_array_valid.append(fuzzy_match(str(day), str(d), ratio=85))
+    #                 except Exception as e:
+    #                     logging.error(f"day_name_f - {d}: {e}")
 
-            if np.count_nonzero(day_array_valid) >= (len(values) * 0.65):
-                return build_return_date_object("%A", dayFirst=None)
-            else:
-                return build_return_standard_object(
-                    category=None, subcategory=None, match_type=None
-                )
-        except Exception as e:
-            return self.exception_category(e)
+    #         if np.count_nonzero(day_array_valid) >= (len(values) * 0.65):
+    #             return build_return_date_object("%A", dayFirst=None)
+    #         else:
+    #             return build_return_standard_object(
+    #                 category=None, subcategory=None, match_type=None
+    #             )
+    #     except Exception as e:
+    #         return self.exception_category(e)
 
     def validate_month_name(self, values):
         try:
