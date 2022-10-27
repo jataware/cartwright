@@ -18,7 +18,7 @@ from inspect import isclass
 #     return all_categories
 
 
-#
+# TODO: this should be dynamically generated based on e.g. files in the categories directory
 def return_all_category_classes_and_labels():
     all_classes={}
     dirs={"geos":geos,"dates":dates,"timespans":timespans,"misc":misc, "partial_dates":partial_dates}
