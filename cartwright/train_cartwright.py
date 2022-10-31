@@ -38,10 +38,10 @@ import matplotlib.ticker as ticker
 from cartwright.utils import character_tokins
 from cartwright.category_helpers import return_all_category_classes_and_labels
 from cartwright.LSTM import LSTMClassifier, PaddedTensorDataset
-from cartwright.CartWrightBase import CartWrightBase
+from cartwright.CartwrightBase import CartwrightBase
 
 # This class creates a randomized dataset and splits it into training ,validation and testing for model training and validation
-class CartwrightTrainer(CartWrightBase):
+class CartwrightTrainer(CartwrightBase):
     def __init__(self, seed=1,training_set_size=150000, test_set_size=5000, num_epochs=1, learning_rate=.001):
         super().__init__()
         self.category_values = {}
@@ -232,7 +232,7 @@ class CartwrightTrainer(CartWrightBase):
 
     def save_model(self, version):
         # If the model performed well you can save it locally
-        path = f'cartwright/models/LSTM_RNN_CartWright_v_{version}_dict.pth'
+        path = f'cartwright/models/LSTM_RNN_Cartwright_v_{version}_dict.pth'
         torch.save(self.model.state_dict(), path)
 
 

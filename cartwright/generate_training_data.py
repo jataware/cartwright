@@ -25,10 +25,10 @@ import random
 
 import matplotlib.pyplot as plt
 
-from cartwright.CartWrightBase import CartWrightBase
+from cartwright.CartwrightBase import CartwrightBase
 
 # This class creates a randomized dataset and splits it into training ,validation and testing for model training and validation
-class CartwrightDatasetGenerator(CartWrightBase):
+class CartwrightDatasetGenerator(CartwrightBase):
     def __init__(self, seed=1, training_size=150000, test_size=5000 ):
         super().__init__()
         self.category_values = {}

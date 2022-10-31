@@ -9,7 +9,7 @@ from cartwright.utils import character_tokins
 from cartwright.category_helpers import return_all_category_classes_and_labels, generate_label_id
 from cartwright.LSTM import LSTMClassifier, PaddedTensorDataset
 
-class CartWrightBase:
+class CartwrightBase:
     def __init__(self):
         self.char_dim = 128
         self.hidden_dim = 32

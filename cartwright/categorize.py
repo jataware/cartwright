@@ -20,7 +20,7 @@ import time
 import logging
 
 from .LSTM import PaddedTensorDataset
-from .CartWrightBase import CartWrightBase
+from .CartwrightBase import CartwrightBase
 
 from .utils import (
     columns_to_classify_and_skip_if_found,
@@ -68,14 +68,14 @@ def skipped(column, fuzzy_matched):
         )
 
 
-class CartwrightClassify(CartWrightBase):
+class CartwrightClassify(CartwrightBase):
     def __init__(self,model_version='0.0.0.1', number_of_samples=100, seconds_to_finish=40):
         super().__init__()
         self.model_version=model_version
         self.model.load_state_dict(
             torch.load(
                 pkg_resources.resource_stream(
-                    __name__, f"models/LSTM_RNN_CartWright_v_{self.model_version}_dict.pth"
+                    __name__, f"models/LSTM_RNN_Cartwright_v_{self.model_version}_dict.pth"
                 )
             )
         )
