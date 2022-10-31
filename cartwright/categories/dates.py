@@ -280,6 +280,7 @@ class date_dmy_12(DateBase):
         self.format="%d.%m.%Y %H:%M:%S"
 
 
+
 #### Yd / Ym
 class date_yd_1(DateBase):
     def __init__(self):
@@ -404,7 +405,7 @@ class date_long_mdy(DateBase):
 class date_long_dmdyt(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="%A, %B %d, %Y %H:%M:%S"
+        self.format="%A, %B %d, %Y HH:mm:ss"
 
     def generate_training_data(self):
         dayExample = str(getattr(self.fake, "day_of_month")())
@@ -430,8 +431,6 @@ class date_long_mdyt_m(DateBase):
         ampm = str(self.fake.am_pm())
         val = dateExample + ' ' + time + ' ' + ampm
         return self.format, val
-
-
 
 
 
