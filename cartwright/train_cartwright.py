@@ -221,6 +221,7 @@ def default_training():
     parser = argparse.ArgumentParser()
     parser.add_argument("--version", help="set the version of the model")
     parser.add_argument("--num_epochs",type=int, help="number of epochs for model training")
+    parser.add_argument("--new_data",type=bool, help="generate new training data")
     args = parser.parse_args()
     cartwright = CartwrightTrainer(num_epochs=args.num_epochs)
     cartwright.train()
