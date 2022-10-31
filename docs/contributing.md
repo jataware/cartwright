@@ -35,7 +35,7 @@ Tox automatically creates a virtual environment for each Python version and runs
 ## Adding a New Category
 Coming soon.
 
-## Adding a New Category Member
+## Adding a New Category Element
 Coming soon.
 
 ## Training a New Model
