@@ -474,9 +474,12 @@ class CartwrightClassify(CartWrightBase):
 
         return final
 
-    def columns_classified(self, path):
+    def columns_classified(self, df=None, path=None):
         logging.info("starting classification")
-        self.read_in_csv(path)
+        if path is not None:
+            self.read_in_csv(path)
+        if df is not None:
+            self.df = df
         index_remove, fuzzy_matched_columns = self.skip_matched_columns()
         columns_na = self.find_NANs()
         index_remove = index_remove + columns_na
@@ -490,8 +493,6 @@ class CartwrightClassify(CartWrightBase):
 
 if __name__ == "__main__":
     gc = CartwrightClassify(50)
-    preds = gc.columns_classified("/home/kyle/code/geotime_classify/cartwright/datasets/Fake_data.csv")
-    # preds=gc.vectorized_array(['hi','there'])
-    # print(gc.pad_sequences(preds, torch.LongTensor([len(s) for s in preds])) )
-    # print(torch.LongTensor([len(s) for s in preds]))
+    df_t=gc.fake_data
+    preds = gc.columns_classified(df=df_t)
     print(preds)
