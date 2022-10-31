@@ -29,7 +29,7 @@ from cartwright.CartWrightBase import CartWrightBase
 
 # This class creates a randomized dataset and splits it into training ,validation and testing for model training and validation
 class CartwrightDatasetGenerator(CartWrightBase):
-    def __init__(self, seed=1, training_size=150000, test_size=8000 ):
+    def __init__(self, seed=1, training_size=150000, test_size=5000 ):
         super().__init__()
         self.category_values = {}
 
@@ -98,6 +98,11 @@ class CartwrightDatasetGenerator(CartWrightBase):
         for _ in range(self.test_set_size):
             self.test_split.append(self.getRandomSet())
 
+
+
+
+    def save_data(self):
+        self.df.to_csv('cartwright/resources/all_training_data.csv')
         with open('cartwright/resources/training_data.pickle', 'wb') as f:
             pickle.dump(self.train_split, f)
 
@@ -106,11 +111,6 @@ class CartwrightDatasetGenerator(CartWrightBase):
 
         with open('cartwright/resources/dev_data.pickle', 'wb') as f:
             pickle.dump(self.dev_split, f)
-
-
-
-    def save_data(self):
-        self.df.to_csv('cartwright/resources/all_training_data.csv')
 
     # train the model by creating a pseudo dataset
     def generate_training_data(self):
@@ -125,9 +125,9 @@ class CartwrightDatasetGenerator(CartWrightBase):
 
 def generate_training_data():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--seed",type=int, help="set random seed")
-    parser.add_argument("--training_size",type=int, help="set size of training dataset")
-    parser.add_argument("--test_size",type=int, help="set size of test dataset")
+    parser.add_argument("--seed",type=int,default=1, help="set random seed")
+    parser.add_argument("--training_size",type=int, default=150000, help="set size of training dataset")
+    parser.add_argument("--test_size",type=int, default=5000, help="set size of test dataset")
     args = parser.parse_args()
     print(f'args {args}')
     cartwright = CartwrightDatasetGenerator(seed=args.seed, training_size=args.training_size, test_size=args.test_size)

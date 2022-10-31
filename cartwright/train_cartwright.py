@@ -42,16 +42,16 @@ from cartwright.CartWrightBase import CartWrightBase
 
 # This class creates a randomized dataset and splits it into training ,validation and testing for model training and validation
 class CartwrightTrainer(CartWrightBase):
-    def __init__(self, seed=1, num_epochs=1, learning_rate=.001):
+    def __init__(self, seed=1,training_set_size=150000, test_set_size=5000, num_epochs=1, learning_rate=.001):
         super().__init__()
         self.category_values = {}
 
         self.train_split = []
         self.dev_split = []
         self.test_split = []
-        self.training_set_size = 100000
-        self.dev_set_size = 1000
-        self.test_set_size = 4000
+        self.training_set_size = training_set_size
+        self.dev_set_size = 5000
+        self.test_set_size = test_set_size
         self.traning_data_size = self.get_training_data_size()
 
         self.seed = seed
@@ -239,8 +239,10 @@ class CartwrightTrainer(CartWrightBase):
 def default_training():
     parser = argparse.ArgumentParser()
     parser.add_argument("--version", help="set the version of the model")
-    parser.add_argument("--num_epochs",type=int, help="number of epochs for model training")
+    parser.add_argument("--num_epochs",type=int,default=8, help="number of epochs for model training")
     parser.add_argument("--new_data",  action='store_true', help="generate new training data")
+    parser.add_argument("--training_size", type=int,default=150000, help="size of training dataset")
+    parser.add_argument("--testing_size", type=int,default=5000, help="size of testing dataset")
     args = parser.parse_args()
     print(args)
     cartwright = CartwrightTrainer(num_epochs=args.num_epochs)
