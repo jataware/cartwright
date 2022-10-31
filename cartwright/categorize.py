@@ -69,7 +69,7 @@ def skipped(column, fuzzy_matched):
 
 
 class CartwrightClassify(CartWrightBase):
-    def __init__(self,model_version, number_of_samples, seconds_to_finish=40):
+    def __init__(self,model_version='0.0.0.1', number_of_samples=100, seconds_to_finish=40):
         super().__init__()
         self.model_version=model_version
         self.model.load_state_dict(
