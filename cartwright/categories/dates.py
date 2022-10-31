@@ -56,10 +56,6 @@ class date_Ymd_5(DateBase):
         super().__init__()
         self.format="%Y%m%d"
 
-    def validate(self, value):
-        return self.is_date_arrow(value)
-
-
 
 
 #'1980-01-12 17:02:57'
@@ -230,7 +226,6 @@ class date_dmy_5(DateBase):
         self.format="%d/%m/%Y"
 
 
-
 #'28/02/96'
 class date_dmy_6(DateBase):
     def __init__(self):
@@ -280,16 +275,11 @@ class date_dmy_12(DateBase):
         self.format="%d.%m.%Y %H:%M:%S"
 
 
-
-#### Yd / Ym
+# 200831 or 197520 or 202208
 class date_yd_1(DateBase):
     def __init__(self):
         super().__init__()
         self.format="%Y%d"
-
-    def validate(self, value):
-        return self.is_date_arrow(value)
-
 
 
 #'2008-12'
@@ -298,31 +288,12 @@ class date_ym_1(DateBase):
         super().__init__()
         self.format="%Y-%m"
 
-    def validate(self, value):
-        year_month = value.split('-')
-        monthval=year_month[1]
-        yearval=year_month[0]
-        if 12 >= int(monthval) >= 1:
-            if str.isdigit(str(yearval)):
-                if 1800 < int(yearval) < 2100:
-                    return value
-
 
 #'2008/12'
 class date_ym_2(DateBase):
     def __init__(self):
         super().__init__()
         self.format="%Y/%m"
-
-    def validate(self, value):
-        year_month = value.split('/')
-        monthval=year_month[1]
-        yearval=year_month[0]
-        if self.is_date_arrow(value):
-            if 12 >= int(monthval) >= 1:
-                if str.isdigit(str(yearval)):
-                    if 1800 < int(yearval) < 2100:
-                        return value
 
 
 #'2008.12'
@@ -331,40 +302,19 @@ class date_ym_3(DateBase):
         super().__init__()
         self.format="%Y.%m"
 
-    def validate(self, value):
-        year_month = value.split('.')
-        monthval=year_month[1]
-        yearval=year_month[0]
-        if self.is_date_arrow(value):
-            if 12 >= int(monthval) >= 1:
-                if str.isdigit(str(yearval)):
-                    if 1800 < int(yearval) < 2100:
-                        return value
 
-
-#'2008.12'
+#'2008_12'
 class date_ym_4(DateBase):
     def __init__(self):
         super().__init__()
         self.format="%Y_%m"
-
-    def validate(self, value):
-        year_month = value.split('_')
-        monthval=year_month[1]
-        yearval=year_month[0]
-        if self.is_date_arrow(value):
-            if 12 >= int(monthval) >= 1:
-                if str.isdigit(str(yearval)):
-                    if 1800 < int(yearval) < 2100:
-                        return value
-
 
 
 #2001-05-02T16:40:06
 class iso8601(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="%Y-%m-%dT%H%M%S"
+        self.format="%Y-%m-%dT%H:%M:%S"
 
     def generate_training_data(self):
         return self.format, str(getattr(self.fake, self.class_name())())
@@ -375,15 +325,23 @@ class iso8601(DateBase):
 class date_long_dmdy(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="%A, %B %d, %y"
+        self.format="%A, %B %d, %Y"
 
     def generate_training_data(self):
-        dayExample = str(getattr(self.fake, "day_of_month")())
-        dayExample_name = str(getattr(self.fake, "day_of_week")())
-        monthExample = str(getattr(self.fake, "month_name")())
-        yearExample = str(getattr(self.fake, "year")())
-        val = dayExample_name + ', ' + monthExample + ' ' + dayExample + ', ' + yearExample
-        return self.format, val
+        #TODO: while loop because this can generate invalid dates e.g. Saturday, February 29, 1989
+        while True:
+            dayExample = str(getattr(self.fake, "day_of_month")())
+            dayExample_name = str(getattr(self.fake, "day_of_week")())
+            monthExample = str(getattr(self.fake, "month_name")())
+            yearExample = str(getattr(self.fake, "year")())
+            val = dayExample_name + ', ' + monthExample + ' ' + dayExample + ', ' + yearExample
+            try:
+                self.validate(val)
+                return self.format, val
+            except:
+                pass
+
+        # return self.format, val
 
 
 
@@ -394,28 +352,43 @@ class date_long_mdy(DateBase):
         self.format="%B %d, %Y"
 
     def generate_training_data(self):
-        dayExample = str(getattr(self.fake, "day_of_month")())
-        monthExample = str(getattr(self.fake, "month_name")())
-        yearExample = str(getattr(self.fake, "year")())
-        val = monthExample + ' ' + dayExample + ', ' + yearExample
-        return self.format, val
+        while True: #TODO: loop until valid date is generated
+            dayExample = str(getattr(self.fake, "day_of_month")())
+            monthExample = str(getattr(self.fake, "month_name")())
+            yearExample = str(getattr(self.fake, "year")())
+            val = monthExample + ' ' + dayExample + ', ' + yearExample
+            try:
+                self.validate(val)
+                return self.format, val
+            except:
+                pass
+
+        # return self.format, val
 
 
 #'Monday, November 03, 1999, 18:46:22'
 class date_long_dmdyt(DateBase):
     def __init__(self):
         super().__init__()
-        self.format="%A, %B %d, %Y HH:mm:ss"
+        self.format="%A, %B %d, %Y, %H:%M:%S"
 
     def generate_training_data(self):
-        dayExample = str(getattr(self.fake, "day_of_month")())
-        dayExample_name = str(getattr(self.fake, "day_of_week")())
-        monthExample = str(getattr(self.fake, "month_name")())
-        yearExample = str(getattr(self.fake, "year")())
-        timeDate = str(getattr(self.fake, "date_time_this_century")())
-        time = timeDate.split(' ')[1]
-        val = dayExample_name + ', ' + monthExample + ' ' + dayExample + ', ' + yearExample + ', ' + time
-        return self.format, val
+        #TODO: loop to skip any invalid dates created
+        while True:
+            dayExample = str(getattr(self.fake, "day_of_month")())
+            dayExample_name = str(getattr(self.fake, "day_of_week")())
+            monthExample = str(getattr(self.fake, "month_name")())
+            yearExample = str(getattr(self.fake, "year")())
+            timeDate = str(getattr(self.fake, "date_time_this_century")())
+            time = timeDate.split(' ')[1]
+            val = dayExample_name + ', ' + monthExample + ' ' + dayExample + ', ' + yearExample + ', ' + time
+            try:
+                self.validate(val)
+                return self.format, val
+            except:
+                pass
+
+        # return self.format, val
 
 
 #'11/03/99 18:46:22 PM'
@@ -441,11 +414,18 @@ class date_long_dmonthY(DateBase):
         self.format="%d %B %Y"
 
     def generate_training_data(self):
-        dayExample = self.fake.day_of_month()
-        monthExample = self.fake.month_name()
-        yearExample = self.fake.year()
-        val = dayExample + ' ' + monthExample + ' ' + yearExample
-        return self.format, val
+        while True: #TODO: loop to skip any invalid dates created
+            dayExample = self.fake.day_of_month()
+            monthExample = self.fake.month_name()
+            yearExample = self.fake.year()
+            val = dayExample + ' ' + monthExample + ' ' + yearExample
+            try:
+                self.validate(val)
+                return self.format, val
+            except:
+                pass
+
+        # return self.format, val
 
 
 #'Sat, 31 Oct 1981'
@@ -462,9 +442,16 @@ class date_long_dmonthy(DateBase):
         self.format = "%d %B %y"
 
     def generate_training_data(self):
-        dayExample = self.fake.day_of_month()
-        monthExample = self.fake.month_name()
-        yearExample = self.fake.year()
-        val = dayExample + ' ' + monthExample + ' ' + yearExample[:2]
-        return self.format, val
+        while True: #TODO: loop to skip any invalid dates created
+            dayExample = self.fake.day_of_month()
+            monthExample = self.fake.month_name()
+            yearExample = self.fake.year()
+            val = dayExample + ' ' + monthExample + ' ' + yearExample[:2]
+            try:
+                self.validate(val)
+                return self.format, val
+            except:
+                pass
+
+        # return self.format, val
 
