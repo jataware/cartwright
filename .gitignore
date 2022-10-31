@@ -11,3 +11,7 @@ dist
 
 #temporary csv made during tests
 test.csv
+
+
+.DS_Store
+.jekyll-cache/
