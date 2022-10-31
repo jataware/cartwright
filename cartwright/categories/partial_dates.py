@@ -11,8 +11,6 @@ class year(DateBase):
     def generate_training_data(self):
         return self.format, str(getattr(self.fake, self.class_name())())
 
-    # def validate(self,value):
-    #     return self.validate_years([value])
 
 # #'05'
 class month(DateBase):
@@ -24,11 +22,6 @@ class month(DateBase):
     def generate_training_data(self):
         return self.format, str(getattr(self.fake, self.class_name())())
 
-    # def validate(self,value):
-    #     if str.isdigit(value):
-    #         if 12 >= int(value) >= 1:
-    #             return True
-
 
 #'May'
 class month_name(DateBase):
@@ -38,9 +31,6 @@ class month_name(DateBase):
 
     def generate_training_data(self):
         return self.format, str(getattr(self.fake, self.class_name())())
-
-    # def validate(self,value):
-    #     return value.lower() in months_of_the_year_B
 
 
 class month_name_short(DateBase):
@@ -66,11 +56,6 @@ class day_of_month(DateBase):
     def generate_training_data(self):
         return self.format, str(getattr(self.fake, self.class_name())())
 
-    # def validate(self,value):
-    #     if str.isdigit(value):
-    #         if 31 >= int(value) >= 1:
-    #             return True
-
 
 #'Wednesday'
 class day_of_week(DateBase):
@@ -80,10 +65,6 @@ class day_of_week(DateBase):
 
     def generate_training_data(self):
         return self.format, str(getattr(self.fake, self.class_name())())
-
-    # def validate(self,value):
-    #     return value.lower() in days_of_the_week_A
-
 
 
 #'Wed'
