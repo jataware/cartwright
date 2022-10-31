@@ -194,7 +194,6 @@ class CartwrightTrainer(CartwrightBase):
         plt.show()
 
     def create_or_load_training_date(self,create_training_data):
-        print('started ..')
         if create_training_data:
             random.seed(self.seed)
             self.dataframe(size=self.get_training_data_size())
@@ -214,11 +213,23 @@ class CartwrightTrainer(CartwrightBase):
             with open('cartwright/resources/dev_data.pickle', 'rb') as f:
                 self.dev_split = pickle.load(f)
 
+    def save_data(self):
+        self.df.to_csv('cartwright/resources/all_training_data.csv')
+        with open('cartwright/resources/training_data.pickle', 'wb') as f:
+            pickle.dump(self.train_split, f)
+
+        with open('cartwright/resources/testing_data.pickle', 'wb') as f:
+            pickle.dump(self.test_split, f)
+
+        with open('cartwright/resources/dev_data.pickle', 'wb') as f:
+            pickle.dump(self.dev_split, f)
 
     # train the model by creating a pseudo dataset
     def train(self, create_training_date=False):
         print("Starting training")
         self.create_or_load_training_date(create_training_data=create_training_date)
+
+        self.save_data()
 
         print('Training samples:', len(self.train_split))
         print('Valid samples:', len(self.dev_split))
