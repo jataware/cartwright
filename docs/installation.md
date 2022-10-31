@@ -6,7 +6,7 @@ has_toc: true
 ---
 # Installation
 
-Cartwright is [available on PyPI](https://pypi.org/project/cartwright/). Compatible with Python versions >= 3.6
+Cartwright is [available on PyPI](https://pypi.org/project/cartwright/). Compatible with Python versions >= 3.7
 ```
 pip install cartwright
 ```
