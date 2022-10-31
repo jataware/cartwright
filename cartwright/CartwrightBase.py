@@ -1,8 +1,5 @@
 import numpy as np
 import torch
-import torch.autograd as autograd
-import torch.nn as nn
-from torch.nn.utils.rnn import pack_padded_sequence
 from torch.utils.data import Dataset, DataLoader
 
 from cartwright.utils import character_tokins

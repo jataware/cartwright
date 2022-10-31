@@ -1,29 +1,12 @@
 from __future__ import unicode_literals, print_function, division
 
-import os
+
 from io import open
-import sys
-import math
-import random
 import argparse
 import pickle
-
-import csv
-
-import torch
-
-import torch.nn as nn
-import torch.optim as optim
-
-
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-
 import pandas as pd
 import numpy as np
-
 import random
-
-import matplotlib.pyplot as plt
 
 from cartwright.CartwrightBase import CartwrightBase
 

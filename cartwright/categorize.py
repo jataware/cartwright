@@ -2,24 +2,16 @@
 from __future__ import unicode_literals, print_function, division
 
 import torch
-
-
-# Kyle's attempt
 import pandas as pd
 import numpy as np
 import argparse
 import datetime
-
 import pkg_resources
-
+import time
+import logging
 
 from . import schemas
 from . import time_resolution
-import time
-
-import logging
-
-from .LSTM import PaddedTensorDataset
 from .CartwrightBase import CartwrightBase
 
 from .utils import (
@@ -34,8 +26,6 @@ from cartwright.category_helpers import (
     generate_label_id,
 )
 
-
-
 # Set log level and formatter
 logging.getLogger().setLevel(level="ERROR")
 logging.basicConfig(format="%(levelname)s - %(asctime)s %(message)s")
@@ -45,7 +35,6 @@ def timeout():
     return build_return_standard_object(
         category="timeout", subcategory=None, match_type=[]
     )
-
 
 def skipped(column, fuzzy_matched):
     category = None
@@ -67,7 +56,6 @@ def skipped(column, fuzzy_matched):
             category=None, subcategory=None, match_type=None
         )
 
-
 class CartwrightClassify(CartwrightBase):
     def __init__(self,model_version='0.0.0.1', number_of_samples=100, seconds_to_finish=40):
         super().__init__()
@@ -85,8 +73,8 @@ class CartwrightClassify(CartwrightBase):
         self.predictionLimit = -4.5
         self.fake_data = pd.read_csv(
             pkg_resources.resource_stream(
-                __name__, "datasets/Fake_data.csv"
-            ),  # cartwright/datasets/Fake_data.csv
+                __name__, "datasets/fake_data.csv"
+            ),  # cartwright/datasets/fake_data.csv
             encoding="latin-1",
         )
         self.seconds_to_finish = seconds_to_finish
@@ -480,7 +468,7 @@ class CartwrightClassify(CartwrightBase):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path", default="cartwright/datasets/Fake_data.csv", help="path to csv")
+    parser.add_argument("--path", default="cartwright/datasets/fake_data.csv", help="path to csv")
     parser.add_argument("--num_samples",type=int, default=100, help="number of samples to test from each column")
     parser.add_argument("--model_version",default="0.0.1", help='model version you would like to run')
     args = parser.parse_args()

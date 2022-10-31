@@ -1,43 +1,17 @@
 from __future__ import unicode_literals, print_function, division
 
-import os
 from io import open
-import sys
-import math
-import random
 import argparse
-import operator
-import pdb
 import pickle
 import torch
-import torch.autograd as autograd
-from torch.autograd import Variable
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
-from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-
-from collections import defaultdict
-from collections import Counter
-
-from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-
+from sklearn.metrics import confusion_matrix, accuracy_score
 import pandas as pd
 import numpy as np
-import re
-from string import punctuation
-import glob
-import unicodedata
-import string
 import random
-
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 
-from cartwright.utils import character_tokins
-from cartwright.category_helpers import return_all_category_classes_and_labels
-from cartwright.LSTM import LSTMClassifier, PaddedTensorDataset
 from cartwright.CartwrightBase import CartwrightBase
 
 # This class creates a randomized dataset and splits it into training ,validation and testing for model training and validation
