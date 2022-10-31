@@ -1,4 +1,3 @@
-
 import numpy as np
 import torch
 import torch.autograd as autograd
@@ -65,16 +64,10 @@ class CartWrightBase:
         seq_lengths = torch.LongTensor([len(s) for s in vectorized_seqs])
         seq_tensor = self.pad_sequences(vectorized_seqs, seq_lengths)
         target_tensor = torch.LongTensor([target2id[y] for _, y in data])
-        print(f'target_tensor {target_tensor}')
-        print(f'target_tensor {len(target_tensor)}')
-
         raw_data = [x for x, _ in data]
-        try:
-            d=DataLoader(PaddedTensorDataset(seq_tensor, target_tensor, seq_lengths, raw_data), batch_size=batch_size)
-        except Exception as e:
-            print(seq_tensor, target_tensor, seq_lengths, raw_data)
-            print(e)
-        return d
+        return DataLoader(PaddedTensorDataset(seq_tensor, target_tensor, seq_lengths, raw_data), batch_size=batch_size)
+
+
 
     def sort_batch(self, batch, targets, lengths):
         seq_lengths, perm_idx = lengths.sort(0, descending=True)

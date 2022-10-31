@@ -1,72 +1,95 @@
-import logging
-from cartwright.utils import build_return_date_object, build_return_standard_object
-from cartwright.categories.CategoryBases import DateBase
-
+from cartwright.utils import months_of_the_year_B, months_of_the_year_b, days_of_the_week_A, days_of_the_week_a
+from cartwright.CategoryBases import DateBase
+import numpy as np
 #'2022'
 class year(DateBase):
     def __init__(self):
         super().__init__()
+        self.format="%Y"
 
     def generate_training_data(self):
-        return self.class_name(), str(getattr(self.fake, self.class_name())())
+        return self.format, str(getattr(self.fake, self.class_name())())
 
-    def validate(self,values):
-        try:
-            logging.info("Start year validation ...")
-            year_values_valid = []
+    def validate(self,value):
+        return self.validate_years([value])
 
-            for year in values:
-                try:
-                    if str.isdigit(str(year)):
-                        if 1800 < int(year) < 2100:
-                            year_values_valid.append("True")
-                except Exception as e:
-                    logging.error(f"year_f - {values}: {e}")
-
-            if len(year_values_valid) > len(values) * 0.75:
-                return build_return_date_object(format="%Y", dayFirst=None)
-            return build_return_standard_object(category=None, subcategory=None, match_type=None)
-        except Exception as e:
-            return self.exception_category(e)
-#'05'
+# #'05'
 class month(DateBase):
     def __init__(self):
         super().__init__()
+        self.format="%m"
 
     def generate_training_data(self):
-        return self.class_name(), str(getattr(self.fake, self.class_name())())
+        return self.format, str(getattr(self.fake, self.class_name())())
 
-    def validate(self,values):
-        return self.validate_month_day(values)
+    def validate(self,value):
+        if str.isdigit(value):
+            if 12 >= int(value) >= 1:
+                return True
+
+
 #'May'
 class month_name(DateBase):
     def __init__(self):
         super().__init__()
+        self.format="%B"
 
     def generate_training_data(self):
-        return self.class_name(), str(getattr(self.fake, self.class_name())())
+        return self.format, str(getattr(self.fake, self.class_name())())
 
-    def validate(self,values):
-        return self.validate_month_name(values)
+    def validate(self,value):
+        return value.lower() in months_of_the_year_B
+
+
+class month_name_short(DateBase):
+    def __init__(self):
+        super().__init__()
+        self.format="%b"
+
+    def generate_training_data(self):
+        return self.format, np.random.choice(months_of_the_year_b)
+
+    def validate(self,value):
+        return value.lower() in months_of_the_year_b
+
 
 #'15'
 class day_of_month(DateBase):
     def __init__(self):
         super().__init__()
+        self.format="%d"
 
     def generate_training_data(self):
-        return self.class_name(), str(getattr(self.fake, self.class_name())())
+        return self.format, str(getattr(self.fake, self.class_name())())
 
-    def validate(self,values):
-        return self.validate_month_day(values)
+    def validate(self,value):
+        if str.isdigit(value):
+            if 31 >= int(value) >= 1:
+                return True
+
 
 #'Wednesday'
 class day_of_week(DateBase):
     def __init__(self):
         super().__init__()
+        self.format="%A"
 
     def generate_training_data(self):
-        return self.class_name(), str(getattr(self.fake, self.class_name())())
+        return self.format, str(getattr(self.fake, self.class_name())())
 
-    def validate(self, values):
-        return self.validate_month_day(values)
+    def validate(self,value):
+        return value.lower() in days_of_the_week_A
+
+
+
+#'Wednesday'
+class day_of_week_a(DateBase):
+    def __init__(self):
+        super().__init__()
+        self.format="%a"
+
+    def generate_training_data(self):
+        return self.format, np.random.choice(days_of_the_week_a)
+
+    def validate(self,value):
+        return value.lower() in days_of_the_week_a

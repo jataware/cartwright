@@ -40,7 +40,6 @@ from cartwright.category_helpers import return_all_category_classes_and_labels
 from cartwright.LSTM import LSTMClassifier, PaddedTensorDataset
 from cartwright.CartWrightBase import CartWrightBase
 
-
 # This class creates a randomized dataset and splits it into training ,validation and testing for model training and validation
 class CartwrightTrainer(CartWrightBase):
     def __init__(self, seed=1, num_epochs=1, learning_rate=.001):
@@ -146,7 +145,6 @@ class CartwrightTrainer(CartWrightBase):
 
                 total_loss += loss
             acc = accuracy_score(y_true, y_pred)
-            print('after acc')
             val_loss, val_acc = self.evaluate_validation_set()
             print("Train loss: {} - acc: {} \nValidation loss: {} - acc: {}".format(
                 total_loss.data.float() / len(self.train_split), acc,
@@ -197,7 +195,7 @@ class CartwrightTrainer(CartWrightBase):
 
     # train the model by creating a pseudo dataset
     def train(self):
-
+        print("Starting training")
         random.seed(self.seed)
 
         self.dataframe(size=self.get_training_data_size())
@@ -215,8 +213,9 @@ class CartwrightTrainer(CartWrightBase):
 
     def save_model(self, version):
         # If the model performed well you can save it locally
-        path = f'../cartwright/models/LSTM_RNN_CartWright_v_{version}_dict.pth'
+        path = f'models/LSTM_RNN_CartWright_v_{version}_dict.pth'
         torch.save(self.model.state_dict(), path)
 
-f=CartwrightTrainer(num_epochs=2)
+f=CartwrightTrainer(num_epochs=5)
 f.train()
+f.save_model(version="0.0.0.1")

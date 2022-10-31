@@ -1,7 +1,9 @@
 import numpy as np
 from typing import Optional
 
+
 ## when working locally use
+
 from .schemas import TimeUnit, Uniformity, TimeResolution
 
 # from cartwright.schemas import TimeUnit, Uniformity, TimeResolution

@@ -23,6 +23,8 @@ First you need to install numpy, scipy, pandas, joblib, pip, torch and torchvisi
 
     conda install -c conda-forge numpy
     conda install -c conda-forge scipy
+    conda install -c conda-forge scikit-learn
+    conda install -c conda-forge matplotlib
     conda install -c conda-forge pandas
     conda install -c conda-forge joblib
     conda install -c conda-forge pip
