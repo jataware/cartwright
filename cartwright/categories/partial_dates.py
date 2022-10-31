@@ -6,6 +6,7 @@ class year(DateBase):
     def __init__(self):
         super().__init__()
         self.format="%Y"
+        self.threshold=.99
 
     def generate_training_data(self):
         return self.format, str(getattr(self.fake, self.class_name())())
@@ -18,6 +19,7 @@ class month(DateBase):
     def __init__(self):
         super().__init__()
         self.format="%m"
+        self.threshold = .99
 
     def generate_training_data(self):
         return self.format, str(getattr(self.fake, self.class_name())())
@@ -58,6 +60,7 @@ class day_of_month(DateBase):
     def __init__(self):
         super().__init__()
         self.format="%d"
+        self.threshold = .99
 
     def generate_training_data(self):
         return self.format, str(getattr(self.fake, self.class_name())())

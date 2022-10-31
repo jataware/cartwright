@@ -486,6 +486,7 @@ def main():
     args = parser.parse_args()
     cartwright = CartwrightClassify(model_version=args.model_version, number_of_samples=args.samples)
     preds = cartwright.columns_classified(path=args.path)
+    print(preds)
     return preds
 
 
