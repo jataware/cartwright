@@ -1,13 +1,11 @@
 import numpy as np
-import pandas as pd
-import logging
+import fuzzywuzzy
+from fuzzywuzzy import process
 
+import random
 
-# from cartwright.utils import
-from cartwright.categories.CategoryBases import GeoBase
+from cartwright.CategoryBases import GeoBase
 from cartwright.utils import *
-
-
 
 #Sarahbury
 class city(GeoBase):
@@ -17,8 +15,24 @@ class city(GeoBase):
     def generate_training_data(self):
         return self.class_name(), str(getattr(self.fake, self.class_name())())
 
-    def validate(self, values):
-        return self.validate_city(values)
+    def validate_series(self, series):
+        subsample = 5
+        count = 0
+        passed = 0
+        while passed < 2 and count <= subsample:
+            count += 1
+            match = fuzzywuzzy.process.extractOne(
+                random.sample(series, 1),
+                self.city_lookup,
+                scorer=fuzz.token_sort_ratio,
+            )
+            if match is not None:
+                if match[1] > 90:
+                    passed += 1
+
+        if passed>=2:
+            return len(series)
+
 
 #'port'
 class city_suffix(GeoBase):
@@ -28,8 +42,23 @@ class city_suffix(GeoBase):
     def generate_training_data(self):
         return self.class_name(), str(getattr(self.fake, self.class_name())())
 
-    def validate(self, values):
-        return self.validate_country(values)
+    def validate_series(self, series):
+        subsample = 5
+        count = 0
+        passed = 0
+        while passed < 2 and count <= subsample:
+            count += 1
+            match = fuzzywuzzy.process.extractOne(
+                random.sample(series, 1),
+                self.city_lookup,
+                scorer=fuzz.token_sort_ratio,
+            )
+            if match is not None:
+                if match[1] > 90:
+                    passed += 1
+
+        if passed >= 2:
+            return len(series)
 
 
 # Luxembourg
@@ -40,8 +69,23 @@ class country_name(GeoBase):
     def generate_training_data(self):
         return self.class_name(), str(getattr(self.fake, "country")())
 
-    def validate(self, values):
-        return self.validate_country(values)
+    def validate_series(self, series):
+        subsample = 5
+        count = 0
+        passed = 0
+        while passed < 2 and count <= subsample:
+            count += 1
+            match = fuzzywuzzy.process.extractOne(
+                random.sample(series, 1),
+                self.country_name,
+                scorer=fuzz.token_sort_ratio,
+            )
+            if match is not None:
+                if match[1] > 90:
+                    passed += 1
+
+        if passed>=2:
+            return len(series)
 
 
 #TJ
@@ -52,8 +96,9 @@ class country_code(GeoBase):
     def generate_training_data(self):
         return self.class_name(), str(getattr(self.fake, self.class_name())())
 
-    def validate(self,values):
-        return self.validate_iso2(values)
+    def validate(self, value):
+        return value.upper() in self.iso2_lookup
+
 
 #'UZ'
 class country_GID(GeoBase):
@@ -62,28 +107,8 @@ class country_GID(GeoBase):
 
     def generate_training_data(self):
         return self.class_name(), str(np.random.choice(self.iso3_lookup))
-
-    def validate(self, values):
-        try:
-            logging.info("Start iso3 validation ...")
-            ISO_in_lookup = []
-
-            for iso in values:
-                for cc in self.iso3_lookup:
-                    try:
-                        ISO_in_lookup.append(
-                            fuzzy_match(str(iso), str(cc), ratio=85)
-                        )
-                    except Exception as e:
-                        logging.error(f"country_iso3 - {values}: {e}")
-
-            if np.count_nonzero(ISO_in_lookup) >= (len(values) * 0.65):
-                return build_return_standard_object(category='geo', subcategory='ISO3', match_type='LSTM')
-            else:
-                return self.validate_iso2(values)
-        except Exception as e:
-            logging.error(f'country_iso3 error: {e}')
-            return build_return_standard_object(category=None, subcategory=None, match_type=None)
+    def validate(self, value):
+        return value.upper() in self.iso3_lookup
 
 
 #'Antarctica'
@@ -99,28 +124,12 @@ class continent(GeoBase):
             val = np.random.choice(self.cont_names)
         return self.class_name(), val
 
-    def validate(self,values):
-        try:
-            logging.info("Start continent validation ...")
-            cont_in_lookup = []
+    def validate(self, value):
 
-            for cont in values:
-                for c in self.cont_lookup:
-                    try:
-                        cont_in_lookup.append(
-                            fuzzy_match(str(cont), str(c), ratio=85)
-                        )
-                    except Exception as e:
-                        logging.error(f"continent_f - {c} - {cont}: {e}")
+        for continent in self.cont_lookup:
+            if fuzzy_match(str(value), str(continent), ratio_=int(100*self.threshold)):
+                return True
 
-            if np.count_nonzero(cont_in_lookup) >= (len(values) * 0.65):
-
-                return build_return_standard_object(category='geo', subcategory='continent', match_type='LSTM')
-            else:
-                return build_return_standard_object(category=None, subcategory=None, match_type=None)
-        except Exception as e:
-            logging.error(f'continent error: {e}')
-            return build_return_standard_object(category=None, subcategory=None, match_type=None)
 
 
 #'8.166433'
@@ -131,8 +140,10 @@ class latitude(GeoBase):
     def generate_training_data(self):
         return self.class_name(), str(getattr(self.fake, self.class_name())())
 
-    def validate(self,values):
-        return self.validate_geos(values)
+    def validate(self,value):
+        if 90 >= float(value) >= -90:
+            return True
+
 
 #'141.645223'
 class longitude(GeoBase):
@@ -141,9 +152,9 @@ class longitude(GeoBase):
 
     def generate_training_data(self):
         return self.class_name(), str(getattr(self.fake, self.class_name())())
-
-    def validate(self,values):
-        return self.validate_geos(values)
+    def validate(self,value):
+        if 180 >= float(value) >= -180:
+            return True
 
 #'74.2533, 179.643'
 class latlong(GeoBase):
@@ -156,7 +167,12 @@ class latlong(GeoBase):
             getattr(self.fake, "longitude")())[:remove_or_add_digits]
         return self.class_name(), val
 
-    def validate(self, values):
-        return self.not_classified()
 
+    def validate(self,value):
+        values=value.split(',')
+        lat=values[0].strip()
+        lng=values[1].strip()
+        if 180 >= float(lng) >= -180:
+            if 90 >= float(lat) >= -90:
+                return True
 

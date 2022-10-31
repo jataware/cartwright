@@ -2,20 +2,6 @@ from cartwright.categories import geos, dates,partial_dates, misc, timespans
 import importlib
 from inspect import isclass
 
-# def return_all_categories_classes():
-#     all_categories=[]
-#     classes_geo = [x for x in dir(geos) if isclass(getattr(geos, x))]
-#     classes_dates = [x for x in dir(dates) if isclass(getattr(dates, x))]
-#     classes_partial_dates = [x for x in dir(partial_dates) if isclass(getattr(partial_dates, x))]
-#     classes_misc = [x for x in dir(misc) if isclass(getattr(misc, x))]
-#     all_classes=list(set(classes_misc + classes_dates + classes_partial_dates + classes_geo))
-#     print(all_classes)
-#     for name in all_classes:
-#         if name in ["Fake","Faker"]:
-#             pass
-#         else:
-#             all_categories.append(str(name))
-#     return all_categories
 
 
 # TODO: this should be dynamically generated based on e.g. files in the categories directory
@@ -30,7 +16,7 @@ def return_all_category_classes_and_labels():
 
         module = importlib.import_module(f"cartwright.categories.{dir_}")
         for class_name in classes_all.get(dir_):
-            if class_name in ["Fake", "Faker", "DateBase","GeoBase", "CategoryBase", "defaultdict"]:
+            if class_name in ["Fake", "Faker", "DateBase","GeoBase", "CategoryBase", "defaultdict","MiscBase", "TimespanBase"]:
                 pass
             else:
                 try:
@@ -42,7 +28,6 @@ def return_all_category_classes_and_labels():
 
     return all_classes
 
-from collections import defaultdict
 
 def generate_label_id(all_labels):
 
@@ -53,3 +38,4 @@ def generate_label_id(all_labels):
         count += 1
 
     return label2id
+

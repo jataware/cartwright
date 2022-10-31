@@ -25,8 +25,8 @@ def read_file(filename, cb):
         return cb(f)
 
 setup(
-    name='geotime_classify',
-    version='0.8.2',
+    name='cartwright',
+    version='0.0.1',
     license='LGPL-3.0-or-later',
     description='Categorizes spatial and temporal columns for csv files. Standardizes date columns for transformations',
     long_description=long_description,
@@ -36,7 +36,7 @@ setup(
     url='https://github.com/jataware/geotime_classify',
     packages=find_packages(),
     package_dir={'cartwright': 'cartwright'},
-    package_data={'cartwright': ['models/*','datasets/*', 'py.typed']},
+    package_data={'cartwright': ['models/*','resources/*','categories/*' 'py.typed']},
     py_modules=['schemas'],
     # include_package_data=True,
     zip_safe=False,

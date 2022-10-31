@@ -3,7 +3,7 @@ from enum import Enum, IntEnum, auto
 from pydantic import BaseModel, constr, Field
 from typing import List, Optional
 
-class fuzzyCategory(str,Enum):
+class FuzzyCategory(str,Enum):
     """
         fuzzyCategory are the categories we try to capture with fuzzy matching.
     """
@@ -39,7 +39,7 @@ class fuzzyCategory(str,Enum):
     ISO_code= "ISO_code"
     Results= "Results"
 
-class category(str, Enum):
+class Category(str, Enum):
     """
     category is the general classification for a column
     """
@@ -49,7 +49,7 @@ class category(str, Enum):
     timeout="timeout"
 
 
-class subcategory(str, Enum):
+class Subcategory(str, Enum):
     """
     subcategory is the classification of the column at a finer scale than category.
     """
@@ -71,19 +71,19 @@ class subcategory(str, Enum):
     province="province"
     territory="territory"
 
-class matchtype(str, Enum):
+class Matchtype(str, Enum):
     """
      is the type of match for classification if any.
     """
     fuzzy="fuzzy"
     LSTM="LSTM"
 
-class fuzzyColumn(BaseModel):
+class FuzzyColumn(BaseModel):
     """
        fuzzyColumn is only defined when a column header matches a word we are looking for. fuzzyCategory is used for classifying a column.
     """
     matchedKey: str = Field(default=None, description='This is the word that was matched with the column header. If a column header was Lat, it would match with the the matchedKey of Lat, since it is one of the lookup words. In this case the fuzzyCategory would be returned as "Latitude".')
-    fuzzyCategory: Optional[fuzzyCategory]
+    FuzzyCategory: Optional[FuzzyCategory]
     ratio: int = Field(default=None, description='Ratio of the fuzzy match. If it was an exact match it would be 100')
 
 class Parser(str,Enum):
@@ -135,14 +135,13 @@ class Classification(BaseModel):
         Classification is the classifciation information for one column.
     """
     column: str = Field(default=None, description='column name')
-    category: Optional[category]
-    subcategory: Optional[subcategory]
+    category: Optional[Category]
+    subcategory: Optional[Subcategory]
     format: str = Field(default=None, description='the date represented in strftime format')
     time_resolution: Optional[TimeResolution]
-    match_type: List[matchtype]
+    match_type: List[Matchtype]
     Parser: Optional[Parser]
-    DayFirst: bool = Field(default=None, description='Boolean: if day is first in date format' )
-    fuzzyColumn: Optional[fuzzyColumn]
+    fuzzyColumn: Optional[FuzzyColumn]
 
 
 class Classifications(BaseModel):

@@ -10,7 +10,7 @@ include LICENSE
 include README.md
 include requirements.txt
 include requirements-dev.txt
-include cartwright/models/LSTM_RNN_Geotime_Classify_v_0.07_dict.pth
+include cartwright/models/LSTM_RNN_CartWright_v_0.0.0.1_dict.pth
 include cartwright/resources/city.csv
 include cartwright/resources/continent_lookup.csv
 include cartwright/resources/country_lookup.csv
