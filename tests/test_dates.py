@@ -6,56 +6,56 @@ import pytest
 import pdb
 
 #single instance used for all tests
-t = CartwrightClassify(20)
+t = CartwrightClassify('0.0.0.1', 20)
 
 
 #TODO: pull classes from the .py file itself
 date_classes = [
-    'date_%Y-%m-%d',
-    'date_%Y_%m_%d',
-    'date_%Y/%m/%d',
-    'date_%Y.%m.%d',
-    'date_%Y%m%d',
-    'date_%Y-%m-%d %H:%M:%S',
-    'date_%Y/%m/%d %H:%M:%S',
-    'date_%Y_%m_%d %H:%M:%S',
-    'date_%Y.%m.%d %H:%M:%S',
-    'date_%d-%m-%Y',
-    'date_%d/%m/%Y %H:%M:%S',
-    'date_%d_%m_%Y %H:%M:%S',
-    'date_%d.%m.%Y %H:%M:%S',
-    'date_%d-%m-%y',
-    'date_%d_%m_%Y',
-    'date_%d_%m_%y',
-    'date_%d/%m/%Y',
-    'date_%d/%m/%y',
-    'date_%d.%m.%Y',
-    'date_%d.%m.%y',
-    'date_%d-%m-%Y %H:%M:%S',
-    'date_%A, %B %d, %y',
-    'date_%A, %B %d, %Y HH:mm:ss',
-    'date_%d %B %Y',
-    'date_%d %B %y',
-    'date_%B %d, %Y',
-    'date_%m/%d/%y HH:mm:ss',
-    'date_%m-%d-%Y',
-    'date_%m/%d/%Y %H:%M:%S',
-    'date_%m_%d_%Y %H:%M:%S',
-    'date_%m.%d.%Y %H:%M:%S',
-    'date_%m-%d-%y',
-    'date_%m_%d_%Y',
-    'date_%m_%d_%y',
-    'date_%m/%d/%Y',
-    'date_%m/%d/%y',
-    'date_%m.%d.%Y',
-    'date_%m.%d.%y',
-    'date_%m-%d-%Y %H:%M:%S',
-    'date_%Y%d',
-    'date_%Y-%m',
-    'date_%Y/%m',
-    'date_%Y.%m',
-    'date_%Y_%m',
-    'date_%Y-%m-%dT%H%M%S',
+    '%Y-%m-%d',
+    '%Y_%m_%d',
+    '%Y/%m/%d',
+    '%Y.%m.%d',
+    '%Y%m%d',
+    '%Y-%m-%d %H:%M:%S',
+    '%Y/%m/%d %H:%M:%S',
+    '%Y_%m_%d %H:%M:%S',
+    '%Y.%m.%d %H:%M:%S',
+    '%d-%m-%Y',
+    '%d/%m/%Y %H:%M:%S',
+    '%d_%m_%Y %H:%M:%S',
+    '%d.%m.%Y %H:%M:%S',
+    '%d-%m-%y',
+    '%d_%m_%Y',
+    '%d_%m_%y',
+    '%d/%m/%Y',
+    '%d/%m/%y',
+    '%d.%m.%Y',
+    '%d.%m.%y',
+    '%d-%m-%Y %H:%M:%S',
+    '%A, %B %d, %Y',
+    '%A, %B %d, %Y, %H:%M:%S',
+    '%d %B %Y',
+    '%d %B %y',
+    '%B %d, %Y',
+    '%m/%d/%Y %H:%M:%S',
+    '%m-%d-%Y',
+    '%m/%d/%Y %H:%M:%S',
+    '%m_%d_%Y %H:%M:%S',
+    '%m.%d.%Y %H:%M:%S',
+    '%m-%d-%y',
+    '%m_%d_%Y',
+    '%m_%d_%y',
+    '%m/%d/%Y',
+    '%m/%d/%y',
+    '%m.%d.%Y',
+    '%m.%d.%y',
+    '%m-%d-%Y %H:%M:%S',
+    '%Y%d',
+    '%Y-%m',
+    '%Y/%m',
+    '%Y.%m',
+    '%Y_%m',
+    '%Y-%m-%dT%H:%M:%S',
     'unix_time',
 ]
 
@@ -86,4 +86,8 @@ def test_generate_column(name, ratio_valid, num_samples=1000):
 # #find real data and then have whole pipeline read it
 
 if __name__ == '__main__':
-    test_generate_single_date(date_classes[0])
+    # test_generate_single_date(date_classes[22])
+    # test_generate_single_date('%A, %B %d, %Y')
+    cls = t.all_classes['%Y%d']
+    for i in range(100):
+        print(cls.generate_training_data())
