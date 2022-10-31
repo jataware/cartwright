@@ -223,7 +223,7 @@ class CartwrightTrainer(CartwrightBase):
 
 def default_training():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--version", help="set the version of the model")
+    parser.add_argument("--version", default="0.0.1",help="set the version of the model")
     parser.add_argument("--num_epochs",type=int,default=8, help="number of epochs for model training")
     parser.add_argument("--new_data",  action='store_true', help="generate new training data")
     parser.add_argument("--training_size", type=int,default=250000, help="size of training dataset")
