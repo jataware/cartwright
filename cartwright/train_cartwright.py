@@ -8,7 +8,7 @@ import random
 import argparse
 import operator
 import pdb
-
+import pickle
 import torch
 import torch.autograd as autograd
 from torch.autograd import Variable
@@ -193,13 +193,32 @@ class CartwrightTrainer(CartWrightBase):
 
         plt.show()
 
-    # train the model by creating a pseudo dataset
-    def train(self):
-        print("Starting training")
-        random.seed(self.seed)
+    def create_or_load_training_date(self,create_training_data):
+        print('started ..')
+        if create_training_data:
+            random.seed(self.seed)
+            self.dataframe(size=self.get_training_data_size())
+            self.split_data()
 
-        self.dataframe(size=self.get_training_data_size())
-        self.split_data()
+        else:
+            self.test_split=[]
+            self.train_split=[]
+            self.dev_split=[]
+
+            with open('cartwright/resources/training_data.pickle', 'rb') as f:
+                self.train_split = pickle.load(f)
+
+            with open('cartwright/resources/testing_data.pickle', 'rb') as f:
+                self.test_split = pickle.load(f)
+
+            with open('cartwright/resources/dev_data.pickle', 'rb') as f:
+                self.dev_split = pickle.load(f)
+
+
+    # train the model by creating a pseudo dataset
+    def train(self, create_training_date=False):
+        print("Starting training")
+        self.create_or_load_training_date(create_training_data=create_training_date)
 
         print('Training samples:', len(self.train_split))
         print('Valid samples:', len(self.dev_split))
@@ -221,10 +240,11 @@ def default_training():
     parser = argparse.ArgumentParser()
     parser.add_argument("--version", help="set the version of the model")
     parser.add_argument("--num_epochs",type=int, help="number of epochs for model training")
-    parser.add_argument("--new_data",type=bool, help="generate new training data")
+    parser.add_argument("--new_data",  action='store_true', help="generate new training data")
     args = parser.parse_args()
+    print(args)
     cartwright = CartwrightTrainer(num_epochs=args.num_epochs)
-    cartwright.train()
+    cartwright.train(create_training_date=args.new_data)
     cartwright.save_model(version=str(args.version))
 
 if __name__ == "__main__":

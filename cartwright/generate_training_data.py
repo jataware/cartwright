@@ -6,7 +6,9 @@ import sys
 import math
 import random
 import argparse
+import pickle
 
+import csv
 
 import torch
 
@@ -55,7 +57,6 @@ class CartwrightDatasetGenerator(CartWrightBase):
 
     def dataframe(self, size):
         self.df = pd.DataFrame([self.datapoint() for i in range(size)])
-        print(self.df.head())
         self.get_category_values()
         return self.df
 
@@ -97,16 +98,23 @@ class CartwrightDatasetGenerator(CartWrightBase):
         for _ in range(self.test_set_size):
             self.test_split.append(self.getRandomSet())
 
-        print(self.test_split)
+        with open('cartwright/resources/training_data.pickle', 'wb') as f:
+            pickle.dump(self.train_split, f)
+
+        with open('cartwright/resources/testing_data.pickle', 'wb') as f:
+            pickle.dump(self.test_split, f)
+
+        with open('cartwright/resources/dev_data.pickle', 'wb') as f:
+            pickle.dump(self.dev_split, f)
 
 
 
     def save_data(self):
-        self.df.to_csv('cartwright/resources/training_data.csv')
+        self.df.to_csv('cartwright/resources/all_training_data.csv')
 
     # train the model by creating a pseudo dataset
     def generate_training_data(self):
-        print("Starting training")
+        print("Generating data")
         random.seed(self.seed)
         self.dataframe(size=self.get_training_data_size())
         self.split_data()
