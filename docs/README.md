@@ -110,5 +110,5 @@ The workflow consists of four main sections.
 
 Workflow overview
 
-![Alt text](./resources/cartwright2.png?raw=true "Workflows")
+![Alt text](geotime_classify/resources/cartwright2.png?raw=true "Workflows")
 
