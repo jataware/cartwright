@@ -1,31 +1,33 @@
-# from cartwright.categorize import CartwrightClassify
-# from random import random
-# import pytest
+from cartwright.categorize import CartwrightClassify
+from random import random
+import pytest
 
 
-# import pdb
+import pdb
 
-# #single instance used for all tests
-# t = CartwrightClassify(20)
-
-
-# #TODO: pull classes from the .py file itself
-# partial_date_classes = [
-#     'day_of_month',
-#     'day_of_week',
-#     'month',
-#     'month_name',
-#     'year',
-# ]
+#single instance used for all tests
+t = CartwrightClassify()
 
 
+#TODO: pull classes from the .py file itself
+partial_date_classes = [
+    '%d',
+    '%A',
+    '%a',
+    '%m',
+    '%B',
+    '%b',
+    '%Y',
+]
 
-# @pytest.mark.parametrize('name', partial_date_classes)
-# def test_generate_single_partial_date(name, num_samples=1000):
-#     cls = t.all_classes[name]
-#     examples = [cls.generate_training_data() for _ in range(num_samples)]
-#     for label, value in examples:
-#         cls.validate(value)
+
+
+@pytest.mark.parametrize('name', partial_date_classes)
+def test_generate_single_partial_date(name, num_samples=1000):
+    cls = t.all_classes[name]
+    examples = [cls.generate_training_data() for _ in range(num_samples)]
+    for label, value in examples:
+        cls.validate(value)
 
 # @pytest.mark.parametrize('name,ratio_valid', [
 #     (date_class, 1.0) for date_class in partial_date_classes #TODO: for ratio in <some sequence>
@@ -43,5 +45,5 @@
 # #def test_whole_pipeline_real():
 # #find real data and then have whole pipeline read it
 
-# if __name__ == '__main__':
-#     test_generate_single_partial_date(partial_date_classes[0])
+if __name__ == '__main__':
+    test_generate_single_partial_date(partial_date_classes[0])
