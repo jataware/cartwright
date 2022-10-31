@@ -57,7 +57,7 @@ def skipped(column, fuzzy_matched):
         )
 
 class CartwrightClassify(CartwrightBase):
-    def __init__(self,model_version='0.0.0.1', number_of_samples=100, seconds_to_finish=40):
+    def __init__(self,model_version='0.0.1', number_of_samples=100, seconds_to_finish=40):
         super().__init__()
         self.model_version=model_version
         self.model.load_state_dict(
@@ -470,7 +470,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--path", default="cartwright/datasets/fake_data.csv", help="path to csv")
     parser.add_argument("--num_samples",type=int, default=100, help="number of samples to test from each column")
-    parser.add_argument("--model_version",default="0.0.0.1", help='model version you would like to run')
+    parser.add_argument("--model_version",default="0.0.1", help='model version you would like to run')
     args = parser.parse_args()
     cartwright = CartwrightClassify(model_version=args.model_version, number_of_samples=args.num_samples)
     preds = cartwright.columns_classified(path=args.path)
