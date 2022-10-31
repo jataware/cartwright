@@ -213,9 +213,18 @@ class CartwrightTrainer(CartWrightBase):
 
     def save_model(self, version):
         # If the model performed well you can save it locally
-        path = f'models/LSTM_RNN_CartWright_v_{version}_dict.pth'
+        path = f'cartwright/models/LSTM_RNN_CartWright_v_{version}_dict.pth'
         torch.save(self.model.state_dict(), path)
 
-f=CartwrightTrainer(num_epochs=5)
-f.train()
-f.save_model(version="0.0.0.1")
+
+def default_training():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--version", help="set the version of the model")
+    parser.add_argument("--num_epochs",type=int, help="number of epochs for model training")
+    args = parser.parse_args()
+    cartwright = CartwrightTrainer(num_epochs=args.num_epochs)
+    cartwright.train()
+    cartwright.save_model(version=str(args.version))
+
+if __name__ == "__main__":
+    default_training()

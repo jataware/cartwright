@@ -2,24 +2,14 @@
 from __future__ import unicode_literals, print_function, division
 
 import torch
-import torch.autograd as autograd
-import torch.nn as nn
-
-from torch.utils.data import Dataset, DataLoader
-from torch.nn.utils.rnn import pack_padded_sequence
 
 
 # Kyle's attempt
 import pandas as pd
 import numpy as np
-
-import random
-import dateutil.parser
+import argparse
 import datetime
-import arrow
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process
-import fuzzywuzzy
+
 import pkg_resources
 
 
@@ -79,12 +69,13 @@ def skipped(column, fuzzy_matched):
 
 
 class CartwrightClassify(CartWrightBase):
-    def __init__(self, number_of_samples, seconds_to_finish=40):
+    def __init__(self,model_version, number_of_samples, seconds_to_finish=40):
         super().__init__()
+        self.model_version=model_version
         self.model.load_state_dict(
             torch.load(
                 pkg_resources.resource_stream(
-                    __name__, "models/LSTM_RNN_CartWright_v_0.0.0.1_dict.pth"
+                    __name__, f"models/LSTM_RNN_CartWright_v_{self.model_version}_dict.pth"
                 )
             )
         )
@@ -111,11 +102,8 @@ class CartwrightClassify(CartWrightBase):
             test, batch_size=1
         ):
             batch, targets, lengths = self.sort_batch(batch, targets, lengths)
-            # print(batch,targets,lengths)
-            # print(torch.autograd.Variable(batch))
             pred = self.model(torch.autograd.Variable(batch), lengths.cpu().numpy())
             pred_idx = torch.max(pred, 1)[1]
-            # print(f'pred_idx ,{pred_idx}, {pred_idx[0]}')
             def get_key(val):
                 for key, value in self.label2id.items():
                     if val == value:
@@ -490,9 +478,16 @@ class CartwrightClassify(CartWrightBase):
         final = self.predict_temporal_resolution(final)
         return final
 
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--path", help="path to csv")
+    parser.add_argument("--samples",type=int, help="number of samples to test from each column")
+    parser.add_argument("--model_version", help='model version you would like to run')
+    args = parser.parse_args()
+    cartwright = CartwrightClassify(model_version=args.model_version, number_of_samples=args.samples)
+    preds = cartwright.columns_classified(path=args.path)
+    return preds
+
 
 if __name__ == "__main__":
-    gc = CartwrightClassify(50)
-    df_t=gc.fake_data
-    preds = gc.columns_classified(df=df_t)
-    print(preds)
+    main()
