@@ -162,8 +162,11 @@ class CartwrightClassify(CartWrightBase):
 
         top_categories= {}
         for ind in backup_ind:
-            top_categories[get_key(ind)]= backup_out[ind]
+            if backup_out[ind]>self.predictionLimit:
+                top_categories[get_key(ind)]= backup_out[ind]
+
         sorted_top_categories=sorted(top_categories.items(), key=lambda x: x[1], reverse=True)
+
         # print(f'sorted {sorted_top_categories}')
         return {
             "averaged_tensor": out,
