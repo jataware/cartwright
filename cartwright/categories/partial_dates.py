@@ -11,8 +11,8 @@ class year(DateBase):
     def generate_training_data(self):
         return self.format, str(getattr(self.fake, self.class_name())())
 
-    def validate(self,value):
-        return self.validate_years([value])
+    # def validate(self,value):
+    #     return self.validate_years([value])
 
 # #'05'
 class month(DateBase):
@@ -24,10 +24,10 @@ class month(DateBase):
     def generate_training_data(self):
         return self.format, str(getattr(self.fake, self.class_name())())
 
-    def validate(self,value):
-        if str.isdigit(value):
-            if 12 >= int(value) >= 1:
-                return True
+    # def validate(self,value):
+    #     if str.isdigit(value):
+    #         if 12 >= int(value) >= 1:
+    #             return True
 
 
 #'May'
@@ -39,8 +39,8 @@ class month_name(DateBase):
     def generate_training_data(self):
         return self.format, str(getattr(self.fake, self.class_name())())
 
-    def validate(self,value):
-        return value.lower() in months_of_the_year_B
+    # def validate(self,value):
+    #     return value.lower() in months_of_the_year_B
 
 
 class month_name_short(DateBase):
@@ -51,6 +51,7 @@ class month_name_short(DateBase):
     def generate_training_data(self):
         return self.format, np.random.choice(months_of_the_year_b)
 
+    #TODO: some disagreement between this and datetime.strptime
     def validate(self,value):
         return value.lower() in months_of_the_year_b
 
@@ -65,10 +66,10 @@ class day_of_month(DateBase):
     def generate_training_data(self):
         return self.format, str(getattr(self.fake, self.class_name())())
 
-    def validate(self,value):
-        if str.isdigit(value):
-            if 31 >= int(value) >= 1:
-                return True
+    # def validate(self,value):
+    #     if str.isdigit(value):
+    #         if 31 >= int(value) >= 1:
+    #             return True
 
 
 #'Wednesday'
@@ -80,12 +81,12 @@ class day_of_week(DateBase):
     def generate_training_data(self):
         return self.format, str(getattr(self.fake, self.class_name())())
 
-    def validate(self,value):
-        return value.lower() in days_of_the_week_A
+    # def validate(self,value):
+    #     return value.lower() in days_of_the_week_A
 
 
 
-#'Wednesday'
+#'Wed'
 class day_of_week_a(DateBase):
     def __init__(self):
         super().__init__()
@@ -94,5 +95,6 @@ class day_of_week_a(DateBase):
     def generate_training_data(self):
         return self.format, np.random.choice(days_of_the_week_a)
 
+    #TODO: some disagreement between this and datetime.strptime
     def validate(self,value):
         return value.lower() in days_of_the_week_a

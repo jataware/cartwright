@@ -6,7 +6,7 @@ import pytest
 import pdb
 
 #single instance used for all tests
-t = CartwrightClassify('0.0.0.1', 20)
+t = CartwrightClassify()
 
 # #TODO: pull classes from the .py file itself
 geo_classes = [

@@ -6,7 +6,7 @@ import pytest
 import pdb
 
 #single instance used for all tests
-t = CartwrightClassify('0.0.0.1', 20)
+t = CartwrightClassify()
 
 
 #TODO: pull classes from the .py file itself
@@ -68,15 +68,15 @@ def test_generate_single_date(name, num_samples=1000):
     for label, value in examples:
         cls.validate(value)
 
-@pytest.mark.parametrize('name,ratio_valid', [
-    (date_class, 1.0) for date_class in date_classes #TODO: for ratio in <some sequence>
-])
-def test_generate_column(name, ratio_valid, num_samples=1000):
-    cls = t.all_classes[name]
-    examples = [cls.generate_training_data() if random() < ratio_valid else ('akjdsgjhdg','adhgjahgdj') for _ in range(num_samples)]
+# @pytest.mark.parametrize('name,ratio_valid', [
+#     (date_class, 1.0) for date_class in date_classes #TODO: for ratio in <some sequence>
+# ])
+# def test_generate_column(name, ratio_valid, num_samples=1000):
+#     cls = t.all_classes[name]
+#     examples = [cls.generate_training_data() if random() < ratio_valid else ('akjdsgjhdg','adhgjahgdj') for _ in range(num_samples)]
     
-    #TODO: call the looping validator
-    #TODO: categorize.assign_heuristic_function probably needs to be broken out so that the loop validation can be called directly without needing any of the other results/spreadsheet stuff/etc
+#     #TODO: call the looping validator
+#     #TODO: categorize.assign_heuristic_function probably needs to be broken out so that the loop validation can be called directly without needing any of the other results/spreadsheet stuff/etc
 
 
 # #def test_whole_pipeline_synthetic():
