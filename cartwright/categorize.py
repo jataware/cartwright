@@ -43,7 +43,6 @@ from cartwright.category_helpers import (
     return_all_category_classes_and_labels,
     generate_label_id,
 )
-from CategoryBases import CategoryBase
 
 
 
@@ -488,7 +487,7 @@ class CartwrightClassify(CartWrightBase):
 
 if __name__ == "__main__":
     gc = CartwrightClassify(50)
-    preds = gc.columns_classified("datasets/Fake_data.csv")
+    preds = gc.columns_classified("/home/kyle/code/geotime_classify/cartwright/datasets/Fake_data.csv")
     # preds=gc.vectorized_array(['hi','there'])
     # print(gc.pad_sequences(preds, torch.LongTensor([len(s) for s in preds])) )
     # print(torch.LongTensor([len(s) for s in preds]))
