@@ -1,0 +1,17 @@
+title: "ASKEM"
+remote_theme: pmarsceill/just-the-docs
+search_enabled: true
+
+gems:
+- just-the-docs
+- jekyll-github-metadata
+- jekyll-mentions
+- jekyll-redirect-from
+- jekyll-sitemap
+- jemoji
+
+# theme: "just-the-docs"
+
+aux_links:
+  "Cartwright on Github":
+    - "//github.com/jataware/cartwright"
