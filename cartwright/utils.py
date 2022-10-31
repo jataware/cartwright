@@ -21,7 +21,6 @@ def fuzzy_ratio(word1, word2, ratio_=95):
 
 
 def build_return_date_object(format, util="Util"):
-    print("building date")
     return {
         "category": "time",
         "subcategory": "date",

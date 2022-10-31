@@ -97,7 +97,6 @@ class CategoryBase:
             return build_return_standard_object(category=self.category, subcategory=str(self.return_label()), match_type="LSTM")
         raise
     def pass_validation(self, number_validated, number_of_samples):
-        print(number_validated, number_of_samples, self.threshold)
         return self.threshold_check(number_validated,number_of_samples,self.threshold)
 
 class MiscBase(CategoryBase):
@@ -134,7 +133,6 @@ class DateBase(CategoryBase):
         return self.is_date_(value)
 
     def pass_validation(self, number_validated, number_of_samples):
-        print(number_validated, number_of_samples, self.threshold)
         return self.threshold_check(number_validated,number_of_samples,self.threshold)
 
     def validate_years(self,series):
