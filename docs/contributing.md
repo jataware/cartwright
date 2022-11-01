@@ -1,3 +1,10 @@
+---
+layout: default
+title: Contributing
+nav_order: 5
+has_toc: true
+---
+
 # Contributing to Cartwright
 
 Contributions to Cartwright are welcome. Please read the following guidelines before contributing.
