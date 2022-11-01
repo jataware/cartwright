@@ -14,7 +14,7 @@ class unix_time(DateBase):
             if int(value) < -5364601438 or int(value) > 4102506000 or len(value) >13:
                 pass
             else:
-                return value
+                return True
 
 
 ## ymd
