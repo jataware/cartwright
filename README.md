@@ -4,7 +4,10 @@
 
 Cartwirght categorizes spatial and temporal features in a dataset. 
 
-Cartwright uses natural language processing and heuristic functions to determine the correct categorization of a feature. The goal of this project was for a given dataframe where we expect some kind of geospatial and temporal columns, automatically infer:
+Cartwright uses natural language processing and heuristic 
+functions to determine the best guess categorization of a feature. 
+The goal of this project was for a given dataframe where we expect
+some kind of geospatial and temporal columns, automatically infer:
 
 -   Country
 -   Admin levels (0 through 3)
@@ -15,7 +18,9 @@ Cartwright uses natural language processing and heuristic functions to determine
 -   Time resolution for date columns
 
 
- The model and transformation code can be used locally by installing the pip package or downloaded the github repo and following the directions found in /docs.
+ The model and transformation code can be used locally by installing
+ the pip package or downloaded the github repo and following the directions
+ found in /docs.
 
 # Simple use case
 
@@ -23,8 +28,9 @@ Cartwright has the ability to classify features of a dataframe which can help
 with automation tasks that normally require a human in the loop.
 For a simple example we have a data pipeline that ingests dataframes and
 creates a standard timeseries plots or a map with datapoints. The problem is these new dataframes
-are not standarized and we have no way of knowing which columns are dates or locations data.
-By using Cartwright we can automatically infering which columns are dates or coordinate values and continue with our pipeline.
+are not standarized, and we have no way of knowing which columns contain dates or locations data.
+By using Cartwright we can automatically infer which columns are dates or coordinate values and 
+continue with our pipeline.
 
 Here is the dataframe with :
 
