@@ -1,5 +1,6 @@
 
 # Cartwright
+![Tests](https://github.com/jataware/geotime_classify/actions/workflows/tests.yml/badge.svg)
 
 Cartwirght categorizes spatial and temporal features in a dataset. 
 
