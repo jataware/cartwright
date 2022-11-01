@@ -13,13 +13,13 @@ The Cartwright model is a type recurrent neural network that uses LSTM to learn 
 -   Timestamp (from arbitrary formats)
 -   Latitude
 -   Longitude
--   Which column likely contains the "feature value"
--   Which column likely contains a modifier on the  `feature`
+-   Dates (including format)
+-   Time resolution for date columns
 
 Cartwright workflow:
-  ![Alt text](cartwright/docs/assests/Cartwright_Wireframe.png?raw=true "WireFrame")
+  ![Alt text](.assests/Cartwright_Wireframe.png?raw=true "WireFrame")
 
-To do this, we collected example data from Faker along with additional locally generated data. The model was built using pytorch. We used padded embedding, and LSTM cell, a linear layer and finally a LogSoftmax layer. This model was trained with a dropout of .2 to reduce overfitting and improving model performance. 
+To do this, we generated training data using Faker along with additional locally generated data. The model was built using pytorch. We used padded embedding, and LSTM cell, a linear layer and finally a LogSoftmax layer. This model was trained with a dropout of .2 to reduce overfitting and improving model performance. 
 
 	    self.embedding = nn.Embedding(vocab_size, embedding_dim)
         self.lstm = nn.LSTM(embedding_dim, hidden_dim, num_layers=1)
@@ -27,19 +27,13 @@ To do this, we collected example data from Faker along with additional locally g
         self.softmax = nn.LogSoftmax(dim=1)
         self.dropout_layer = nn.Dropout(p=0.2)
 After a few iterations the model was performing well enough with accuracy hovering around 91 percent.
-Confusion Matrix:
 
-
-
-  ![Alt text](assests/Cartwright_Wireframe.png?raw=true "WireFrame")
-
-Now the model was able to ingest a string and categorize it into one the 57 categories. 
 
 ## The Heuristic functions
-The heuristic functions ingest the prediction classifications from the model along with the original data for  validation tests. If the data passes the test associated with the classification the final classification is made and returned. If it failed it will return 'None' or 'Unknown Date' if the model classified the column as a date. If addition information is needed for future transformation of the data these functions try to capture that. For example if a column is classified as a Date the function will try validate the format and return it along with the classification.
+The heuristic functions ingest the prediction classifications from the model along with the original data for validation tests. If the data passes the test associated with the classification the final classification is made and returned. If Cartwright failed to categorize a feature it will return 'None'. We provide a theshold value for each category that determine how many of the samples can fail. Usually we aim for greater than 85 percent of samples pass the validation test for a category. If the heuristic functions can't validate enough samples for a feature we try the next best category prediction from our model output. That continues until validation passes or we run out of model predictions that meet a certain minimum similary value.
 
 ## Column Header Fuzzy Match
-This is the most simple part of the workflow. For each column header we try to match that string to a word of interest. If there is a high match ratio the code returns the word of interest. For more info you can see Fuzzywuzzy docs [here](https://pypi.org/project/fuzzywuzzy/).
+This is the most simple part of the workflow. For each column header we try to match that string to a word of interest. If there is a high match ratio we categorize the feature apporiately and set match_type value to "fuzzy". For more info you can see Fuzzywuzzy docs [here](https://pypi.org/project/fuzzywuzzy/).
 
 
 ## Automatic Temporal Resolution Detection
