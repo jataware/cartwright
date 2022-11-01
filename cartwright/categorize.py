@@ -466,6 +466,27 @@ class CartwrightClassify(CartwrightBase):
         final = self.predict_temporal_resolution(final)
         return final
 
+    def columns_categorized(self, df=None, path=None):
+        preds=self.columns_classified(df=df,path=path)
+        preds_dict=preds.dict()
+        column_categorization={}
+        for pred in preds_dict['classifications']:
+            column_categorization[pred['column']]={
+                "category":pred.get('category',None),
+                "subcategory":pred.get("subcategory",None),
+                "format": pred.get("format",None),
+                "time_resolution": {
+                    "resolution":pred.get('time_resolution',None),
+                    "unit": pred.get('unit',None),
+                    "density": pred.get('density',None),
+                    "error": pred.get('error',None)
+                    },
+                "match_type":pred.get('match_type',[]),
+                "fuzzyColumn":pred.get("fuzzyColumn",None)
+
+                }
+        return column_categorization
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--path", default="cartwright/datasets/fake_data.csv", help="path to csv")
@@ -473,7 +494,7 @@ def main():
     parser.add_argument("--model_version",default="0.0.1", help='model version you would like to run')
     args = parser.parse_args()
     cartwright = CartwrightClassify(model_version=args.model_version, number_of_samples=args.num_samples)
-    preds = cartwright.columns_classified(path=args.path)
+    preds = cartwright.columns_categorized(path=args.path)
     print(preds)
     return preds
 
