@@ -48,8 +48,8 @@ python code example and output.
     for column, category in categorization.items():
         print(column, category)
 
-You can see from the output we were able to infer that x_value and y_values were geo category with subcategory of longitude. 
-With more samples tested or additional :
+You can see from the output we were able to infer that x_value and y_values were geo category with subcategory of latitude and longitude. In some cases these can be impossible to tell apart since all latitude values are valid longitude values. For our date feature the category is time and the subcategory is date. The format is correct and we were able to pick out the time resolution of one day.  
+
 
     x_value {'category': <Category.geo: 'geo'>, 'subcategory': <Subcategory.latitude: 'latitude'>, 'format': None, 'time_resolution': {'resolution': None, 'unit': None, 'density': None, 'error': None}, 'match_type': [<Matchtype.LSTM: 'LSTM'>], 'fuzzyColumn': None}
     
