@@ -491,9 +491,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--path", default="cartwright/datasets/fake_data.csv", help="path to csv")
     parser.add_argument("--num_samples",type=int, default=100, help="number of samples to test from each column")
-    parser.add_argument("--model_version",default="0.0.1", help='model version you would like to run')
     args = parser.parse_args()
-    cartwright = CartwrightClassify(model_version=args.model_version, number_of_samples=args.num_samples)
+    cartwright = CartwrightClassify(model_version="0.0.1", number_of_samples=args.num_samples)
     preds = cartwright.columns_categorized(path=args.path)
     print(preds)
     return preds
