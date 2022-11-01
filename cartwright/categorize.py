@@ -489,7 +489,7 @@ class CartwrightClassify(CartwrightBase):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--path", default="cartwright/datasets/fake_data.csv", help="path to csv")
+    parser.add_argument("path", help="path to csv")
     parser.add_argument("--num_samples",type=int, default=100, help="number of samples to test from each column")
     args = parser.parse_args()
     cartwright = CartwrightClassify(model_version="0.0.1", number_of_samples=args.num_samples)
