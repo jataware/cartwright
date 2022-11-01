@@ -17,7 +17,7 @@ The Cartwright model is a type recurrent neural network that uses LSTM to learn 
 -   Which column likely contains a modifier on the  `feature`
 
 Cartwright workflow:
-  ![Alt text](assests/Cartwright_Wireframe.png?raw=true "WireFrame")
+  ![Alt text](cartwright/docs/assests/Cartwright_Wireframe.png?raw=true "WireFrame")
 
 To do this, we collected example data from Faker along with additional locally generated data. The model was built using pytorch. We used padded embedding, and LSTM cell, a linear layer and finally a LogSoftmax layer. This model was trained with a dropout of .2 to reduce overfitting and improving model performance. 
 
