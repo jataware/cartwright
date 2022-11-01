@@ -6,4 +6,18 @@ has_toc: true
 ---
 # Installation
 
-Coming soon.
+Cartwright is [available on PyPI](https://pypi.org/project/cartwright/). Compatible with Python versions >= 3.7
+```
+pip install cartwright
+```
+
+
+Alternatively you can install for local development.
+
+```
+git clone git@github.com:jataware/cartwright.git
+cd cartwright
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+pip install -e .
+```
