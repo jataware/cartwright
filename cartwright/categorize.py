@@ -36,6 +36,7 @@ def timeout():
         category="timeout", subcategory=None, match_type=[]
     )
 
+
 def skipped(column, fuzzy_matched):
     category = None
     subcategory = None
@@ -56,14 +57,18 @@ def skipped(column, fuzzy_matched):
             category=None, subcategory=None, match_type=None
         )
 
+
 class CartwrightClassify(CartwrightBase):
-    def __init__(self,model_version='0.0.1', number_of_samples=100, seconds_to_finish=40):
+    def __init__(
+        self, model_version="0.0.1", number_of_samples=100, seconds_to_finish=40
+    ):
         super().__init__()
-        self.model_version=model_version
+        self.model_version = model_version
         self.model.load_state_dict(
             torch.load(
                 pkg_resources.resource_stream(
-                    __name__, f"models/LSTM_RNN_Cartwright_v_{self.model_version}_dict.pth"
+                    __name__,
+                    f"models/LSTM_RNN_Cartwright_v_{self.model_version}_dict.pth",
                 )
             )
         )
@@ -92,11 +97,11 @@ class CartwrightClassify(CartwrightBase):
             batch, targets, lengths = self.sort_batch(batch, targets, lengths)
             pred = self.model(torch.autograd.Variable(batch), lengths.cpu().numpy())
             pred_idx = torch.max(pred, 1)[1]
+
             def get_key(val):
                 for key, value in self.label2id.items():
                     if val == value:
                         return {"top_pred": key, "tensor": pred, "pred_idx": pred_idx}
-
 
             predictions.append(get_key(pred_idx[0]))
         return predictions
@@ -124,7 +129,7 @@ class CartwrightClassify(CartwrightBase):
             all_arrays.append(pred["tensor"].detach().numpy())
 
         out = np.mean(all_arrays, axis=0)
-        backup_out=out.copy()[0]
+        backup_out = out.copy()[0]
         maxValue = np.amax(out)
         backup_ind = np.argpartition(backup_out, -5)[-5:]
         # # remove max value
@@ -136,12 +141,14 @@ class CartwrightClassify(CartwrightBase):
 
         topcat = get_key(np.argmax(out))
 
-        top_categories= {}
+        top_categories = {}
         for ind in backup_ind:
-            if backup_out[ind]>self.predictionLimit:
-                top_categories[get_key(ind)]= backup_out[ind]
+            if backup_out[ind] > self.predictionLimit:
+                top_categories[get_key(ind)] = backup_out[ind]
 
-        sorted_top_categories=sorted(top_categories.items(), key=lambda x: x[1], reverse=True)
+        sorted_top_categories = sorted(
+            top_categories.items(), key=lambda x: x[1], reverse=True
+        )
 
         # print(f'sorted {sorted_top_categories}')
         return {
@@ -149,7 +156,7 @@ class CartwrightClassify(CartwrightBase):
             "averaged_top_category": {True: "None", False: topcat}[
                 maxValue < self.predictionLimit
             ],
-            "top_categories":sorted_top_categories
+            "top_categories": sorted_top_categories,
         }
 
     def return_data(self):
@@ -203,7 +210,9 @@ class CartwrightClassify(CartwrightBase):
         currentTime = time.perf_counter()
         count = 0
         timesUp = time.perf_counter()
-        while currentTime - timesUp < self.seconds_to_finish and count < len(predictions):
+        while currentTime - timesUp < self.seconds_to_finish and count < len(
+            predictions
+        ):
             category_name = None
             category_obj = None
             try:
@@ -212,8 +221,10 @@ class CartwrightClassify(CartwrightBase):
                 else:
                     series = self.column_value_object[predictions[count]["column"]]
                     total_sample_count = len(series)
-                    final_categorization=None
-                    for category_name, _ in predictions[count]["avg_predictions"]["top_categories"]:
+                    final_categorization = None
+                    for category_name, _ in predictions[count]["avg_predictions"][
+                        "top_categories"
+                    ]:
                         # print(f'predictions {category_name}')
                         category_obj = self.all_classes[category_name]
                         valid_sample_count = category_obj.validate_series(series=series)
@@ -467,34 +478,40 @@ class CartwrightClassify(CartwrightBase):
         return final
 
     def columns_categorized(self, df=None, path=None):
-        preds=self.columns_classified(df=df,path=path)
-        preds_dict=preds.dict()
-        column_categorization={}
-        for pred in preds_dict['classifications']:
-            column_categorization[pred['column']]={
-                "category":pred.get('category',None),
-                "subcategory":pred.get("subcategory",None),
-                "format": pred.get("format",None),
+        preds = self.columns_classified(df=df, path=path)
+        preds_dict = preds.dict()
+        column_categorization = {}
+        for pred in preds_dict["classifications"]:
+            column_categorization[pred["column"]] = {
+                "category": pred.get("category", None),
+                "subcategory": pred.get("subcategory", None),
+                "format": pred.get("format", None),
                 "time_resolution": {
-                    "resolution":pred.get('time_resolution',None),
-                    "unit": pred.get('unit',None),
-                    "density": pred.get('density',None),
-                    "error": pred.get('error',None)
-                    },
-                "match_type":pred.get('match_type',[]),
-                "fuzzyColumn":pred.get("fuzzyColumn",None)
-
-                }
+                    "resolution": pred.get("time_resolution", None),
+                    "unit": pred.get("unit", None),
+                    "density": pred.get("density", None),
+                    "error": pred.get("error", None),
+                },
+                "match_type": pred.get("match_type", []),
+                "fuzzyColumn": pred.get("fuzzyColumn", None),
+            }
         return column_categorization
+
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("path", help="path to csv")
-    parser.add_argument("--num_samples",type=int, default=100, help="number of samples to test from each column")
+    parser.add_argument(
+        "--num_samples",
+        type=int,
+        default=100,
+        help="number of samples to test from each column",
+    )
     args = parser.parse_args()
-    cartwright = CartwrightClassify(model_version="0.0.1", number_of_samples=args.num_samples)
+    cartwright = CartwrightClassify(
+        model_version="0.0.1", number_of_samples=args.num_samples
+    )
     preds = cartwright.columns_categorized(path=args.path)
-    print(preds)
     return preds
 
 
