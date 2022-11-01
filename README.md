@@ -1,4 +1,3 @@
-# Cartwright Github Pages
 
 # Cartwright
 
