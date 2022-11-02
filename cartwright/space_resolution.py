@@ -17,7 +17,7 @@ def detect_resolution(lat:np.ndarray, lon:np.ndarray) -> SpaceResolution:
     """
 
     #detect the lat/lon resolution
-    latlon_resolution = detect_latlon_resolution(lat, lon)
+    # latlon_resolution = detect_latlon_resolution(lat, lon)
     spherical_resolution = detect_spherical_resolution(lat, lon)
     categorical_resolution = detect_categorical_resolution(lat, lon)
 
@@ -112,7 +112,69 @@ def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[LatLonR
 
 
 def detect_spherical_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[SphericalResolution]:
-    pdb.set_trace()
+    
+    #filter out non-unique points, and convert to radians
+    latlon = np.stack([lat, lon], axis=1)
+    latlon = np.unique(latlon, axis=0)
+    lat,lon = np.rollaxis(np.deg2rad(latlon), 1)
+
+    #convert to 3D cartesian coordinates
+    x = np.cos(lat) * np.cos(lon)
+    y = np.cos(lat) * np.sin(lon)
+    z = np.sin(lat)
+
+    #filter any points at the north pole
+    mask = np.abs(z) < 1.0-1e-9
+    x,y,z = x[mask], y[mask], z[mask]
+
+    #compute an orthographic projection of the points on the sphere
+    X = x/(1-z)
+    Y = y/(1-z)
+
+    #compute the Delaunay triangulation of the projected points (this is equivalent to a Delaunay triangulation directly on the sphere)
+    tri = Delaunay(np.array([X,Y]).T)
+    # tri = Delaunay(np.stack([x,y,z], axis=1))
+
+    #collect together all edges of the triangles (in lat/lon space)
+    edges = np.concatenate([
+        #edge 1
+        [lon[tri.simplices[:,0]] - lon[tri.simplices[:,1]],
+         lat[tri.simplices[:,0]] - lat[tri.simplices[:,1]]],
+        #edge 2
+        [lon[tri.simplices[:,1]] - lon[tri.simplices[:,2]],
+         lat[tri.simplices[:,1]] - lat[tri.simplices[:,2]]],
+        #edge 3
+        [lon[tri.simplices[:,2]] - lon[tri.simplices[:,0]],
+         lat[tri.simplices[:,2]] - lat[tri.simplices[:,0]],]
+    ], axis=1)
+
+    #find edges that are either horizontal or vertical
+    horizontal = edges[:, np.abs(edges[1]) < 1e-6]
+    vertical = edges[:, np.abs(edges[0]) < 1e-6]
+
+    #DEBUG plot the horizontal and vertical edges in 3D
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(x,y,z, marker='.')
+    for tri in tri.simplices:
+        if np.abs(lat[tri[0]] - lat[tri[1]]) < 1e-6:
+            ax.plot(x[tri[0:2]], y[tri[0:2]], z[tri[0:2]], color='red')
+        if np.abs(lat[tri[1]] - lat[tri[2]]) < 1e-6:
+            ax.plot(x[tri[1:3]], y[tri[1:3]], z[tri[1:3]], color='red')
+        if np.abs(lat[tri[2]] - lat[tri[0]]) < 1e-6:
+            ax.plot(x[tri[0:3:2]], y[tri[0:3:2]], z[tri[0:3:2]], color='red')
+    
+        if np.abs(lon[tri[0]] - lon[tri[1]]) < 1e-6:
+            ax.plot(x[tri[0:2]], y[tri[0:2]], z[tri[0:2]], color='blue')
+        if np.abs(lon[tri[1]] - lon[tri[2]]) < 1e-6:
+            ax.plot(x[tri[1:3]], y[tri[1:3]], z[tri[1:3]], color='blue')
+        if np.abs(lon[tri[2]] - lon[tri[0]]) < 1e-6:
+            ax.plot(x[tri[0:3:2]], y[tri[0:3:2]], z[tri[0:3:2]], color='blue')
+
+    ax.set_box_aspect([1,1,1])
+    ax.set_proj_type('ortho')
+    set_axes_equal(ax)
+    plt.show()
 
 def detect_categorical_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[CategoricalResolution]:
     pdb.set_trace()
@@ -173,7 +235,7 @@ def main():
     lons = (np.arange(2*d_points) + 0.5) / (2 * d_points) * 360 - 180
     lat,lon = np.meshgrid(lats, lons)
     lat,lon = lat.flatten(), lon.flatten()
-    detect_latlon_resolution(lat, lon)
+    detect_resolution(lat, lon)
     exit(1)
     
     
