@@ -130,6 +130,20 @@ class TimeResolution:
     error: float
 
 
+@dataclass
+class LatLonResolution:
+    uniformity: Uniformity
+    horizontal: float
+    h_error: float
+    vertical: float
+    v_error: float
+
+@dataclass
+class GeoResolution:
+    latlon: Optional[LatLonResolution]
+    #TODO: other possible resolutions, e.g. spherical, categorical
+
+
 class Classification(BaseModel):
     """
         Classification is the classifciation information for one column.
