@@ -8,8 +8,86 @@ from cartwright.schemas import LatLonResolution
 
 import pdb
 
-def detect_latlon_resolution(lats:np.ndarray, lons:np.ndarray) -> Optional[LatLonResolution]:
+def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[LatLonResolution]:
+    """
+    Detect if the lat/lon coordinates are drawn from a uniform grid.
+
+    @param lat: a numpy array of latitudes in [DEGREES]
+    @param lon: a numpy array of longitudes in [DEGREES]
+    """
+
+    #filter out non-unique points, and convert to radians
+    latlon = np.stack([lat, lon], axis=1)
+    latlon = np.unique(latlon, axis=0)
+    lat,lon = np.rollaxis(np.deg2rad(latlon), 1)
+
+    #convert to 3D cartesian coordinates
+    x = np.cos(lat) * np.cos(lon)
+    y = np.cos(lat) * np.sin(lon)
+    z = np.sin(lat)
+
+    # #filter any points at the north pole
+    # mask = np.abs(z) < 1.0-1e-9
+    # x,y,z = x[mask], y[mask], z[mask]
+
+    # #compute an orthographic projection of the points on the sphere
+    # X = x/(1-z)
+    # Y = y/(1-z)
+
+    # #TODO: can we just run the Delaunay triangulation directly on the lat/lon points?
+
+    # #compute the Delaunay triangulation of the points
+    # tri = Delaunay(np.array([X,Y]).T)
+    tri = Delaunay(latlon)
+
+    #collect together all edges of the triangles (in lat/lon space)
+    edges = np.concatenate([
+        #edge 1
+        [lon[tri.simplices[:,0]] - lon[tri.simplices[:,1]],
+         lat[tri.simplices[:,0]] - lat[tri.simplices[:,1]]],
+        #edge 2
+        [lon[tri.simplices[:,1]] - lon[tri.simplices[:,2]],
+         lat[tri.simplices[:,1]] - lat[tri.simplices[:,2]]],
+        #edge 3
+        [lon[tri.simplices[:,2]] - lon[tri.simplices[:,0]],
+         lat[tri.simplices[:,2]] - lat[tri.simplices[:,0]],]
+    ], axis=1)
+
+    #find edges that are either horizontal or vertical
+    horizontal = edges[:, np.abs(edges[1]) < 1e-6]
+    vertical = edges[:, np.abs(edges[0]) < 1e-6]
+
+    #DEBUG plot the horizontal and vertical edges in 3D
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(x,y,z, marker='.')
+    for tri in tri.simplices:
+        if np.abs(lat[tri[0]] - lat[tri[1]]) < 1e-6:
+            ax.plot(x[tri[0:2]], y[tri[0:2]], z[tri[0:2]], color='red')
+        if np.abs(lat[tri[1]] - lat[tri[2]]) < 1e-6:
+            ax.plot(x[tri[1:3]], y[tri[1:3]], z[tri[1:3]], color='red')
+        if np.abs(lat[tri[2]] - lat[tri[0]]) < 1e-6:
+            ax.plot(x[tri[0:3:2]], y[tri[0:3:2]], z[tri[0:3:2]], color='red')
+    
+        if np.abs(lon[tri[0]] - lon[tri[1]]) < 1e-6:
+            ax.plot(x[tri[0:2]], y[tri[0:2]], z[tri[0:2]], color='blue')
+        if np.abs(lon[tri[1]] - lon[tri[2]]) < 1e-6:
+            ax.plot(x[tri[1:3]], y[tri[1:3]], z[tri[1:3]], color='blue')
+        if np.abs(lon[tri[2]] - lon[tri[0]]) < 1e-6:
+            ax.plot(x[tri[0:3:2]], y[tri[0:3:2]], z[tri[0:3:2]], color='blue')
+
+    ax.set_box_aspect([1,1,1])
+    ax.set_proj_type('ortho')
+    set_axes_equal(ax)
+    plt.show()
+
+
+
+    dlon = np.abs(horizontal[0])
+    dlat = np.abs(vertical[1])
+
     pdb.set_trace()
+
 
 
 def set_axes_equal(ax: plt.Axes):
@@ -42,7 +120,7 @@ def main():
     # pdb.set_trace()
 
     #Some experiments with plotting points on a sphere
-    n_points = 1000
+    n_points = 180
     d_points = int(np.round(n_points ** (1/3)))
 
     side = (np.arange(d_points) + 0.5) / d_points
@@ -67,6 +145,11 @@ def main():
     lons = (np.arange(2*d_points) + 0.5) / (2 * d_points) * 360 - 180
     lat,lon = np.meshgrid(lats, lons)
     lat,lon = lat.flatten(), lon.flatten()
+    detect_latlon_resolution(lat, lon)
+    exit(1)
+    
+    
+    
     lat,lon = np.deg2rad(lat), np.deg2rad(lon)
     xn,yn,zn = np.cos(lat) * np.cos(lon), np.cos(lat) * np.sin(lon), np.sin(lat)
 
