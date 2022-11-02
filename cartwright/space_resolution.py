@@ -2,7 +2,7 @@ from typing import Optional
 import numpy as np
 from scipy.stats import norm
 from scipy.spatial import Delaunay
-from cartwright.schemas import SpaceResolution, LatLonResolution, SphericalResolution, CategoricalResolution
+from cartwright.schemas import SpaceResolution, LatLonResolution, SphericalResolution, CategoricalResolution, Uniformity
 
 
 from matplotlib import pyplot as plt
@@ -14,14 +14,15 @@ def detect_resolution(lat:np.ndarray, lon:np.ndarray) -> SpaceResolution:
 
     @param lat: a numpy array of latitudes in [DEGREES]
     @param lon: a numpy array of longitudes in [DEGREES]
+
+    @return: SpaceResolution(<TODO>) object where 
+        ...
     """
 
     #detect the lat/lon resolution
-    # latlon_resolution = detect_latlon_resolution(lat, lon)
+    latlon_resolution = detect_latlon_resolution(lat, lon)
     spherical_resolution = detect_spherical_resolution(lat, lon)
     categorical_resolution = detect_categorical_resolution(lat, lon)
-
-    #TODO: other checks, i.e. spherical, categorical, etc.
 
     return SpaceResolution(
         latlon_resolution=latlon_resolution,
@@ -36,6 +37,9 @@ def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[LatLonR
 
     @param lat: a numpy array of latitudes in [DEGREES]
     @param lon: a numpy array of longitudes in [DEGREES]
+
+    @return: (optional) LatLonResolution(<TODO>) object where
+        ...
     """
 
     #filter out non-unique points, and convert to radians
@@ -43,23 +47,7 @@ def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[LatLonR
     latlon = np.unique(latlon, axis=0)
     lat,lon = np.rollaxis(np.deg2rad(latlon), 1)
 
-    #convert to 3D cartesian coordinates
-    x = np.cos(lat) * np.cos(lon)
-    y = np.cos(lat) * np.sin(lon)
-    z = np.sin(lat)
-
-    # #filter any points at the north pole
-    # mask = np.abs(z) < 1.0-1e-9
-    # x,y,z = x[mask], y[mask], z[mask]
-
-    # #compute an orthographic projection of the points on the sphere
-    # X = x/(1-z)
-    # Y = y/(1-z)
-
-    # #TODO: can we just run the Delaunay triangulation directly on the lat/lon points?
-
-    # #compute the Delaunay triangulation of the points
-    # tri = Delaunay(np.array([X,Y]).T)
+    #compute the Delaunay triangulation on the lat/lon points
     tri = Delaunay(latlon)
 
     #collect together all edges of the triangles (in lat/lon space)
@@ -79,36 +67,56 @@ def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[LatLonR
     horizontal = edges[:, np.abs(edges[1]) < 1e-6]
     vertical = edges[:, np.abs(edges[0]) < 1e-6]
 
-    #DEBUG plot the horizontal and vertical edges in 3D
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(x,y,z, marker='.')
-    for tri in tri.simplices:
-        if np.abs(lat[tri[0]] - lat[tri[1]]) < 1e-6:
-            ax.plot(x[tri[0:2]], y[tri[0:2]], z[tri[0:2]], color='red')
-        if np.abs(lat[tri[1]] - lat[tri[2]]) < 1e-6:
-            ax.plot(x[tri[1:3]], y[tri[1:3]], z[tri[1:3]], color='red')
-        if np.abs(lat[tri[2]] - lat[tri[0]]) < 1e-6:
-            ax.plot(x[tri[0:3:2]], y[tri[0:3:2]], z[tri[0:3:2]], color='red')
-    
-        if np.abs(lon[tri[0]] - lon[tri[1]]) < 1e-6:
-            ax.plot(x[tri[0:2]], y[tri[0:2]], z[tri[0:2]], color='blue')
-        if np.abs(lon[tri[1]] - lon[tri[2]]) < 1e-6:
-            ax.plot(x[tri[1:3]], y[tri[1:3]], z[tri[1:3]], color='blue')
-        if np.abs(lon[tri[2]] - lon[tri[0]]) < 1e-6:
-            ax.plot(x[tri[0:3:2]], y[tri[0:3:2]], z[tri[0:3:2]], color='blue')
+    #if less than 50% of the edges are horizontal or vertical, then no grid was detected
+    if len(horizontal.T) + len(vertical.T) < len(edges.T) * 0.5: #should be around 2/3 if it was a full grid
+        return None
 
-    ax.set_box_aspect([1,1,1])
-    ax.set_proj_type('ortho')
-    set_axes_equal(ax)
-    plt.show()
-
-
-
+    #collect the lengths of the horizontal and vertical edges
     dlon = np.abs(horizontal[0])
     dlat = np.abs(vertical[1])
 
-    pdb.set_trace()
+    dlon_avg = np.median(dlon)
+    dlat_avg = np.median(dlat)
+
+    if np.abs(dlon_avg - dlat_avg) < 1e-6:
+        #square grid
+        pdb.set_trace()
+    else:
+        #rectangular grid
+
+        #compute the uniformity of the lat/lon grid
+        dlon_uniformity_score = np.abs(dlon - dlon_avg)
+        if np.all(dlon_uniformity_score < 1e-9 * dlon_avg):
+            dlon_uniformity = Uniformity.PERFECT
+        elif dlon_uniformity_score.max() < 0.01 * dlon_avg:
+            dlon_uniformity = Uniformity.UNIFORM
+        else:
+            dlon_uniformity = Uniformity.NOT_UNIFORM
+
+        dlat_uniformity_score = np.abs(dlat - dlat_avg)
+        if np.all(dlat_uniformity_score < 1e-9 * dlat_avg):
+            dlat_uniformity = Uniformity.PERFECT
+        elif dlat_uniformity_score.max() < 0.01 * dlat_avg:
+            dlat_uniformity = Uniformity.UNIFORM
+        else:
+            dlat_uniformity = Uniformity.NOT_UNIFORM
+
+        pdb.set_trace()
+
+    #TODO: handling if dlat/dlon are the same vs different
+
+
+    # #find the closest duration unit
+    # names = [*TimeUnit.__members__.keys()]
+    # durations = np.array([getattr(TimeUnit, name).value for name in names])
+    # unit_errors = np.abs(durations - avg)/durations
+    # closest = np.argmin(unit_errors)
+    # unit = getattr(TimeUnit, names[closest])
+    # errors = np.abs(1 - deltas / durations[closest]) #errors in terms of the closest unit
+
+    # #return the results
+    # return TimeResolution(uniformity, unit, avg/durations[closest], errors.mean())
+
 
 
 def detect_spherical_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[SphericalResolution]:
@@ -148,33 +156,10 @@ def detect_spherical_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[Sphe
          lat[tri.simplices[:,2]] - lat[tri.simplices[:,0]],]
     ], axis=1)
 
-    #find edges that are either horizontal or vertical
-    horizontal = edges[:, np.abs(edges[1]) < 1e-6]
-    vertical = edges[:, np.abs(edges[0]) < 1e-6]
+    lengths = np.sqrt(np.sum(edges**2, axis=0))
 
-    #DEBUG plot the horizontal and vertical edges in 3D
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(x,y,z, marker='.')
-    for tri in tri.simplices:
-        if np.abs(lat[tri[0]] - lat[tri[1]]) < 1e-6:
-            ax.plot(x[tri[0:2]], y[tri[0:2]], z[tri[0:2]], color='red')
-        if np.abs(lat[tri[1]] - lat[tri[2]]) < 1e-6:
-            ax.plot(x[tri[1:3]], y[tri[1:3]], z[tri[1:3]], color='red')
-        if np.abs(lat[tri[2]] - lat[tri[0]]) < 1e-6:
-            ax.plot(x[tri[0:3:2]], y[tri[0:3:2]], z[tri[0:3:2]], color='red')
-    
-        if np.abs(lon[tri[0]] - lon[tri[1]]) < 1e-6:
-            ax.plot(x[tri[0:2]], y[tri[0:2]], z[tri[0:2]], color='blue')
-        if np.abs(lon[tri[1]] - lon[tri[2]]) < 1e-6:
-            ax.plot(x[tri[1:3]], y[tri[1:3]], z[tri[1:3]], color='blue')
-        if np.abs(lon[tri[2]] - lon[tri[0]]) < 1e-6:
-            ax.plot(x[tri[0:3:2]], y[tri[0:3:2]], z[tri[0:3:2]], color='blue')
-
-    ax.set_box_aspect([1,1,1])
-    ax.set_proj_type('ortho')
-    set_axes_equal(ax)
-    plt.show()
+    #TODO: construct a results object based on these lengths
+    pdb.set_trace()
 
 def detect_categorical_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[CategoricalResolution]:
     pdb.set_trace()

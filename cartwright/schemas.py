@@ -131,15 +131,19 @@ class TimeResolution:
 
 @dataclass
 class LatLonResolution:
-    uniformity: Uniformity
-    horizontal: float
-    h_error: float
+    #TODO: some sort of coverage metric?
+    #TODO: handling when lat/lon have the same vs different resolutions
+    lon_resolution: float
+    lon_uniformity: Uniformity
+    lon_error: float
     vertical: float
+    v_uniformity: Uniformity
     v_error: float
 
 @dataclass
 class SphericalResolution:
     uniformity: Uniformity
+    #TODO: some sort of coverage metric?
     density: float
     error: float
     #TODO:maybe a distribution of the spacings?
