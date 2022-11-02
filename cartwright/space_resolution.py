@@ -1,16 +1,38 @@
-from matplotlib import pyplot as plt
+from typing import Optional
 import numpy as np
 from scipy.stats import norm
 from scipy.spatial import Delaunay
-from typing import Optional
-from cartwright.schemas import LatLonResolution
+from cartwright.schemas import SpaceResolution, LatLonResolution, SphericalResolution, CategoricalResolution
 
 
+from matplotlib import pyplot as plt
 import pdb
+
+def detect_resolution(lat:np.ndarray, lon:np.ndarray) -> SpaceResolution:
+    """
+    Detect the resolution of the lat/lon coordinates.
+
+    @param lat: a numpy array of latitudes in [DEGREES]
+    @param lon: a numpy array of longitudes in [DEGREES]
+    """
+
+    #detect the lat/lon resolution
+    latlon_resolution = detect_latlon_resolution(lat, lon)
+    spherical_resolution = detect_spherical_resolution(lat, lon)
+    categorical_resolution = detect_categorical_resolution(lat, lon)
+
+    #TODO: other checks, i.e. spherical, categorical, etc.
+
+    return SpaceResolution(
+        latlon_resolution=latlon_resolution,
+        spherical_resolution=spherical_resolution,
+        categorical_resolution=categorical_resolution
+    )
 
 def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[LatLonResolution]:
     """
     Detect if the lat/lon coordinates are drawn from a uniform grid.
+    NOTE: assumes all lat/lon pairs are unique.
 
     @param lat: a numpy array of latitudes in [DEGREES]
     @param lon: a numpy array of longitudes in [DEGREES]
@@ -88,6 +110,12 @@ def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[LatLonR
 
     pdb.set_trace()
 
+
+def detect_spherical_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[SphericalResolution]:
+    pdb.set_trace()
+
+def detect_categorical_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[CategoricalResolution]:
+    pdb.set_trace()
 
 
 def set_axes_equal(ax: plt.Axes):

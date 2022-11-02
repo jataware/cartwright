@@ -129,7 +129,6 @@ class TimeResolution:
     density: float
     error: float
 
-
 @dataclass
 class LatLonResolution:
     uniformity: Uniformity
@@ -139,9 +138,23 @@ class LatLonResolution:
     v_error: float
 
 @dataclass
-class GeoResolution:
+class SphericalResolution:
+    uniformity: Uniformity
+    density: float
+    error: float
+    #TODO:maybe a distribution of the spacings?
+
+@dataclass
+class CategoricalResolution:
+    uniformity: Uniformity
+    # category: GeoCategory
+
+@dataclass
+class SpaceResolution:
     latlon: Optional[LatLonResolution]
-    #TODO: other possible resolutions, e.g. spherical, categorical
+    spherical: Optional[SphericalResolution]
+    categorical: Optional[CategoricalResolution] #TODO: this could maybe be a list?
+    #TODO: other possible resolutions
 
 
 class Classification(BaseModel):
@@ -153,6 +166,7 @@ class Classification(BaseModel):
     subcategory: Optional[Subcategory]
     format: str = Field(default=None, description='the date represented in strftime format')
     time_resolution: Optional[TimeResolution]
+    space_resolution: Optional[SpaceResolution]
     match_type: List[Matchtype]
     Parser: Optional[Parser]
     fuzzyColumn: Optional[FuzzyColumn]
