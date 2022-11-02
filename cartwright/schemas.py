@@ -166,7 +166,6 @@ class Classification(BaseModel):
     subcategory: Optional[Subcategory]
     format: str = Field(default=None, description='the date represented in strftime format')
     time_resolution: Optional[TimeResolution]
-    space_resolution: Optional[SpaceResolution]
     match_type: List[Matchtype]
     Parser: Optional[Parser]
     fuzzyColumn: Optional[FuzzyColumn]
