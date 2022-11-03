@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Optional, Dict, Tuple
 import numpy as np
 from scipy.stats import norm
 from scipy.spatial import Delaunay
@@ -51,6 +51,23 @@ def get_uniformity(vals: np.ndarray, avg: float):
     else:
         return Uniformity.NOT_UNIFORM
 
+def preprocess_latlon(lat:np.ndarray, lon:np.ndarray, rad=False) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    filter out non-unique points, and optionally convert to radians
+    
+    @param lat: a numpy array of latitudes in [DEGREES]
+    @param lon: a numpy array of longitudes in [DEGREES]
+
+    @return: lat, lon
+    """
+
+    latlon = np.stack([lat, lon], axis=1)
+    latlon = np.unique(latlon, axis=0)
+    if rad: 
+        latlon = np.deg2rad(latlon)
+    lat, lon = np.rollaxis(latlon, 1)
+
+    return lat, lon
 
 
 def detect_resolution(lat:np.ndarray, lon:np.ndarray) -> GeoSpatialResolution:
@@ -84,13 +101,15 @@ def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Dict[str, Resolu
         ...
     """
 
-    #filter out non-unique points, and convert to radians
-    latlon = np.stack([lat, lon], axis=1)
-    latlon = np.unique(latlon, axis=0)
-    lat,lon = np.rollaxis(np.deg2rad(latlon), 1)
+    #filter duplicates, and convert to radians
+    lat, lon = preprocess_latlon(lat, lon, rad=True)
+
+    #fail if not enough points
+    if lat.size <= 2:
+        return {}
 
     #compute the Delaunay triangulation on the lat/lon points
-    tri = Delaunay(latlon)
+    tri = Delaunay(np.stack([lat, lon], axis=1))
 
     #collect together all edges of the triangles (in lat/lon space)
     edges = np.concatenate([
@@ -110,7 +129,8 @@ def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Dict[str, Resolu
     vertical = edges[:, np.abs(edges[0]) < 1e-6]
 
     #if less than 33% of the edges are horizontal or vertical, then no grid was detected
-    if len(horizontal.T) + len(vertical.T) < len(edges.T) / 3: #should be around 2/3 if it was a full grid, 1/3 if only horizontal or vertical
+    #should be around 2/3 if it was a full grid, 1/3 if only horizontal or vertical
+    if len(horizontal.T) + len(vertical.T) < len(edges.T) * 0.33333: 
         return {}
 
     #collect the lengths of the horizontal and vertical edges
@@ -127,18 +147,18 @@ def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Dict[str, Resolu
         uniformity = get_uniformity(deltas, avg)
         error = np.abs(1 - deltas/avg).mean()
 
-        return {'latlon': Resolution(uniformity, avg, GeoUnit.DEGREES, error)}
+        return {'latlon': Resolution(uniformity, np.rad2deg(avg), GeoUnit.DEGREES, np.rad2deg(error))}
     
 
     # rectangular grid
     dlon_uniformity = get_uniformity(dlon, dlon_avg)
-    dlon_errors = np.abs(1 - dlon/dlon_avg).mean()
+    dlon_error = np.abs(1 - dlon/dlon_avg).mean()
     dlat_uniformity = get_uniformity(dlat, dlat_avg)
-    dlat_errors = np.abs(1 - dlat/dlat_avg).mean()
+    dlat_error = np.abs(1 - dlat/dlat_avg).mean()
 
     return {
-        'lat':Resolution(dlat_uniformity, dlat_avg, GeoUnit.DEGREES, dlat_errors),
-        'lon':Resolution(dlon_uniformity, dlon_avg, GeoUnit.DEGREES, dlon_errors)
+        'lat':Resolution(dlat_uniformity, np.rad2deg(dlat_avg), GeoUnit.DEGREES, np.rad2deg(dlat_error)),
+        'lon':Resolution(dlon_uniformity, np.rad2deg(dlon_avg), GeoUnit.DEGREES, np.rad2deg(dlon_error))
     }
 
 
@@ -149,13 +169,15 @@ def detect_spherical_resolution(lat:np.ndarray, lon:np.ndarray) -> Dict[str, Res
     @param lat: a numpy array of latitudes in [DEGREES]
     @param lon: a numpy array of longitudes in [DEGREES]
 
-    @return: {'spherical':Resolution} | {}
+    @return: {'spherical':Resolution()} | {}
     """
     
     #filter out non-unique points, and convert to radians
-    latlon = np.stack([lat, lon], axis=1)
-    latlon = np.unique(latlon, axis=0)
-    lat,lon = np.rollaxis(np.deg2rad(latlon), 1)
+    lat, lon = preprocess_latlon(lat, lon, rad=True)
+
+    #fail if not enough points
+    if lat.size <= 2:
+        return {}
 
     #convert to 3D cartesian coordinates
     x = np.cos(lat) * np.cos(lon)
@@ -171,23 +193,26 @@ def detect_spherical_resolution(lat:np.ndarray, lon:np.ndarray) -> Dict[str, Res
     Y = y/(1-z)
 
     #compute the Delaunay triangulation of the projected points (this is equivalent to a Delaunay triangulation directly on the sphere)
-    tri = Delaunay(np.array([X,Y]).T)
-    # tri = Delaunay(np.stack([x,y,z], axis=1))
+    tri = Delaunay(np.stack([X,Y], axis=1))
 
-    #collect together all edges of the triangles (in lat/lon space)
-    edges = np.concatenate([
-        #edge 1
-        [lon[tri.simplices[:,0]] - lon[tri.simplices[:,1]],
-         lat[tri.simplices[:,0]] - lat[tri.simplices[:,1]]],
-        #edge 2
-        [lon[tri.simplices[:,1]] - lon[tri.simplices[:,2]],
-         lat[tri.simplices[:,1]] - lat[tri.simplices[:,2]]],
-        #edge 3
-        [lon[tri.simplices[:,2]] - lon[tri.simplices[:,0]],
-         lat[tri.simplices[:,2]] - lat[tri.simplices[:,0]],]
-    ], axis=1)
+    #collect together all edges of the triangles (in 3D space)
+    i0, i1, i2 = tri.simplices[:,0], tri.simplices[:,1], tri.simplices[:,2]
+    p0 = np.stack([x[i0], y[i0], z[i0]], axis=1)
+    p1 = np.stack([x[i1], y[i1], z[i1]], axis=1)
+    p2 = np.stack([x[i2], y[i2], z[i2]], axis=1)
+    # edges = np.concatenate([
+    #     #edge 1
+    #     [lon[tri.simplices[:,0]] - lon[tri.simplices[:,1]],
+    #      lat[tri.simplices[:,0]] - lat[tri.simplices[:,1]]],
+    #     #edge 2
+    #     [lon[tri.simplices[:,1]] - lon[tri.simplices[:,2]],
+    #      lat[tri.simplices[:,1]] - lat[tri.simplices[:,2]]],
+    #     #edge 3
+    #     [lon[tri.simplices[:,2]] - lon[tri.simplices[:,0]],
+    #      lat[tri.simplices[:,2]] - lat[tri.simplices[:,0]],]
+    # ], axis=1)
 
-    lengths = np.sqrt(np.sum(edges**2, axis=0))
+    # lengths = np.sqrt(np.sum(edges**2, axis=0))
 
     #TODO: construct a results object based on these lengths
     pdb.set_trace()
@@ -226,23 +251,24 @@ def main():
     # pdb.set_trace()
 
     #Some experiments with plotting points on a sphere
-    n_points = 180
-    d_points = int(np.round(n_points ** (1/3)))
-
-    side = (np.arange(d_points) + 0.5) / d_points
-    x,y,z = np.meshgrid(side, side, side)
-    x,y,z = x.flatten(), y.flatten(), z.flatten()
-
-    #convert to 3D coordinates on a sphere via normal distribution
-    xn,yn,zn = norm.ppf(x), norm.ppf(y), norm.ppf(z) #inverse normal transform
-    r = np.sqrt(xn**2 + yn**2 + zn**2)
-    xn,yn,zn = xn/r, yn/r, zn/r
+    n_points = 100
 
 
-    #DEBUG just generate random (normal) points for xn,yn,zn instead of uniformly distributed
-    xn,yn,zn = np.random.normal(size=(3,n_points))
-    r = np.sqrt(xn**2 + yn**2 + zn**2)
-    xn,yn,zn = xn/r, yn/r, zn/r
+    # d_points = int(np.round(n_points ** (1/3)))
+    # side = (np.arange(d_points) + 0.5) / d_points
+    # x,y,z = np.meshgrid(side, side, side)
+    # x,y,z = x.flatten(), y.flatten(), z.flatten()
+
+    # #convert to 3D coordinates on a sphere via normal distribution
+    # xn,yn,zn = norm.ppf(x), norm.ppf(y), norm.ppf(z) #inverse normal transform
+    # r = np.sqrt(xn**2 + yn**2 + zn**2)
+    # xn,yn,zn = xn/r, yn/r, zn/r
+
+
+    # #DEBUG just generate random (normal) points for xn,yn,zn instead of uniformly distributed
+    # xn,yn,zn = np.random.normal(size=(3,n_points))
+    # r = np.sqrt(xn**2 + yn**2 + zn**2)
+    # xn,yn,zn = xn/r, yn/r, zn/r
 
 
     #DEBUG generate points at uniform lat/lon intervals and then convert to 3D
@@ -255,136 +281,158 @@ def main():
     exit(1)
     
     
+
+def test1():
+    n_points = 64800
+    d_points = int(np.round((n_points/2) ** (1/2)))
+    lats = (np.arange(d_points) + 0.5) / d_points * 180 - 90
+    lons = (np.arange(2*d_points) + 0.5) / (2 * d_points) * 360 - 180
+    lat,lon = np.meshgrid(lats, lons)
+    lat,lon = lat.flatten(), lon.flatten()
+    res = detect_latlon_resolution(lat, lon)
+
+    #TODO: test, should be perfectly uniform at 1 degree
+
+
+
+
+
+
+
+
+
+
+
     
-    lat,lon = np.deg2rad(lat), np.deg2rad(lon)
-    xn,yn,zn = np.cos(lat) * np.cos(lon), np.cos(lat) * np.sin(lon), np.sin(lat)
+    # lat,lon = np.deg2rad(lat), np.deg2rad(lon)
+    # xn,yn,zn = np.cos(lat) * np.cos(lon), np.cos(lat) * np.sin(lon), np.sin(lat)
 
 
 
-    if False:
-        #plot the points in 3D
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(xn, yn, zn)
-        ax.set_box_aspect([1,1,1])
-        ax.set_proj_type('ortho')
-        set_axes_equal(ax)
+    # if False:
+    #     #plot the points in 3D
+    #     fig = plt.figure()
+    #     ax = fig.add_subplot(111, projection='3d')
+    #     ax.scatter(xn, yn, zn)
+    #     ax.set_box_aspect([1,1,1])
+    #     ax.set_proj_type('ortho')
+    #     set_axes_equal(ax)
 
-        #plot the lat/lon points in 2D
-        # fig = plt.figure()
-        # ax = fig.add_subplot(111, projection='polar')
-        # ax.scatter(lon, lat)
+    #     #plot the lat/lon points in 2D
+    #     # fig = plt.figure()
+    #     # ax = fig.add_subplot(111, projection='polar')
+    #     # ax.scatter(lon, lat)
 
-        plt.show()
+    #     plt.show()
 
-    #2 side by side plots in 3D
-    # fig, ax = plt.subplots(1,2, subplot_kw={'projection':'3d'})
-    # ax[0].scatter(x,y,z, c='r', marker='o')
-    # ax[0].plot3D(x,y,z, c='grey', alpha=0.5)
-    # ax[1].scatter(xn,yn,zn, c='r', marker='o')
-    # ax[1].plot3D(xn,yn,zn, c='grey', alpha=0.5)
+    # #2 side by side plots in 3D
+    # # fig, ax = plt.subplots(1,2, subplot_kw={'projection':'3d'})
+    # # ax[0].scatter(x,y,z, c='r', marker='o')
+    # # ax[0].plot3D(x,y,z, c='grey', alpha=0.5)
+    # # ax[1].scatter(xn,yn,zn, c='r', marker='o')
+    # # ax[1].plot3D(xn,yn,zn, c='grey', alpha=0.5)
 
-    # for a in ax:
-    #     a.set_box_aspect([1,1,1]) # IMPORTANT - this is the new, key line
-    #     a.set_proj_type('ortho') # OPTIONAL - default is perspective (shown in image above)
-    #     set_axes_equal(a) # IMPORTANT - this is also required
+    # # for a in ax:
+    # #     a.set_box_aspect([1,1,1]) # IMPORTANT - this is the new, key line
+    # #     a.set_proj_type('ortho') # OPTIONAL - default is perspective (shown in image above)
+    # #     set_axes_equal(a) # IMPORTANT - this is also required
 
 
+    # # plt.show()
+
+
+
+
+
+
+    # #compute an orthographic projection of the points on the sphere
+    # X = xn/(1-zn)
+    # Y = yn/(1-zn)
+
+    # #compute the Delaunay triangulation of the points
+    # tri = Delaunay(np.array([X,Y]).T)
+
+    # # #plot the points and the triangulation
+    # # fig, ax = plt.subplots(1,2, subplot_kw={'aspect':'equal'})
+    # # ax[0].scatter(X,Y, c='r', marker='o')
+    # # ax[0].plot(X,Y, c='grey', alpha=0.5)
+    # # ax[1].scatter(X,Y, c='r', marker='o')
+    # # # ax[1].plot(X,Y, c='grey', alpha=0.5)
+    # # for simplex in tri.simplices:
+    # #     ax[1].plot(X[simplex], Y[simplex], c='k')
+
+    # # plt.show()
+
+    # if False:
+    #     #draw corresponding polygons from the triangulation on the sphere
+    #     fig = plt.figure()
+    #     ax = fig.add_subplot(111, projection='3d')
+    #     # ax.scatter(xn,yn,zn, c='r', marker='o')
+    #     # ax.plot3D(xn,yn,zn, c='grey', alpha=0.5)
+    #     for simplex in tri.simplices:
+    #         ax.plot3D(xn[simplex], yn[simplex], zn[simplex], c='k')
+
+
+    #     ax.set_box_aspect([1,1,1])
+    #     ax.set_proj_type('ortho')
+    #     set_axes_equal(ax)
+
+    #     plt.show()
+
+
+
+
+
+    # # compute the grid size of points in lat/lon space
+    # # convert xn,yn,zn to lat/lon
+    # lat = np.arcsin(zn)
+    # lon = np.arctan2(yn, xn)
+    # lat,lon = np.rad2deg(lat), np.rad2deg(lon)
+
+    # if False:
+    #     #plot lat lon points and triangulation
+    #     plt.scatter(lon,lat, c='r', marker='o')
+    #     for simplex in tri.simplices:
+    #         plt.plot(lon[simplex], lat[simplex], c='k')
+
+    #     plt.show()
+
+
+    # #collect together all edges of the triangles (in lat/lon space)
+    # edges = np.concatenate([
+    #     #edge 1
+    #     [
+    #         lon[tri.simplices[:,0]] - lon[tri.simplices[:,1]],
+    #         lat[tri.simplices[:,0]] - lat[tri.simplices[:,1]]
+    #     ],
+    #     #edge 2
+    #     [
+    #         lon[tri.simplices[:,1]] - lon[tri.simplices[:,2]],
+    #         lat[tri.simplices[:,1]] - lat[tri.simplices[:,2]]
+    #     ],
+    #     #edge 3
+    #     [
+    #         lon[tri.simplices[:,2]] - lon[tri.simplices[:,0]],
+    #         lat[tri.simplices[:,2]] - lat[tri.simplices[:,0]],
+    #     ]
+    # ], axis=1)
+
+
+    # horizontal = edges[:, np.abs(edges[1]) < 1e-6]
+    # vertical = edges[:, np.abs(edges[0]) < 1e-6]
+
+    # dlon = np.abs(horizontal[0])
+    # dlat = np.abs(vertical[1])
+
+
+    # #plot histograms of horizontal and vertical spacings
+    # fig, ax = plt.subplots(1,2)
+    # ax[0].hist(dlon, bins=20)
+    # ax[1].hist(dlat, bins=20)
     # plt.show()
 
 
-
-
-
-
-    #compute an orthographic projection of the points on the sphere
-    X = xn/(1-zn)
-    Y = yn/(1-zn)
-
-    #compute the Delaunay triangulation of the points
-    tri = Delaunay(np.array([X,Y]).T)
-
-    # #plot the points and the triangulation
-    # fig, ax = plt.subplots(1,2, subplot_kw={'aspect':'equal'})
-    # ax[0].scatter(X,Y, c='r', marker='o')
-    # ax[0].plot(X,Y, c='grey', alpha=0.5)
-    # ax[1].scatter(X,Y, c='r', marker='o')
-    # # ax[1].plot(X,Y, c='grey', alpha=0.5)
-    # for simplex in tri.simplices:
-    #     ax[1].plot(X[simplex], Y[simplex], c='k')
-
-    # plt.show()
-
-    if False:
-        #draw corresponding polygons from the triangulation on the sphere
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        # ax.scatter(xn,yn,zn, c='r', marker='o')
-        # ax.plot3D(xn,yn,zn, c='grey', alpha=0.5)
-        for simplex in tri.simplices:
-            ax.plot3D(xn[simplex], yn[simplex], zn[simplex], c='k')
-
-
-        ax.set_box_aspect([1,1,1])
-        ax.set_proj_type('ortho')
-        set_axes_equal(ax)
-
-        plt.show()
-
-
-
-
-
-    # compute the grid size of points in lat/lon space
-    # convert xn,yn,zn to lat/lon
-    lat = np.arcsin(zn)
-    lon = np.arctan2(yn, xn)
-    lat,lon = np.rad2deg(lat), np.rad2deg(lon)
-
-    if False:
-        #plot lat lon points and triangulation
-        plt.scatter(lon,lat, c='r', marker='o')
-        for simplex in tri.simplices:
-            plt.plot(lon[simplex], lat[simplex], c='k')
-
-        plt.show()
-
-
-    #collect together all edges of the triangles (in lat/lon space)
-    edges = np.concatenate([
-        #edge 1
-        [
-            lon[tri.simplices[:,0]] - lon[tri.simplices[:,1]],
-            lat[tri.simplices[:,0]] - lat[tri.simplices[:,1]]
-        ],
-        #edge 2
-        [
-            lon[tri.simplices[:,1]] - lon[tri.simplices[:,2]],
-            lat[tri.simplices[:,1]] - lat[tri.simplices[:,2]]
-        ],
-        #edge 3
-        [
-            lon[tri.simplices[:,2]] - lon[tri.simplices[:,0]],
-            lat[tri.simplices[:,2]] - lat[tri.simplices[:,0]],
-        ]
-    ], axis=1)
-
-
-    horizontal = edges[:, np.abs(edges[1]) < 1e-6]
-    vertical = edges[:, np.abs(edges[0]) < 1e-6]
-
-    dlon = np.abs(horizontal[0])
-    dlat = np.abs(vertical[1])
-
-
-    #plot histograms of horizontal and vertical spacings
-    fig, ax = plt.subplots(1,2)
-    ax[0].hist(dlon, bins=20)
-    ax[1].hist(dlat, bins=20)
-    plt.show()
-
-
-    pdb.set_trace()
+    # pdb.set_trace()
 
 
 
