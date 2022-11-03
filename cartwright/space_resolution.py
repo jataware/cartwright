@@ -25,13 +25,6 @@ class Resolution:
     unit: GeoUnit
     error: float
 
-# @dataclass
-# class SphericalResolution:
-#     uniformity: Uniformity
-#     #TODO: some sort of coverage metric?
-#     density: float
-#     error: float
-#     #TODO:maybe a distribution of the spacings?
 
 @dataclass
 class CategoricalResolution:
