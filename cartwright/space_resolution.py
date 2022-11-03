@@ -37,7 +37,7 @@ class GeoSpatialResolution:
     lat: Optional[Resolution]
     lon: Optional[Resolution]
     latlon: Optional[Resolution]
-    spherical: Optional[Resolution]
+    # spherical: Optional[Resolution]
     categorical: Optional[CategoricalResolution] #TODO: this could maybe be a list?
     #TODO: other possible resolutions
 
@@ -83,13 +83,14 @@ def detect_resolution(lat:np.ndarray, lon:np.ndarray) -> GeoSpatialResolution:
 
     #detect the lat/lon resolution
     latlon_resolution = detect_latlon_resolution(lat, lon)
-    spherical_resolution = detect_spherical_resolution(lat, lon)
-    print(spherical_resolution, '\n\n')
-    pdb.set_trace()
-
+    # spherical_resolution = detect_spherical_resolution(lat, lon)
     categorical_resolution = detect_categorical_resolution(lat, lon)
 
-    return GeoSpatialResolution(**latlon_resolution, **spherical_resolution, **categorical_resolution)
+    return GeoSpatialResolution(
+        **latlon_resolution, 
+        # **spherical_resolution,  #skip for now due to poor results
+        **categorical_resolution
+    )
 
 
 
@@ -204,6 +205,15 @@ def detect_spherical_resolution(lat:np.ndarray, lon:np.ndarray) -> Dict[str, Res
     p1 = np.stack([x[i1], y[i1], z[i1]], axis=1)
     p2 = np.stack([x[i2], y[i2], z[i2]], axis=1)
 
+    #TODO: come up with a good way to characterize the uniformity of the points, based on the triangulation
+
+
+    #compute the areas of the triangles
+    areas = np.linalg.norm(np.cross(p1-p0, p2-p0), axis=1)
+    plt.hist(areas, bins=100)
+    plt.show()
+    pdb.set_trace()
+
     #compute the great circle distance between each pair of points
     d01 = np.arccos((p0 * p1).sum(axis=1))
     d12 = np.arccos((p1 * p2).sum(axis=1))
@@ -213,6 +223,17 @@ def detect_spherical_resolution(lat:np.ndarray, lon:np.ndarray) -> Dict[str, Res
     avg = np.median(deltas)
     uniformity = get_uniformity(deltas, avg)
     error = np.abs(1 - deltas/avg).mean()
+
+    #DEBUG plot points and edges in 3D
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(x,y,z)
+    for i in range(len(tri.simplices)):
+        ax.plot([x[i0[i]], x[i1[i]]], [y[i0[i]], y[i1[i]]], [z[i0[i]], z[i1[i]]], 'k-')
+        ax.plot([x[i1[i]], x[i2[i]]], [y[i1[i]], y[i2[i]]], [z[i1[i]], z[i2[i]]], 'k-')
+        ax.plot([x[i2[i]], x[i0[i]]], [y[i2[i]], y[i0[i]]], [z[i2[i]], z[i0[i]]], 'k-')
+    set_axes_equal(ax)
+    plt.show()
 
     return {'spherical': Resolution(uniformity, np.rad2deg(avg), GeoUnit.DEGREES, np.rad2deg(error))}
 
@@ -246,7 +267,7 @@ def set_axes_equal(ax: plt.Axes):
 def main():
 
     #Some experiments with plotting points on a sphere
-    n_points = 100
+    n_points = 500
 
     def linspace(a,b,n,extremes=False):
         r = (np.arange(n) / (n-1)) if extremes else (np.arange(n) + 0.5) / n
@@ -323,14 +344,15 @@ def main():
     # x,y,z = sphere_from_area(*uniform_square(n_points, True))
     x,y,z = fibonacci_sphere(n_points)
 
-    #DEBUG plot points in 3D
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(x,y,z)
-    set_axes_equal(ax)
-    plt.show()
-    pdb.set_trace()
+    # #DEBUG plot points in 3D
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
+    # ax.scatter(x,y,z)
+    # set_axes_equal(ax)
+    # plt.show()
+    # pdb.set_trace()
 
+    lat, lon = xyz2latlon(x,y,z)
 
     detect_resolution(lat, lon)
     
