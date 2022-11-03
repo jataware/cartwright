@@ -84,6 +84,9 @@ def detect_resolution(lat:np.ndarray, lon:np.ndarray) -> GeoSpatialResolution:
     #detect the lat/lon resolution
     latlon_resolution = detect_latlon_resolution(lat, lon)
     spherical_resolution = detect_spherical_resolution(lat, lon)
+    print(spherical_resolution, '\n\n')
+    pdb.set_trace()
+
     categorical_resolution = detect_categorical_resolution(lat, lon)
 
     return GeoSpatialResolution(**latlon_resolution, **spherical_resolution, **categorical_resolution)
@@ -200,22 +203,19 @@ def detect_spherical_resolution(lat:np.ndarray, lon:np.ndarray) -> Dict[str, Res
     p0 = np.stack([x[i0], y[i0], z[i0]], axis=1)
     p1 = np.stack([x[i1], y[i1], z[i1]], axis=1)
     p2 = np.stack([x[i2], y[i2], z[i2]], axis=1)
-    # edges = np.concatenate([
-    #     #edge 1
-    #     [lon[tri.simplices[:,0]] - lon[tri.simplices[:,1]],
-    #      lat[tri.simplices[:,0]] - lat[tri.simplices[:,1]]],
-    #     #edge 2
-    #     [lon[tri.simplices[:,1]] - lon[tri.simplices[:,2]],
-    #      lat[tri.simplices[:,1]] - lat[tri.simplices[:,2]]],
-    #     #edge 3
-    #     [lon[tri.simplices[:,2]] - lon[tri.simplices[:,0]],
-    #      lat[tri.simplices[:,2]] - lat[tri.simplices[:,0]],]
-    # ], axis=1)
 
-    # lengths = np.sqrt(np.sum(edges**2, axis=0))
+    #compute the great circle distance between each pair of points
+    d01 = np.arccos((p0 * p1).sum(axis=1))
+    d12 = np.arccos((p1 * p2).sum(axis=1))
+    d20 = np.arccos((p2 * p0).sum(axis=1))
 
-    #TODO: construct a results object based on these lengths
-    pdb.set_trace()
+    deltas = np.concatenate([d01, d12, d20])
+    avg = np.median(deltas)
+    uniformity = get_uniformity(deltas, avg)
+    error = np.abs(1 - deltas/avg).mean()
+
+    return {'spherical': Resolution(uniformity, np.rad2deg(avg), GeoUnit.DEGREES, np.rad2deg(error))}
+
 
 def detect_categorical_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[CategoricalResolution]:
     pdb.set_trace()
@@ -228,6 +228,8 @@ def set_axes_equal(ax: plt.Axes):
     spheres and cubes as cubes.  Required since `ax.axis('equal')`
     and `ax.set_aspect('equal')` don't work on 3D.
     """
+    ax.set_box_aspect([1,1,1])
+    ax.set_proj_type('ortho')
     limits = np.array([
         ax.get_xlim3d(),
         ax.get_ylim3d(),
@@ -253,32 +255,82 @@ def main():
     #Some experiments with plotting points on a sphere
     n_points = 100
 
+    def linspace(a,b,n,extremes=False):
+        r = (np.arange(n) / (n-1)) if extremes else (np.arange(n) + 0.5) / n
+        return a + r * (b-a)
 
-    # d_points = int(np.round(n_points ** (1/3)))
-    # side = (np.arange(d_points) + 0.5) / d_points
-    # x,y,z = np.meshgrid(side, side, side)
-    # x,y,z = x.flatten(), y.flatten(), z.flatten()
+    def uniform_cube(n_points:int, extremes=False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """generate a uniform 3D grid of points in a cube"""
+        d_points = int(np.round(n_points ** (1/3)))
+        side = linspace(0,1,d_points,extremes)
+        x,y,z = np.meshgrid(side, side, side)
+        x,y,z = x.flatten(), y.flatten(), z.flatten()
+        return x, y, z
 
-    # #convert to 3D coordinates on a sphere via normal distribution
-    # xn,yn,zn = norm.ppf(x), norm.ppf(y), norm.ppf(z) #inverse normal transform
-    # r = np.sqrt(xn**2 + yn**2 + zn**2)
-    # xn,yn,zn = xn/r, yn/r, zn/r
+    def uniform_square(n_points:int, extremes=False) -> Tuple[np.ndarray, np.ndarray]:
+        """generate a uniform 2D grid of points in a square"""
+        d_points = int(np.round(n_points ** (1/2)))
+        side = linspace(0,1,d_points,extremes)
+        x,y = np.meshgrid(side, side)
+        x,y = x.flatten(), y.flatten()
+        return x, y
+
+    def sphere_from_icdf(x:np.ndarray, y:np.ndarray, z:np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """convert to 3D coordinates on a sphere via the inverse normal cumulative distribution"""
+        xn,yn,zn = norm.ppf(x), norm.ppf(y), norm.ppf(z) #inverse normal transform
+        r = np.sqrt(xn**2 + yn**2 + zn**2)
+        xn,yn,zn = xn/r, yn/r, zn/r
+
+        return xn,yn,zn
+
+    def sphere_from_area(z:np.ndarray, φ:np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """convert to 3D coordinates on a sphere via an equal area transformation"""
+        z = 2*z - 1
+        φ = 2*np.pi*φ
+        r = np.sqrt(1-z**2)
+        x = r*np.cos(φ)
+        y = r*np.sin(φ)
+        return x,y,z
+
+    def random_normal_uniform(n_points:int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """directly generate random points for x,y,z, which should be approximately uniformly distributed"""
+        x,y,z = np.random.normal(size=(3,n_points))
+        r = np.sqrt(x**2 + y**2 + z**2)
+        x,y,z = x/r, y/r, z/r
+        return x,y,z
+
+    def random_area_uniform(n_points:int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        pdb.set_trace()
+
+    # convert xn,yn,zn to lat/lon
+    def xyz2latlon(x:np.ndarray, y:np.ndarray, z:np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        lat = np.arcsin(z)
+        lon = np.arctan2(y,x)
+        lat,lon = np.rad2deg(lat), np.rad2deg(lon)
+        return lat, lon
+
+    def generate_latlon_grid(n_points:int) -> Tuple[np.ndarray, np.ndarray]:
+        """generate points at uniform lat/lon intervals"""# and then convert to 3D
+        d_points = int(np.round((n_points/2) ** (1/2)))
+        lats = (np.arange(d_points) + 0.5) / d_points * 180 - 90
+        lons = (np.arange(2*d_points) + 0.5) / (2 * d_points) * 360 - 180
+        lat,lon = np.meshgrid(lats, lons)
+        lat,lon = lat.flatten(), lon.flatten()
+        return lat, lon
 
 
-    # #DEBUG just generate random (normal) points for xn,yn,zn instead of uniformly distributed
-    # xn,yn,zn = np.random.normal(size=(3,n_points))
-    # r = np.sqrt(xn**2 + yn**2 + zn**2)
-    # xn,yn,zn = xn/r, yn/r, zn/r
+    x,y,z = sphere_from_area(*uniform_square(n_points, True))
+
+    #DEBUG plot points in 3D
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(x,y,z)
+    set_axes_equal(ax)
+    plt.show()
+    pdb.set_trace()
 
 
-    #DEBUG generate points at uniform lat/lon intervals and then convert to 3D
-    d_points = int(np.round((n_points/2) ** (1/2)))
-    lats = (np.arange(d_points) + 0.5) / d_points * 180 - 90
-    lons = (np.arange(2*d_points) + 0.5) / (2 * d_points) * 360 - 180
-    lat,lon = np.meshgrid(lats, lons)
-    lat,lon = lat.flatten(), lon.flatten()
     detect_resolution(lat, lon)
-    exit(1)
     
     
 
