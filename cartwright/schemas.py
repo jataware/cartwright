@@ -129,37 +129,6 @@ class TimeResolution:
     density: float
     error: float
 
-@dataclass
-class LatLonResolution:
-    #TODO: some sort of coverage metric?
-    #TODO: handling when lat/lon have the same vs different resolutions
-    lon_resolution: float
-    lon_uniformity: Uniformity
-    lon_error: float
-    vertical: float
-    v_uniformity: Uniformity
-    v_error: float
-
-@dataclass
-class SphericalResolution:
-    uniformity: Uniformity
-    #TODO: some sort of coverage metric?
-    density: float
-    error: float
-    #TODO:maybe a distribution of the spacings?
-
-@dataclass
-class CategoricalResolution:
-    uniformity: Uniformity
-    # category: GeoCategory
-
-@dataclass
-class SpaceResolution:
-    latlon: Optional[LatLonResolution]
-    spherical: Optional[SphericalResolution]
-    categorical: Optional[CategoricalResolution] #TODO: this could maybe be a list?
-    #TODO: other possible resolutions
-
 
 class Classification(BaseModel):
     """

@@ -1,14 +1,66 @@
-from typing import Optional
+from typing import Optional, Dict
 import numpy as np
 from scipy.stats import norm
 from scipy.spatial import Delaunay
-from cartwright.schemas import SpaceResolution, LatLonResolution, SphericalResolution, CategoricalResolution, Uniformity
-
+from cartwright.schemas import Uniformity#, SpaceResolution, LatLonResolution, SphericalResolution, CategoricalResolution
+from enum import Enum, auto
 
 from matplotlib import pyplot as plt
 import pdb
 
-def detect_resolution(lat:np.ndarray, lon:np.ndarray) -> SpaceResolution:
+
+#TODO: move these to schema or perhaps a dedicated file for space_schemas
+#TODO: some sort of coverage metric?
+
+from dataclasses import dataclass
+
+class GeoUnit(Enum):
+    DEGREES = auto()
+    KILOMETERS = auto()
+
+@dataclass
+class Resolution:
+    uniformity: Uniformity
+    resolution: float
+    unit: GeoUnit
+    error: float
+
+# @dataclass
+# class SphericalResolution:
+#     uniformity: Uniformity
+#     #TODO: some sort of coverage metric?
+#     density: float
+#     error: float
+#     #TODO:maybe a distribution of the spacings?
+
+@dataclass
+class CategoricalResolution:
+    uniformity: Uniformity
+    # category: GeoCategory
+    # coverage: float # percent of category elements covered
+
+@dataclass
+class GeoSpatialResolution:
+    lat: Optional[Resolution]
+    lon: Optional[Resolution]
+    latlon: Optional[Resolution]
+    spherical: Optional[Resolution]
+    categorical: Optional[CategoricalResolution] #TODO: this could maybe be a list?
+    #TODO: other possible resolutions
+
+
+def get_uniformity(vals: np.ndarray, avg: float):
+    uniformity_score = np.abs(vals - avg)
+    if np.all(uniformity_score < 1e-9 * (avg_mag:=np.abs(avg))):
+        return Uniformity.PERFECT
+    elif uniformity_score.max() < 0.01 * avg_mag:
+        return Uniformity.UNIFORM
+    else:
+        return Uniformity.NOT_UNIFORM
+
+
+
+def detect_resolution(lat:np.ndarray, lon:np.ndarray) -> GeoSpatialResolution:
     """
     Detect the resolution of the lat/lon coordinates.
 
@@ -24,21 +76,18 @@ def detect_resolution(lat:np.ndarray, lon:np.ndarray) -> SpaceResolution:
     spherical_resolution = detect_spherical_resolution(lat, lon)
     categorical_resolution = detect_categorical_resolution(lat, lon)
 
-    return SpaceResolution(
-        latlon_resolution=latlon_resolution,
-        spherical_resolution=spherical_resolution,
-        categorical_resolution=categorical_resolution
-    )
+    return GeoSpatialResolution(**latlon_resolution, **spherical_resolution, **categorical_resolution)
 
-def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[LatLonResolution]:
+
+
+def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Dict[str, Resolution]:
     """
     Detect if the lat/lon coordinates are drawn from a uniform grid.
-    NOTE: assumes all lat/lon pairs are unique.
 
     @param lat: a numpy array of latitudes in [DEGREES]
     @param lon: a numpy array of longitudes in [DEGREES]
 
-    @return: (optional) LatLonResolution(<TODO>) object where
+    @return: {'latlon': Resolution()} | {'lat': Resolution(), 'lon': Resolution()} | {}
         ...
     """
 
@@ -67,59 +116,48 @@ def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[LatLonR
     horizontal = edges[:, np.abs(edges[1]) < 1e-6]
     vertical = edges[:, np.abs(edges[0]) < 1e-6]
 
-    #if less than 50% of the edges are horizontal or vertical, then no grid was detected
-    if len(horizontal.T) + len(vertical.T) < len(edges.T) * 0.5: #should be around 2/3 if it was a full grid
-        return None
+    #if less than 33% of the edges are horizontal or vertical, then no grid was detected
+    if len(horizontal.T) + len(vertical.T) < len(edges.T) / 3: #should be around 2/3 if it was a full grid, 1/3 if only horizontal or vertical
+        return {}
 
     #collect the lengths of the horizontal and vertical edges
     dlon = np.abs(horizontal[0])
     dlat = np.abs(vertical[1])
-
     dlon_avg = np.median(dlon)
     dlat_avg = np.median(dlat)
 
+    
+    # square grid
     if np.abs(dlon_avg - dlat_avg) < 1e-6:
-        #square grid
-        pdb.set_trace()
-    else:
-        #rectangular grid
+        deltas = np.concatenate([dlon, dlat])
+        avg = np.median(deltas)
+        uniformity = get_uniformity(deltas, avg)
+        error = np.abs(1 - deltas/avg).mean()
 
-        #compute the uniformity of the lat/lon grid
-        dlon_uniformity_score = np.abs(dlon - dlon_avg)
-        if np.all(dlon_uniformity_score < 1e-9 * dlon_avg):
-            dlon_uniformity = Uniformity.PERFECT
-        elif dlon_uniformity_score.max() < 0.01 * dlon_avg:
-            dlon_uniformity = Uniformity.UNIFORM
-        else:
-            dlon_uniformity = Uniformity.NOT_UNIFORM
+        return {'latlon': Resolution(uniformity, avg, GeoUnit.DEGREES, error)}
+    
 
-        dlat_uniformity_score = np.abs(dlat - dlat_avg)
-        if np.all(dlat_uniformity_score < 1e-9 * dlat_avg):
-            dlat_uniformity = Uniformity.PERFECT
-        elif dlat_uniformity_score.max() < 0.01 * dlat_avg:
-            dlat_uniformity = Uniformity.UNIFORM
-        else:
-            dlat_uniformity = Uniformity.NOT_UNIFORM
+    # rectangular grid
+    dlon_uniformity = get_uniformity(dlon, dlon_avg)
+    dlon_errors = np.abs(1 - dlon/dlon_avg).mean()
+    dlat_uniformity = get_uniformity(dlat, dlat_avg)
+    dlat_errors = np.abs(1 - dlat/dlat_avg).mean()
 
-        pdb.set_trace()
-
-    #TODO: handling if dlat/dlon are the same vs different
+    return {
+        'lat':Resolution(dlat_uniformity, dlat_avg, GeoUnit.DEGREES, dlat_errors),
+        'lon':Resolution(dlon_uniformity, dlon_avg, GeoUnit.DEGREES, dlon_errors)
+    }
 
 
-    # #find the closest duration unit
-    # names = [*TimeUnit.__members__.keys()]
-    # durations = np.array([getattr(TimeUnit, name).value for name in names])
-    # unit_errors = np.abs(durations - avg)/durations
-    # closest = np.argmin(unit_errors)
-    # unit = getattr(TimeUnit, names[closest])
-    # errors = np.abs(1 - deltas / durations[closest]) #errors in terms of the closest unit
+def detect_spherical_resolution(lat:np.ndarray, lon:np.ndarray) -> Dict[str, Resolution]:
+    """
+    Detect if points are uniformly distributed on a sphere.
 
-    # #return the results
-    # return TimeResolution(uniformity, unit, avg/durations[closest], errors.mean())
+    @param lat: a numpy array of latitudes in [DEGREES]
+    @param lon: a numpy array of longitudes in [DEGREES]
 
-
-
-def detect_spherical_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[SphericalResolution]:
+    @return: {'spherical':Resolution} | {}
+    """
     
     #filter out non-unique points, and convert to radians
     latlon = np.stack([lat, lon], axis=1)
