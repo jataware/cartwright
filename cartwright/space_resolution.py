@@ -244,13 +244,6 @@ def set_axes_equal(ax: plt.Axes):
 
 
 def main():
-    #test conversion to uniform
-    # p = 10000
-    # x = (np.arange(p) + 0.5) / p
-    # xn = norm.ppf(x)
-    # plt.hist(xn, bins=100)
-    # plt.show()
-    # pdb.set_trace()
 
     #Some experiments with plotting points on a sphere
     n_points = 100
@@ -299,8 +292,16 @@ def main():
         x,y,z = x/r, y/r, z/r
         return x,y,z
 
-    def random_area_uniform(n_points:int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        pdb.set_trace()
+    def fibonacci_sphere(n_points:int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        φ = np.pi * (3 - np.sqrt(5)) #golden angle
+        y = linspace(1, -1, n_points, True)
+        r = np.sqrt(1 - y*y)
+        θ = φ * np.arange(n_points)
+        x = np.cos(θ) * r
+        z = np.sin(θ) * r
+        return x,y,z
+
+
 
     # convert xn,yn,zn to lat/lon
     def xyz2latlon(x:np.ndarray, y:np.ndarray, z:np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
@@ -319,7 +320,8 @@ def main():
         return lat, lon
 
 
-    x,y,z = sphere_from_area(*uniform_square(n_points, True))
+    # x,y,z = sphere_from_area(*uniform_square(n_points, True))
+    x,y,z = fibonacci_sphere(n_points)
 
     #DEBUG plot points in 3D
     fig = plt.figure()
