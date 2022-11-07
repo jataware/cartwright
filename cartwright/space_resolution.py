@@ -1,9 +1,11 @@
 from typing import Optional, Dict, Tuple
 import numpy as np
+from scipy.sparse import csr_matrix
 from scipy.stats import norm
 from scipy.spatial import Delaunay
 from cartwright.schemas import Uniformity#, SpaceResolution, LatLonResolution, SphericalResolution, CategoricalResolution
 from enum import Enum, auto
+import pandas as pd
 
 from matplotlib import pyplot as plt
 import pdb
@@ -16,6 +18,7 @@ from dataclasses import dataclass
 
 class GeoUnit(Enum):
     DEGREES = auto()
+    # MINUTES = auto() #TODO: have enum like time enums. probably separate angles from distances
     KILOMETERS = auto()
 
 @dataclass
@@ -34,11 +37,11 @@ class CategoricalResolution:
 
 @dataclass
 class GeoSpatialResolution:
-    lat: Optional[Resolution]
-    lon: Optional[Resolution]
-    latlon: Optional[Resolution]
-    # spherical: Optional[Resolution]
-    categorical: Optional[CategoricalResolution] #TODO: this could maybe be a list?
+    lat: Optional[Resolution]=None
+    lon: Optional[Resolution]=None
+    latlon: Optional[Resolution]=None
+    spherical: Optional[Resolution]=None
+    categorical: Optional[CategoricalResolution]=None #TODO: this could maybe be a list?
     #TODO: other possible resolutions
 
 
@@ -84,12 +87,14 @@ def detect_resolution(lat:np.ndarray, lon:np.ndarray) -> GeoSpatialResolution:
     #detect the lat/lon resolution
     latlon_resolution = detect_latlon_resolution(lat, lon)
     # spherical_resolution = detect_spherical_resolution(lat, lon)
-    categorical_resolution = detect_categorical_resolution(lat, lon)
+    # print(spherical_resolution)
+    # pdb.set_trace()
+    # categorical_resolution = detect_categorical_resolution(lat, lon)
 
     return GeoSpatialResolution(
-        **latlon_resolution, 
-        # **spherical_resolution,  #skip for now due to poor results
-        **categorical_resolution
+        **latlon_resolution,
+        # **spherical_resolution,
+        # **categorical_resolution
     )
 
 
@@ -199,6 +204,14 @@ def detect_spherical_resolution(lat:np.ndarray, lon:np.ndarray) -> Dict[str, Res
     #compute the Delaunay triangulation of the projected points (this is equivalent to a Delaunay triangulation directly on the sphere)
     tri = Delaunay(np.stack([X,Y], axis=1))
 
+    #create a sparse adjacency matrix from the triangulation
+    adj = csr_matrix((np.ones(len(tri.simplices)), (tri.simplices[:,0], tri.simplices[:,1])), shape=(len(X), len(X)))
+    adj += csr_matrix((np.ones(len(tri.simplices)), (tri.simplices[:,1], tri.simplices[:,2])), shape=(len(X), len(X)))
+    adj += csr_matrix((np.ones(len(tri.simplices)), (tri.simplices[:,2], tri.simplices[:,0])), shape=(len(X), len(X)))
+
+    pdb.set_trace()
+
+
     #collect together all edges of the triangles (in 3D space)
     i0, i1, i2 = tri.simplices[:,0], tri.simplices[:,1], tri.simplices[:,2]
     p0 = np.stack([x[i0], y[i0], z[i0]], axis=1)
@@ -239,6 +252,11 @@ def detect_spherical_resolution(lat:np.ndarray, lon:np.ndarray) -> Dict[str, Res
 
 
 def detect_categorical_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[CategoricalResolution]:
+    #edge cases/issues
+    # - how stable are the categories? countries come and go, change names, etc. would be a pain to have to make this aware of the date, but how else do you handle?
+    #    - possibly just assume the date is now?
+    #    - possibly have the user specify the date/handling process?
+    #
     pdb.set_trace()
 
 
@@ -331,6 +349,13 @@ def main():
         lat,lon = np.rad2deg(lat), np.rad2deg(lon)
         return lat, lon
 
+    def latlon2xyz(lat:np.ndarray, lon:np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        lat,lon = np.deg2rad(lat), np.deg2rad(lon)
+        x = np.cos(lat) * np.cos(lon)
+        y = np.cos(lat) * np.sin(lon)
+        z = np.sin(lat)
+        return x,y,z
+
     def generate_latlon_grid(n_points:int) -> Tuple[np.ndarray, np.ndarray]:
         """generate points at uniform lat/lon intervals"""# and then convert to 3D
         d_points = int(np.round((n_points/2) ** (1/2)))
@@ -340,21 +365,62 @@ def main():
         lat,lon = lat.flatten(), lon.flatten()
         return lat, lon
 
+    def africa_grid_example():
+        df = pd.read_csv('tests/test_data/Africa-0.1.csv')
+        lat,lon = df['latitude'].values, df['longitude'].values
+        return lat,lon
 
-    # x,y,z = sphere_from_area(*uniform_square(n_points, True))
-    x,y,z = fibonacci_sphere(n_points)
+    def netcdf_examples():
+        from glob import glob
+        for f in glob('tests/test_data/netcdf/CSVs/*.csv'):
+            print(f)
+            df = pd.read_csv(f)
+            #should be 2 columns with unknown names. try lat,lon first
+            lat,lon = df.iloc[:,0].values, df.iloc[:,1].values
 
-    # #DEBUG plot points in 3D
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111, projection='3d')
-    # ax.scatter(x,y,z)
-    # set_axes_equal(ax)
-    # plt.show()
-    # pdb.set_trace()
+            #check if lat/lon are in the right range
+            check_lat0 = lambda x: (x >= -90) & (x <= 90)
+            check_lat1 = lambda x: (x >= 0) & (x <= 180)
+            check_lon0 = lambda x: (x >= -180) & (x <= 180)
+            check_lon1 = lambda x: (x >= 0) & (x <= 360)
 
-    lat, lon = xyz2latlon(x,y,z)
+            if (check_lat0(lat).all() or check_lat1(lat).all()) and (check_lon0(lon).all() or check_lon1(lon).all()):
+                yield lat,lon
+                continue
 
-    detect_resolution(lat, lon)
+            lat,lon = lon,lat
+            if (check_lat0(lat).all() or check_lat1(lat).all()) and (check_lon0(lon).all() or check_lon1(lon).all()):
+                yield lat,lon
+                continue
+            
+
+    # x,y,z = sphere_from_area(*uniform_square(n_points))
+    # x,y,z = fibonacci_sphere(n_points)
+    # lat, lon = xyz2latlon(x,y,z)
+    # lat, lon = africa_grid_example()
+    # x,y,z = latlon2xyz(lat,lon)
+    for lat,lon in netcdf_examples():
+        lat,lon = preprocess_latlon(lat,lon) #remove duplicates
+        if len(lat) < 5:
+            continue
+
+        #DEBUG plot latlon points in 2D
+        s = 10.0 if len(lat) < 5000 else 0.1
+        plt.scatter(lon, lat, s=s)
+        plt.show()
+
+        # #DEBUG plot points in 3D
+        x,y,z = latlon2xyz(lat,lon)
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.scatter(x,y,z, s=s)
+        set_axes_equal(ax)
+        plt.show()
+
+
+
+        res = detect_resolution(lat, lon)
+        print(res)
     
     
 
@@ -372,6 +438,61 @@ def test1():
 
 
 
+
+
+
+us_latlons = {
+    'Wisconsin, USA': [44.500000, -89.500000],
+    'West Virginia, USA': [39.000000, -80.500000],
+    'Vermont, USA': [44.000000, -72.699997],
+    'Texas, the USA': [31.000000, -100.000000],
+    'South Dakota, the US': [44.500000, -100.000000],
+    'Rhode Island, the US': [41.742325, -71.742332],
+    'Oregon, the US': [44.000000, -120.500000],
+    'New York, USA': [43.000000, -75.000000],
+    'New Hampshire, USA': [44.000000, -71.500000],
+    'Nebraska, USA': [41.500000, -100.000000],
+    'Kansas, the US': [38.500000, -98.000000],
+    'Mississippi, USA': [33.000000, -90.000000],
+    'Illinois, USA': [40.000000, -89.000000],
+    'Delaware, the US': [39.000000, -75.500000],
+    'Connecticut, USA': [41.599998, -72.699997],
+    'Arkansas, the US': [34.799999, -92.199997],
+    'Indiana, USA': [40.273502, -86.126976],
+    'Missouri, USA': [38.573936, -92.603760],
+    'Florida, USA': [27.994402, -81.760254],
+    'Nevada, USA': [39.876019, -117.224121],
+    'Maine, the USA': [45.367584, -68.972168],
+    'Michigan, USA': [44.182205, -84.506836],
+    'Georgia, the USA': [33.247875, -83.441162],
+    'Hawaii, USA': [19.741755, -155.844437],
+    'Alaska, USA': [66.160507, -153.369141],
+    'Tennessee, USA': [35.860119, -86.660156],
+    'Virginia, USA': [37.926868, -78.024902],
+    'New Jersey, USA': [39.833851, -74.871826],
+    'Kentucky, USA': [37.839333, -84.270020],
+    'North Dakota, USA': [47.650589, -100.437012],
+    'Minnesota, USA': [46.392410, -94.636230],
+    'Oklahoma, the USA': [36.084621, -96.921387],
+    'Montana, USA': [46.965260, -109.533691],
+    'Washington, the USA': [47.751076, -120.740135],
+    'Utah, USA': [39.419220, -111.950684],
+    'Colorado, USA': [39.113014, -105.358887],
+    'Ohio, USA': [40.367474, -82.996216],
+    'Alabama, USA': [32.318230, -86.902298],
+    'Iowa, the USA': [42.032974, -93.581543],
+    'New Mexico, USA': [34.307144, -106.018066],
+    'South Carolina, USA': [33.836082, -81.163727],
+    'Pennsylvania, USA': [41.203323, -77.194527],
+    'Arizona, USA': [34.048927, -111.093735],
+    'Maryland, USA': [39.045753, -76.641273],
+    'Massachusetts, USA': [42.407211, -71.382439],
+    'California, the USA': [36.778259, -119.417931],
+    'Idaho, USA': [44.068203, -114.742043],
+    'Wyoming, USA': [43.075970, -107.290283],
+    'North Carolina, USA': [35.782169, -80.793457],
+    'Louisiana, USA': [30.391830, -92.329102],
+}
 
 
 
