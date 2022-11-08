@@ -4,7 +4,7 @@ from scipy.sparse import csr_matrix
 from scipy.stats import norm
 from scipy.spatial import Delaunay
 from cartwright.schemas import Uniformity#, SpaceResolution, LatLonResolution, SphericalResolution, CategoricalResolution
-from enum import Enum, auto
+from enum import Enum, EnumMeta
 import pandas as pd
 
 from matplotlib import pyplot as plt
@@ -16,16 +16,20 @@ import pdb
 
 from dataclasses import dataclass
 
-class GeoUnit(Enum):
-    DEGREES = auto()
-    # MINUTES = auto() #TODO: have enum like time enums. probably separate angles from distances
-    KILOMETERS = auto()
+class Unit(float, Enum): ...
+
+class AngleUnit(Unit):
+    degrees = 1
+    minutes = degrees/60
+    seconds = degrees/3600
+    # radians = 180/np.pi #probably don't include since we usually only want to return degrees
+
 
 @dataclass
 class Resolution:
     uniformity: Uniformity
     resolution: float
-    unit: GeoUnit
+    unit: Unit
     error: float
 
 
@@ -56,7 +60,7 @@ def get_uniformity(vals: np.ndarray, avg: float):
 
 def preprocess_latlon(lat:np.ndarray, lon:np.ndarray, rad=False) -> Tuple[np.ndarray, np.ndarray]:
     """
-    filter out non-unique points, and optionally convert to radians
+    filter out non-unique points, empty rows, and optionally convert to radians
     
     @param lat: a numpy array of latitudes in [DEGREES]
     @param lon: a numpy array of longitudes in [DEGREES]
@@ -64,13 +68,24 @@ def preprocess_latlon(lat:np.ndarray, lon:np.ndarray, rad=False) -> Tuple[np.nda
     @return: lat, lon
     """
 
-    latlon = np.stack([lat, lon], axis=1)
-    latlon = np.unique(latlon, axis=0)
+    latlon = np.stack([lat, lon], axis=0)
+    latlon = np.unique(latlon, axis=1)
+    latlon = latlon[:,~np.isnan(latlon).any(axis=0)]
     if rad: 
         latlon = np.deg2rad(latlon)
-    lat, lon = np.rollaxis(latlon, 1)
+    lat, lon = latlon
 
     return lat, lon
+
+def match_unit(cls:EnumMeta, avg:float) -> Tuple[float, Unit]:
+    #find the closest matching unit
+    names = [*cls.__members__.keys()]
+    durations = np.array([getattr(cls, name).value for name in names], dtype=float)
+    unit_errors = np.abs(durations - avg)/durations
+    closest = np.argmin(unit_errors)
+    unit = getattr(cls, names[closest])
+    return avg/durations[closest], unit
+
 
 
 def detect_resolution(lat:np.ndarray, lon:np.ndarray) -> GeoSpatialResolution:
@@ -154,20 +169,25 @@ def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Dict[str, Resolu
         deltas = np.concatenate([dlon, dlat])
         avg = np.median(deltas)
         uniformity = get_uniformity(deltas, avg)
-        error = np.abs(1 - deltas/avg).mean()
 
-        return {'latlon': Resolution(uniformity, np.rad2deg(avg), GeoUnit.DEGREES, np.rad2deg(error))}
+        scale, unit = match_unit(AngleUnit, np.rad2deg(avg))
+        error = np.rad2deg(np.abs(1 - deltas/avg).mean()) / unit
+
+        return {'latlon': Resolution(uniformity, scale, unit, error)}
     
 
     # rectangular grid
     dlon_uniformity = get_uniformity(dlon, dlon_avg)
-    dlon_error = np.abs(1 - dlon/dlon_avg).mean()
+    dlon_scale, dlon_unit = match_unit(AngleUnit, np.rad2deg(dlon_avg))
+    dlon_error = np.rad2deg(np.abs(1 - dlon/dlon_avg).mean()) / dlon_unit
+
     dlat_uniformity = get_uniformity(dlat, dlat_avg)
-    dlat_error = np.abs(1 - dlat/dlat_avg).mean()
+    dlat_scale, dlat_unit = match_unit(AngleUnit, np.rad2deg(dlat_avg))
+    dlat_error = np.rad2deg(np.abs(1 - dlat/dlat_avg).mean()) / dlat_unit
 
     return {
-        'lat':Resolution(dlat_uniformity, np.rad2deg(dlat_avg), GeoUnit.DEGREES, np.rad2deg(dlat_error)),
-        'lon':Resolution(dlon_uniformity, np.rad2deg(dlon_avg), GeoUnit.DEGREES, np.rad2deg(dlon_error))
+        'lat':Resolution(dlat_uniformity, dlat_scale, dlat_unit, dlat_error),
+        'lon':Resolution(dlon_uniformity, dlon_scale, dlon_unit, dlon_error)
     }
 
 
@@ -378,6 +398,9 @@ def main():
             #should be 2 columns with unknown names. try lat,lon first
             lat,lon = df.iloc[:,0].values, df.iloc[:,1].values
 
+            #remove duplicates and empty rows
+            lat,lon = preprocess_latlon(lat, lon)
+
             #check if lat/lon are in the right range
             check_lat0 = lambda x: (x >= -90) & (x <= 90)
             check_lat1 = lambda x: (x >= 0) & (x <= 180)
@@ -393,6 +416,7 @@ def main():
                 yield lat,lon
                 continue
             
+            pdb.set_trace()
 
     # x,y,z = sphere_from_area(*uniform_square(n_points))
     # x,y,z = fibonacci_sphere(n_points)
@@ -400,8 +424,9 @@ def main():
     # lat, lon = africa_grid_example()
     # x,y,z = latlon2xyz(lat,lon)
     for lat,lon in netcdf_examples():
-        lat,lon = preprocess_latlon(lat,lon) #remove duplicates
+        #lat,lon are already preprocessed
         if len(lat) < 5:
+            print('skipping, too few points')
             continue
 
         #DEBUG plot latlon points in 2D
