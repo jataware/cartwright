@@ -135,7 +135,7 @@ def main():
         print(res)
     
 
-def test1():
+def test_1_degree_globe():
     n_points = 64800
     d_points = int(np.round((n_points/2) ** (1/2)))
     lats = (np.arange(d_points) + 0.5) / d_points * 180 - 90
@@ -144,7 +144,11 @@ def test1():
     lat,lon = lat.flatten(), lon.flatten()
     res = detect_latlon_resolution(lat, lon)
 
-    #TODO: test, should be perfectly uniform at 1 degree
+    # should be perfectly uniform at 1 degree
+    assert res is not None, f'failed to detect resolution for in perfectly uniform grid test'
+    assert res.square is not None, f'detected resolution is not square for in perfectly uniform grid test'
+    assert res.square.unit == AngleUnit.degrees, f'detected resolution unit is not degrees for in perfectly uniform grid test'
+    assert res.square.resolution - 1.0 < 1e-6, f'detected resolution scale is not 1.0 for in perfectly uniform grid test'
 
 
 
