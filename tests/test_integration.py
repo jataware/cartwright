@@ -6,7 +6,7 @@ from cartwright.categorize import CartwrightClassify
     pytest.param('examples/example_2.csv', marks=pytest.mark.xfail(reason='Currently broken'))
 ])
 def test_simple_integration(filepath):
-    t = CartwrightClassify(20)
+    t = CartwrightClassify()
     res = t.columns_classified(filepath)
 
 

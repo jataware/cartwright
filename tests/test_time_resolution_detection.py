@@ -110,7 +110,7 @@ def test_time_resolution_whole_pipeline(unit:TimeUnit, uniformity:Uniformity, nu
     df.to_csv('test.csv',index=False, date_format='%m/%d/%Y %H:%M:%S')
 
     #run geotime
-    t = CartwrightClassify(20)
+    t = CartwrightClassify()
     res = t.columns_classified('test.csv')
     if res is None:
         raise Exception('geotime failed to classify the test data')
