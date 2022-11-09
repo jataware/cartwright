@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
 from cartwright.analysis.space_resolution import preprocess_latlon, detect_latlon_resolution
 from cartwright.schemas import AngleUnit, Uniformity
-from .helpers import latlon2xyz, generate_latlon_square, generate_latlon_rect
+from typing import Tuple
 
 import pytest
 import pdb
@@ -41,6 +42,8 @@ def test_synthetic_square_grid(unit:AngleUnit, scale:float):
     assert res.square.unit == unit, f'detected resolution unit is not {unit} for {unit} with scale {scale}'
     assert res.square.resolution - scale < 1e-6, f'detected resolution scale is not {scale} for {unit} with scale {scale}'
 
+
+
 @pytest.mark.parametrize('unit,lat_scale,lon_scale', [
     (unit, lat_scale, lon_scale) for unit in AngleUnit for lat_scale in [0.25, 0.5, 1.0, 1.5] for lon_scale in [0.25, 0.5, 1.0, 1.5] if lat_scale != lon_scale
 ])
@@ -56,96 +59,6 @@ def test_synthetic_rect_grid(unit:AngleUnit, lat_scale:float, lon_scale:float):
     assert res.lon.resolution - lon_scale < 1e-6, f'detected resolution longitude scale is not {lon_scale} for {unit} with lat_scale {lat_scale} and lon_scale {lon_scale}'
 
 
-
-def main():
-    from matplotlib import pyplot as plt
-    def set_axes_equal(ax: plt.Axes):
-        """Set 3D plot axes to equal scale.
-
-        Make axes of 3D plot have equal scale so that spheres appear as
-        spheres and cubes as cubes.  Required since `ax.axis('equal')`
-        and `ax.set_aspect('equal')` don't work on 3D.
-        """
-        ax.set_box_aspect([1,1,1])
-        ax.set_proj_type('ortho')
-        limits = np.array([
-            ax.get_xlim3d(),
-            ax.get_ylim3d(),
-            ax.get_zlim3d(),
-        ])
-        origin = np.mean(limits, axis=1)
-        radius = 0.5 * np.max(np.abs(limits[:, 1] - limits[:, 0]))
-        x, y, z = origin
-        ax.set_xlim3d([x - radius, x + radius])
-        ax.set_ylim3d([y - radius, y + radius])
-        ax.set_zlim3d([z - radius, z + radius])
-
-
-
-    def africa_grid_example():
-        df = pd.read_csv('tests/test_data/Africa-0.1.csv')
-        lat,lon = df['latitude'].values, df['longitude'].values
-        return lat,lon
-
-    def netcdf_examples():
-        from glob import glob
-        for f in glob('tests/test_data/netcdf/CSVs/*.csv'):
-            print(f)
-            df = pd.read_csv(f)
-            #should be 2 columns with unknown names. try lat,lon first
-            lat,lon = df.iloc[:,0].values, df.iloc[:,1].values
-
-            #remove duplicates and empty rows
-            lat,lon = preprocess_latlon(lat, lon)
-
-            #check if lat/lon are in the right range
-            check_lat0 = lambda x: (x >= -90) & (x <= 90)
-            check_lat1 = lambda x: (x >= 0) & (x <= 180)
-            check_lon0 = lambda x: (x >= -180) & (x <= 180)
-            check_lon1 = lambda x: (x >= 0) & (x <= 360)
-
-            if (check_lat0(lat).all() or check_lat1(lat).all()) and (check_lon0(lon).all() or check_lon1(lon).all()):
-                yield lat,lon
-                continue
-
-            lat,lon = lon,lat
-            if (check_lat0(lat).all() or check_lat1(lat).all()) and (check_lon0(lon).all() or check_lon1(lon).all()):
-                yield lat,lon
-                continue
-            
-            pdb.set_trace()
-
-    #Some experiments with plotting points on a sphere
-    n_points = 500
-    # x,y,z = sphere_from_area(*uniform_square(n_points))
-    # x,y,z = fibonacci_sphere(n_points)
-    # lat, lon = xyz2latlon(x,y,z)
-    # lat, lon = africa_grid_example()
-    # x,y,z = latlon2xyz(lat,lon)
-    for lat,lon in netcdf_examples():
-        #lat,lon are already preprocessed
-        if len(lat) < 5:
-            print('skipping, too few points')
-            continue
-
-        #DEBUG plot latlon points in 2D
-        s = 10.0 if len(lat) < 5000 else 0.1
-        plt.scatter(lon, lat, s=s)
-        plt.show()
-
-        # #DEBUG plot points in 3D
-        x,y,z = latlon2xyz(lat,lon)
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(x,y,z, s=s)
-        set_axes_equal(ax)
-        plt.show()
-
-
-
-        res = detect_latlon_resolution(lat, lon)
-        print(res)
-    
 
 def test_1_degree_globe():
     n_points = 64800
@@ -165,8 +78,134 @@ def test_1_degree_globe():
 
 
 
+############################### HELPER FUNCTIONS ########################################
+
+def linspace(a,b=None,n=10,extremes=True):
+    if b is None:
+        a,b = 0,a
+    r = (np.arange(n) / (n-1)) if extremes else (np.arange(n) + 0.5) / n
+    return a + r * (b-a)
+
+
+def uniform_cube(n_points:int, extremes=False) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """generate a uniform 3D grid of points in a cube"""
+    d_points = int(np.round(n_points ** (1/3)))
+    side = linspace(0,1,d_points,extremes)
+    x,y,z = np.meshgrid(side, side, side)
+    x,y,z = x.flatten(), y.flatten(), z.flatten()
+    return x, y, z
+
+
+def uniform_square(n_points:int, extremes=False) -> Tuple[np.ndarray, np.ndarray]:
+    """generate a uniform 2D grid of points in a square"""
+    d_points = int(np.round(n_points ** (1/2)))
+    side = linspace(0,1,d_points,extremes)
+    x,y = np.meshgrid(side, side)
+    x,y = x.flatten(), y.flatten()
+    return x, y
+
+
+def sphere_from_icdf(x:np.ndarray, y:np.ndarray, z:np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """convert to 3D coordinates on a sphere via the inverse normal cumulative distribution"""
+    xn,yn,zn = norm.ppf(x), norm.ppf(y), norm.ppf(z) #inverse normal transform
+    r = np.sqrt(xn**2 + yn**2 + zn**2)
+    xn,yn,zn = xn/r, yn/r, zn/r
+
+    return xn,yn,zn
+
+
+def sphere_from_area(z:np.ndarray, φ:np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """convert to 3D coordinates on a sphere via an equal area transformation"""
+    z = 2*z - 1
+    φ = 2*np.pi*φ
+    r = np.sqrt(1-z**2)
+    x = r*np.cos(φ)
+    y = r*np.sin(φ)
+    return x,y,z
+
+
+def random_normal_uniform(n_points:int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """directly generate random points for x,y,z, which should be approximately uniformly distributed"""
+    x,y,z = np.random.normal(size=(3,n_points))
+    r = np.sqrt(x**2 + y**2 + z**2)
+    x,y,z = x/r, y/r, z/r
+    return x,y,z
+
+
+def fibonacci_sphere(n_points:int) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    φ = np.pi * (3 - np.sqrt(5)) #golden angle
+    y = linspace(1, -1, n_points, True)
+    r = np.sqrt(1 - y*y)
+    θ = φ * np.arange(n_points)
+    x = np.cos(θ) * r
+    z = np.sin(θ) * r
+    return x,y,z
+
+
+def xyz2latlon(x:np.ndarray, y:np.ndarray, z:np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    lat = np.arcsin(z)
+    lon = np.arctan2(y,x)
+    lat,lon = np.rad2deg(lat), np.rad2deg(lon)
+    return lat, lon
+
+
+def latlon2xyz(lat:np.ndarray, lon:np.ndarray) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    lat,lon = np.deg2rad(lat), np.deg2rad(lon)
+    x = np.cos(lat) * np.cos(lon)
+    y = np.cos(lat) * np.sin(lon)
+    z = np.sin(lat)
+    return x,y,z
+
+
+def generate_n_point_latlon_grid(n_points:int) -> Tuple[np.ndarray, np.ndarray]:
+    """generate points at uniform lat/lon intervals"""
+    d_points = int(np.round((n_points/2) ** (1/2)))
+    lats = linspace(-90, 90, d_points, False)
+    lons = linspace(-180, 180, 2*d_points, False)
+    lat,lon = np.meshgrid(lats, lons)
+    lat,lon = lat.flatten(), lon.flatten()
+    return lat, lon
+
+
+def generate_latlon_square(delta:float, d_points:int) -> Tuple[np.ndarray, np.ndarray]:
+    """generate points in a d_points x d_points square grid with the specified delta (degrees) spacing between points"""
+    lats = np.arange(d_points) * delta
+    lons = np.arange(d_points) * delta
+    lat,lon = np.meshgrid(lats, lons)
+    lat,lon = lat.flatten(), lon.flatten()
+    return lat, lon
+
+
+def generate_latlon_rect(lat_delta, lon_delta, lat_points, lon_points) -> Tuple[np.ndarray, np.ndarray]:
+    """generate points in a lat_points x lon_points rectangular grid with the specified lat/lon spacing between points"""
+    lats = np.arange(lat_points) * lat_delta
+    lons = np.arange(lon_points) * lon_delta
+    lat,lon = np.meshgrid(lats, lons)
+    lat,lon = lat.flatten(), lon.flatten()
+    return lat, lon
 
 
 
-if __name__ == '__main__':
-    main()
+
+
+    # from matplotlib import pyplot as plt
+    # def set_axes_equal(ax: plt.Axes):
+    #     """Set 3D plot axes to equal scale.
+
+    #     Make axes of 3D plot have equal scale so that spheres appear as
+    #     spheres and cubes as cubes.  Required since `ax.axis('equal')`
+    #     and `ax.set_aspect('equal')` don't work on 3D.
+    #     """
+    #     ax.set_box_aspect([1,1,1])
+    #     ax.set_proj_type('ortho')
+    #     limits = np.array([
+    #         ax.get_xlim3d(),
+    #         ax.get_ylim3d(),
+    #         ax.get_zlim3d(),
+    #     ])
+    #     origin = np.mean(limits, axis=1)
+    #     radius = 0.5 * np.max(np.abs(limits[:, 1] - limits[:, 0]))
+    #     x, y, z = origin
+    #     ax.set_xlim3d([x - radius, x + radius])
+    #     ax.set_ylim3d([y - radius, y + radius])
+    #     ax.set_zlim3d([z - radius, z + radius])
