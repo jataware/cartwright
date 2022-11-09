@@ -4,10 +4,10 @@ from typing import Optional
 
 ## when working locally use
 
-from .schemas import TimeUnit, Uniformity, TimeResolution
+from .schemas import TimeUnit, Uniformity, Resolution
 
 # from cartwright.schemas import TimeUnit, Uniformity, TimeResolution
-def detect_resolution(times:np.ndarray) -> Optional[TimeResolution]:
+def detect_resolution(times:np.ndarray) -> Optional[Resolution]:
     """
     Detect the resolution of temporal data.
     
@@ -48,4 +48,4 @@ def detect_resolution(times:np.ndarray) -> Optional[TimeResolution]:
     errors = np.abs(1 - deltas / durations[closest]) #errors in terms of the closest unit
 
     #return the results
-    return TimeResolution(uniformity, unit, avg/durations[closest], errors.mean())
+    return Resolution(uniformity, unit, avg/durations[closest], errors.mean())

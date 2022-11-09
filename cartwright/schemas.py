@@ -108,7 +108,17 @@ class Uniformity(Enum):
             return 'not uniform'
 
 
-class TimeUnit(float, Enum):
+class Unit(float, Enum): 
+    """base class for float/enum based units of measure"""
+
+
+class AngleUnit(Unit):
+    degrees = 1
+    minutes = degrees/60
+    seconds = degrees/3600
+
+
+class TimeUnit(Unit):
     millisecond = 1e-3
     second = 1
     minute = 60 * second
@@ -123,11 +133,18 @@ class TimeUnit(float, Enum):
 
 
 @dataclass
-class TimeResolution:
+class Resolution:
     uniformity: Uniformity
-    unit: TimeUnit
-    density: float
+    unit: Unit
+    resolution: float
     error: float
+
+
+@dataclass
+class GeoSpatialResolution:
+    lat: Optional[Resolution]=None
+    lon: Optional[Resolution]=None
+    square: Optional[Resolution]=None
 
 
 class Classification(BaseModel):
@@ -138,7 +155,7 @@ class Classification(BaseModel):
     category: Optional[Category]
     subcategory: Optional[Subcategory]
     format: str = Field(default=None, description='the date represented in strftime format')
-    time_resolution: Optional[TimeResolution]
+    time_resolution: Optional[Resolution]
     match_type: List[Matchtype]
     Parser: Optional[Parser]
     fuzzyColumn: Optional[FuzzyColumn]
