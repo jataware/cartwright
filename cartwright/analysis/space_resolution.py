@@ -26,23 +26,6 @@ def preprocess_latlon(lat:np.ndarray, lon:np.ndarray, rad=False) -> Tuple[np.nda
     return lat, lon
 
 
-# def detect_resolution(lat:np.ndarray, lon:np.ndarray) -> GeoSpatialResolution:
-#     """
-#     Detect the resolution of the lat/lon coordinates.
-
-#     @param lat: a numpy array of latitudes in [DEGREES]
-#     @param lon: a numpy array of longitudes in [DEGREES]
-
-#     @return: GeoSpatialResolution(<TODO>) object where 
-#         ...
-#     """
-
-#     #detect the lat/lon resolution
-#     latlon_resolution = detect_latlon_resolution(lat, lon)
-
-#     return GeoSpatialResolution(**latlon_resolution)
-
-
 def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[GeoSpatialResolution]:
     """
     Detect if the lat/lon coordinates are drawn from a uniform grid.
@@ -50,8 +33,12 @@ def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[GeoSpat
     @param lat: a numpy array of latitudes in [DEGREES]
     @param lon: a numpy array of longitudes in [DEGREES]
 
-    @return: {'square': Resolution()} | {'lat': Resolution(), 'lon': Resolution()} | {}
-        ...
+    @return: (optional) GeoSpatialResolution with either 
+        - square = Resolution
+        - lat = Resolution, lon = Resolution
+        
+    where `square` indicates that the detected grid has the same resolution in both dimensions
+    while `lat`/`lon` indicate that the detected grid has different resolutions for lat/lon
     """
 
     #filter duplicates, and convert to radians

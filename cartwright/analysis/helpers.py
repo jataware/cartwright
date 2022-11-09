@@ -1,6 +1,6 @@
 import numpy as np
 from enum import EnumMeta
-from typing import Tuple
+from typing import Tuple, Type
 from ..schemas import Unit, Uniformity
 
 
@@ -15,7 +15,7 @@ def get_uniformity(vals: np.ndarray, avg: float):
         return Uniformity.NOT_UNIFORM
 
 
-def match_unit(cls:EnumMeta, avg:float) -> Tuple[float, Unit]:
+def match_unit(cls:Type[Unit], avg:float) -> Tuple[float, Unit]:
     #find the closest matching unit
     names = [*cls.__members__.keys()]
     durations = np.array([getattr(cls, name).value for name in names], dtype=float)
