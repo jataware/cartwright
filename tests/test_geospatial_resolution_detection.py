@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from cartwright.analysis.space_resolution import preprocess_latlon, detect_latlon_resolution
 from cartwright.schemas import AngleUnit, Uniformity
-from .helpers import latlon2xyz, uniform_square, generate_latlon_square
+from .helpers import latlon2xyz, generate_latlon_square, generate_latlon_rect
 
 import pytest
 import pdb
@@ -41,8 +41,20 @@ def test_synthetic_square_grid(unit:AngleUnit, scale:float):
     assert res.square.unit == unit, f'detected resolution unit is not {unit} for {unit} with scale {scale}'
     assert res.square.resolution - scale < 1e-6, f'detected resolution scale is not {scale} for {unit} with scale {scale}'
 
-# def test_synthetic_rect_grid():
-#     ...
+@pytest.mark.parametrize('unit,lat_scale,lon_scale', [
+    (unit, lat_scale, lon_scale) for unit in AngleUnit for lat_scale in [0.25, 0.5, 1.0, 1.5] for lon_scale in [0.25, 0.5, 1.0, 1.5] if lat_scale != lon_scale
+])
+def test_synthetic_rect_grid(unit:AngleUnit, lat_scale:float, lon_scale:float):
+    lat,lon = generate_latlon_rect(unit.value*lat_scale, unit.value*lon_scale, 20, 20)
+
+    res = detect_latlon_resolution(lat, lon)
+    assert res is not None, f'failed to detect resolution for {unit} with lat_scale {lat_scale} and lon_scale {lon_scale}'
+    assert res.lat is not None and res.lon is not None, f'detected resolution is not rect for {unit} with lat_scale {lat_scale} and lon_scale {lon_scale}'
+    assert res.lat.unit == unit, f'detected resolution latitude unit is not {unit} for {unit} with lat_scale {lat_scale} and lon_scale {lon_scale}'
+    assert res.lat.resolution - lat_scale < 1e-6, f'detected resolution latitude scale is not {lat_scale} for {unit} with lat_scale {lat_scale} and lon_scale {lon_scale}'
+    assert res.lon.unit == unit, f'detected resolution longitude unit is not {unit} for {unit} with lat_scale {lat_scale} and lon_scale {lon_scale}'
+    assert res.lon.resolution - lon_scale < 1e-6, f'detected resolution longitude scale is not {lon_scale} for {unit} with lat_scale {lat_scale} and lon_scale {lon_scale}'
+
 
 
 def main():

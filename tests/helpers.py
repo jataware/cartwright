@@ -80,7 +80,7 @@ def latlon2xyz(lat:np.ndarray, lon:np.ndarray) -> Tuple[np.ndarray, np.ndarray, 
     return x,y,z
 
 
-def generate_latlon_grid(n_points:int) -> Tuple[np.ndarray, np.ndarray]:
+def generate_n_point_latlon_grid(n_points:int) -> Tuple[np.ndarray, np.ndarray]:
     """generate points at uniform lat/lon intervals"""
     d_points = int(np.round((n_points/2) ** (1/2)))
     lats = linspace(-90, 90, d_points, False)
@@ -89,10 +89,20 @@ def generate_latlon_grid(n_points:int) -> Tuple[np.ndarray, np.ndarray]:
     lat,lon = lat.flatten(), lon.flatten()
     return lat, lon
 
+
 def generate_latlon_square(delta:float, d_points:int) -> Tuple[np.ndarray, np.ndarray]:
     """generate points in a d_points x d_points square grid with the specified delta (degrees) spacing between points"""
     lats = np.arange(d_points) * delta
     lons = np.arange(d_points) * delta
+    lat,lon = np.meshgrid(lats, lons)
+    lat,lon = lat.flatten(), lon.flatten()
+    return lat, lon
+
+
+def generate_latlon_rect(lat_delta, lon_delta, lat_points, lon_points) -> Tuple[np.ndarray, np.ndarray]:
+    """generate points in a lat_points x lon_points rectangular grid with the specified lat/lon spacing between points"""
+    lats = np.arange(lat_points) * lat_delta
+    lons = np.arange(lon_points) * lon_delta
     lat,lon = np.meshgrid(lats, lons)
     lat,lon = lat.flatten(), lon.flatten()
     return lat, lon
