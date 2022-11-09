@@ -1,9 +1,8 @@
-from typing import Dict, Tuple
+from typing import Optional, Tuple
 import numpy as np
 from scipy.spatial import Delaunay
 from ..schemas import AngleUnit, Resolution, GeoSpatialResolution
 from .helpers import get_uniformity, match_unit
-
 
 
 
@@ -27,27 +26,24 @@ def preprocess_latlon(lat:np.ndarray, lon:np.ndarray, rad=False) -> Tuple[np.nda
     return lat, lon
 
 
+# def detect_resolution(lat:np.ndarray, lon:np.ndarray) -> GeoSpatialResolution:
+#     """
+#     Detect the resolution of the lat/lon coordinates.
+
+#     @param lat: a numpy array of latitudes in [DEGREES]
+#     @param lon: a numpy array of longitudes in [DEGREES]
+
+#     @return: GeoSpatialResolution(<TODO>) object where 
+#         ...
+#     """
+
+#     #detect the lat/lon resolution
+#     latlon_resolution = detect_latlon_resolution(lat, lon)
+
+#     return GeoSpatialResolution(**latlon_resolution)
 
 
-def detect_resolution(lat:np.ndarray, lon:np.ndarray) -> GeoSpatialResolution:
-    """
-    Detect the resolution of the lat/lon coordinates.
-
-    @param lat: a numpy array of latitudes in [DEGREES]
-    @param lon: a numpy array of longitudes in [DEGREES]
-
-    @return: GeoSpatialResolution(<TODO>) object where 
-        ...
-    """
-
-    #detect the lat/lon resolution
-    latlon_resolution = detect_latlon_resolution(lat, lon)
-
-    return GeoSpatialResolution(**latlon_resolution)
-
-
-
-def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Dict[str, Resolution]:
+def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Optional[GeoSpatialResolution]:
     """
     Detect if the lat/lon coordinates are drawn from a uniform grid.
 
@@ -88,7 +84,7 @@ def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Dict[str, Resolu
     #if less than 33% of the edges are horizontal or vertical, then no grid was detected
     #should be around 2/3 if it was a full grid, 1/3 if only horizontal or vertical
     if len(horizontal.T) + len(vertical.T) < len(edges.T) * 0.33333: 
-        return {}
+        return None
 
     #collect the lengths of the horizontal and vertical edges
     dlon = np.abs(horizontal[0])
@@ -107,7 +103,7 @@ def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Dict[str, Resolu
         # error = np.rad2deg(np.abs(1 - deltas/avg).mean()) / unit
         error = np.rad2deg(np.abs(deltas-avg).mean()) / unit
 
-        return {'square': Resolution(uniformity, unit, scale, error)}
+        return GeoSpatialResolution(square=Resolution(uniformity, unit, scale, error))
     
 
     # rectangular grid
@@ -119,10 +115,10 @@ def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Dict[str, Resolu
     dlat_scale, dlat_unit = match_unit(AngleUnit, np.rad2deg(dlat_avg))
     dlat_error = np.rad2deg(np.abs(1 - dlat/dlat_avg).mean()) / dlat_unit
 
-    return {
-        'lat':Resolution(dlat_uniformity, dlat_unit, dlat_scale, dlat_error),
-        'lon':Resolution(dlon_uniformity, dlon_unit, dlon_scale, dlon_error)
-    }
+    return GeoSpatialResolution(
+        lat=Resolution(dlat_uniformity, dlat_unit, dlat_scale, dlat_error),
+        lon=Resolution(dlon_uniformity, dlon_unit, dlon_scale, dlon_error)
+    )
 
 
 # def detect_spherical_resolution(lat:np.ndarray, lon:np.ndarray) -> Dict[str, Resolution]:

@@ -50,7 +50,7 @@ def test_time_resolution_algorithm(unit:TimeUnit, uniformity:Uniformity, num_row
         times += np.random.uniform(-0.1,0.1,num_rows)*unit
 
     #run the test
-    res = time_resolution.detect_resolution(times)
+    res = time_resolution.detect_temporal_resolution(times)
     assert res.unit == unit, f'failed to detect {unit}, instead got {res.unit}'
     assert res.uniformity == uniformity, f'failed to detect {uniformity} uniformity for {unit}, instead got {res.uniformity}'
 

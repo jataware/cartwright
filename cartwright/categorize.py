@@ -450,7 +450,7 @@ class CartwrightClassify(CartwrightBase):
                 ]
                 times = np.array(times)
 
-                classification.time_resolution = time_resolution.detect_resolution(
+                classification.time_resolution = time_resolution.detect_temporal_resolution(
                     times
                 )
             except Exception as e:

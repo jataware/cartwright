@@ -2,7 +2,7 @@ from typing import Tuple
 from scipy.stats import norm
 import numpy as np
 import pandas as pd
-from cartwright.analysis.space_resolution import preprocess_latlon, detect_resolution, detect_latlon_resolution
+from cartwright.analysis.space_resolution import preprocess_latlon, detect_latlon_resolution
 
 import pdb
 
@@ -172,7 +172,7 @@ def main():
 
 
 
-        res = detect_resolution(lat, lon)
+        res = detect_latlon_resolution(lat, lon)
         print(res)
     
     
