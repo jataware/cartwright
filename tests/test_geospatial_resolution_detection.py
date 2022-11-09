@@ -3,7 +3,7 @@ from scipy.stats import norm
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from cartwright.space_resolution import preprocess_latlon, detect_resolution, detect_latlon_resolution
+from cartwright.analysis.space_resolution import preprocess_latlon, detect_resolution, detect_latlon_resolution
 
 import pdb
 

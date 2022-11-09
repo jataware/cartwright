@@ -11,7 +11,7 @@ import time
 import logging
 
 from . import schemas
-from . import time_resolution
+from .analysis import time_resolution
 from .CartwrightBase import CartwrightBase
 
 from .utils import (

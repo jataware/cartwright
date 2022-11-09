@@ -1,7 +1,7 @@
 from typing import Dict, Tuple
 import numpy as np
 from scipy.spatial import Delaunay
-from .schemas import Unit, Uniformity, AngleUnit, Resolution, GeoSpatialResolution
+from ..schemas import Unit, Uniformity, AngleUnit, Resolution, GeoSpatialResolution
 from enum import Enum, EnumMeta
 import pandas as pd
 

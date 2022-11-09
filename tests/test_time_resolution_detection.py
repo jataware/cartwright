@@ -1,5 +1,5 @@
 from datetime import datetime
-from cartwright import time_resolution
+from cartwright.analysis import time_resolution
 from cartwright.categorize import CartwrightClassify
 from cartwright.schemas import TimeUnit, Uniformity
 import os

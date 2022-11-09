@@ -4,7 +4,7 @@ from typing import Optional
 
 ## when working locally use
 
-from .schemas import TimeUnit, Uniformity, Resolution
+from ..schemas import TimeUnit, Uniformity, Resolution
 
 # from cartwright.schemas import TimeUnit, Uniformity, TimeResolution
 def detect_resolution(times:np.ndarray) -> Optional[Resolution]:
