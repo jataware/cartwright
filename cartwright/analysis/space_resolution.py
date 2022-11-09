@@ -1,24 +1,11 @@
 from typing import Dict, Tuple
 import numpy as np
 from scipy.spatial import Delaunay
-from ..schemas import Unit, Uniformity, AngleUnit, Resolution, GeoSpatialResolution
-from enum import Enum, EnumMeta
-import pandas as pd
-
-from matplotlib import pyplot as plt
-import pdb
+from ..schemas import AngleUnit, Resolution, GeoSpatialResolution
+from .helpers import get_uniformity, match_unit
 
 
 
-
-def get_uniformity(vals: np.ndarray, avg: float):
-    uniformity_score = np.abs(vals - avg)
-    if np.all(uniformity_score < 1e-9 * (avg_mag:=np.abs(avg))):
-        return Uniformity.PERFECT
-    elif uniformity_score.max() < 0.01 * avg_mag:
-        return Uniformity.UNIFORM
-    else:
-        return Uniformity.NOT_UNIFORM
 
 def preprocess_latlon(lat:np.ndarray, lon:np.ndarray, rad=False) -> Tuple[np.ndarray, np.ndarray]:
     """
@@ -39,14 +26,6 @@ def preprocess_latlon(lat:np.ndarray, lon:np.ndarray, rad=False) -> Tuple[np.nda
 
     return lat, lon
 
-def match_unit(cls:EnumMeta, avg:float) -> Tuple[float, Unit]:
-    #find the closest matching unit
-    names = [*cls.__members__.keys()]
-    durations = np.array([getattr(cls, name).value for name in names], dtype=float)
-    unit_errors = np.abs(durations - avg)/durations
-    closest = np.argmin(unit_errors)
-    unit = getattr(cls, names[closest])
-    return avg/durations[closest], unit
 
 
 
@@ -63,16 +42,8 @@ def detect_resolution(lat:np.ndarray, lon:np.ndarray) -> GeoSpatialResolution:
 
     #detect the lat/lon resolution
     latlon_resolution = detect_latlon_resolution(lat, lon)
-    # spherical_resolution = detect_spherical_resolution(lat, lon)
-    # print(spherical_resolution)
-    # pdb.set_trace()
-    # categorical_resolution = detect_categorical_resolution(lat, lon)
 
-    return GeoSpatialResolution(
-        **latlon_resolution,
-        # **spherical_resolution,
-        # **categorical_resolution
-    )
+    return GeoSpatialResolution(**latlon_resolution)
 
 
 
@@ -133,7 +104,8 @@ def detect_latlon_resolution(lat:np.ndarray, lon:np.ndarray) -> Dict[str, Resolu
         uniformity = get_uniformity(deltas, avg)
 
         scale, unit = match_unit(AngleUnit, np.rad2deg(avg))
-        error = np.rad2deg(np.abs(1 - deltas/avg).mean()) / unit
+        # error = np.rad2deg(np.abs(1 - deltas/avg).mean()) / unit
+        error = np.rad2deg(np.abs(deltas-avg).mean()) / unit
 
         return {'square': Resolution(uniformity, unit, scale, error)}
     

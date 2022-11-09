@@ -5,6 +5,7 @@ from typing import Optional
 ## when working locally use
 
 from ..schemas import TimeUnit, Uniformity, Resolution
+from .helpers import get_uniformity, match_unit
 
 # from cartwright.schemas import TimeUnit, Uniformity, TimeResolution
 def detect_resolution(times:np.ndarray) -> Optional[Resolution]:
@@ -27,25 +28,22 @@ def detect_resolution(times:np.ndarray) -> Optional[Resolution]:
     times.sort()
     deltas = times[1:] - times[:-1]
 
-    #compute the average delta
+    #compute the average delta, and the average deviation
     avg = np.median(deltas)
 
-    #if all data within 1% of the mode, assume uniform
-    uniformity_score = np.abs(deltas - avg)
-    if np.all(uniformity_score < 1e-9 * avg):
-        uniformity = Uniformity.PERFECT
-    elif uniformity_score.max() < 0.01 * avg:
-        uniformity = Uniformity.UNIFORM
-    else:
-        uniformity = Uniformity.NOT_UNIFORM
+    #compute the uniformity of the deltas
+    uniformity = get_uniformity(deltas, avg)
 
     #find the closest duration unit
-    names = [*TimeUnit.__members__.keys()]
-    durations = np.array([getattr(TimeUnit, name).value for name in names])
-    unit_errors = np.abs(durations - avg)/durations
-    closest = np.argmin(unit_errors)
-    unit = getattr(TimeUnit, names[closest])
-    errors = np.abs(1 - deltas / durations[closest]) #errors in terms of the closest unit
+    scale, unit = match_unit(TimeUnit, avg)
+    error = np.abs((deltas - avg)).mean() / unit
+
+    # names = [*TimeUnit.__members__.keys()]
+    # durations = np.array([getattr(TimeUnit, name).value for name in names])
+    # unit_errors = np.abs(durations - avg)/durations
+    # closest = np.argmin(unit_errors)
+    # unit = getattr(TimeUnit, names[closest])
+    # errors = np.abs(1 - deltas / durations[closest]) #errors in terms of the closest unit
 
     #return the results
-    return Resolution(uniformity, unit, avg/durations[closest], errors.mean())
+    return Resolution(uniformity, unit, scale, error)
