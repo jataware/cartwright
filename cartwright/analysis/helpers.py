@@ -6,7 +6,8 @@ from ..schemas import Unit, Uniformity
 
 def get_uniformity(vals: np.ndarray, avg: float):
     uniformity_score = np.abs(vals - avg)
-    if np.all(uniformity_score < 1e-9 * (avg_mag:=np.abs(avg))):
+    avg_mag = np.abs(avg)
+    if np.all(uniformity_score < 1e-9 * avg_mag):
         return Uniformity.PERFECT
     elif uniformity_score.max() < 0.01 * avg_mag:
         return Uniformity.UNIFORM
