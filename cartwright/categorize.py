@@ -461,7 +461,7 @@ class CartwrightClassify(CartwrightBase):
 
         return final
 
-    def columns_classified(self, df=None, path=None):
+    def columns_classified(self, *, df=None, path=None):
         logging.info("starting classification")
         if path is not None:
             self.read_in_csv(path)
@@ -477,7 +477,7 @@ class CartwrightClassify(CartwrightBase):
         final = self.predict_temporal_resolution(final)
         return final
 
-    def columns_categorized(self, df=None, path=None):
+    def columns_categorized(self, *, df=None, path=None):
         preds = self.columns_classified(df=df, path=path)
         preds_dict = preds.dict()
         column_categorization = {}
