@@ -11,7 +11,7 @@ One of Cartwright's capabilities is to predict the temporal resolution of a give
 Temporal resolution detection is a sub-problem in the larger problem of dataset alignment: given two datasets with possibly different temporal resolutions, how can we align them so that they can be compared? Cartwright's temporal resolution detection is a first step in this process.
 
 ## Detection Process
-During the `columns_classified()` process if a dataset contains data at evenly spaced time intervals, the resolution is automatically detected. A simple heuristic is used to perform the analysis:
+Given data at evenly spaced time intervals, the resolution can be automatically detected. A simple heuristic is used to perform the analysis:
 1. convert all unique dates/times to unix timestamps
 2. sort the timestamps and compute the delta time between each
 3. find the median of the deltas
@@ -20,9 +20,59 @@ During the `columns_classified()` process if a dataset contains data at evenly s
 6. convert the median delta to a proportion of the matched unit, and set as the temporal unit for the dataset
 
 
-Time resolutions are represented by a `TimeResolution` object with values: `uniformity` enum, `unit` enum, `density` value (in the unit given), and mean `error` value. If the detection process fails, the object will be `None`
+## Usage
 
-In addition to detecting data precisely matching known units, such as hours, days, years, etc. Cartwright can also detect data at fractional units, such as `6 hours`, `3.5 days`, `1.25 years`, etc. In these cases, the time unit will be set to the closest matching unit, and the density will be set to the fractional amount of that unit.
+Let's say we have a CSV with the following data in it:
+
+```csv
+date,temperature(C)
+2019-01-01 00:00:00, 10.2
+2019-01-01 02:00:00, 11.7
+2019-01-01 04:00:00, 12.3
+...
+2019-12-31 22:00:00, 10.1
+```
+
+We can automatically detect the frequency of measurements
+
+```
+from cartwright import convert_to_timestamps, detect_temporal_resolution
+import pandas as pd
+
+# Load the data
+df = pd.read_csv("path/to/data.csv")
+
+# convert the dates to timestamps
+timestamps = convert_to_timestamps(df["date"].to_list(), '%Y-%m-%d %H:%M:%S')
+
+# detect the temporal resolution
+resolution = detect_temporal_resolution(timestamps)
+```
+
+The resulting object will contain the following results:
+
+```
+Resolution(
+    uniformity=Uniformity.PERFECT,
+    unit=TimeUnit.HOUR,
+    resolution=2.0,
+    error=0.0,
+)
+```
+
+indicating that the dataset has a resolution of 2 hours.
+
+## Resolution Results
+
+Time resolutions are represented by a `Resolution` object with values: 
+- `uniformity`: (enum) Measures how uniform the time intervals are (see below).
+- `unit`: (enum) The unit of time (e.g. hour, day, week, etc)
+- `resolution`: (float) A multiplier on the unit, e.g. 2 hours, 3 days, etc.
+- `error`: (float) The mean error of the time intervals from the expected value.
+
+If the detection process fails, the object will be `None`
+
+In addition to detecting data precisely matching known units, such as hours, days, years, etc. Cartwright can also detect data at fractional units, such as `6 hours`, `3.5 days`, `1.25 years`, etc. In these cases, `unit` will be set to the closest matching unit, and `resolution` will be set to the fractional amount of that unit.
 
 
 ## Uniformity
