@@ -89,7 +89,7 @@ class country_name(GeoBase):
 
 
 #TJ
-class country_code(GeoBase):
+class ISO2(GeoBase):
     def __init__(self):
         super().__init__()
 
