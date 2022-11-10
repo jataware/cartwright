@@ -2,48 +2,32 @@
 # Cartwright
 ![Tests](https://github.com/jataware/cartwright/actions/workflows/tests.yml/badge.svg)
 
-Cartwirght categorizes spatial and temporal features in a dataset. 
+Cartwirght is a data profiler that identifies and categorizes spatial and temporal features. Cartwright uses deep learning, natural language processing, and a variety of heuristics to determine whether a column in a dataset contains spatial or temporal information and, if so, what is specifically contained.
 
-Cartwright uses natural language processing and heuristic 
-functions to determine the best guess categorization of a feature. 
-The goal of this project was for a given dataframe where we expect
-some kind of geospatial and temporal columns, automatically infer:
+Cartwright was built to automate complex data pipelines for heterogenous climate and geopolitical data that are generally oriented around geospatial and temporal features (_think maps and time series_). The challenge that Cartwright solves is automatically detecting those features so they can be parsed and normalized. This problem turns out to be quite tricky, but Cartwright makes it simple.
 
--   Country
--   Admin levels (0 through 3)
--   Timestamp (from arbitrary formats)
--   Latitude
--   Longitude
--   Dates (including format)
--   Time resolution for date columns
+Cartwright can easily detect things like `country`, `day`, `latitude`, and many other location and time types. Check out Cartwright's [supported categories](https://jataware.github.io/cartwright/categories.html) for a complete listing!
 
+Cartwright is easy to install and works with pretty much any tabular data. It's easy to add new categories too! Learn more about the methodology behind Cartwright, its API, and how to contribute in our [docs](https://jataware.github.io/cartwright).
 
- The model and transformation code can be used locally by installing
- the pip package or downloaded the github repo and following the directions
- found in /docs.
+## Installation
 
-# Simple use case
+You can install Cartwright from PyPi with `pip install cartwright`.
 
-Cartwright has the ability to classify features of a dataframe which can help
-with automation tasks that normally require a human in the loop.
-For a simple example we have a data pipeline that ingests dataframes and
-creates a standard timeseries plots or a map with datapoints. The problem is these new dataframes
-are not standarized, and we have no way of knowing which columns contain dates or locations data.
-By using Cartwright we can automatically infer which columns are dates or coordinate values and 
-continue with our pipeline.
+## Using Cartwright
 
-Here is the dataframe with :
+Imagine we have the following weather dataset:
 
-| x_value  |  y_value   | date_value | Precip |
-|:---------|:----------:|-----------:|--------|
-| 7.942658 | 107.240322 | 07/14/1992 | .2     |
-| 7.943745 | 137.240633 | 07/15/1992 | .1     |
-| 7.943725 | 139.240664 | 07/16/1992 | .3     |
+| x_value  |  y_value   | recorded_at | rainfall |
+|:---------|:----------:|------------:|--------|
+| 7.942658 | 107.240322 | 07/14/1992  | .2     |
+| 7.943745 | 137.240633 | 07/15/1992  | .1     |
+| 7.943725 | 139.240664 | 07/16/1992  | .3     |
 
 
-python code example and output.
-    
-```
+To the human observer, it's pretty obvious that `x_value` is the longitude column, `y_value` the latitude, `recorded_at` the date, and `rainfall` the actual weather measurement. However, if we're trying to automatically ingest this data into a weather model, we would benefit from knowing this _without human observation_. Enter Cartwright:
+
+```    
 from pprint import pprint
 from cartwright import categorize
 
@@ -53,7 +37,7 @@ categories = cartwright.categorize(path="path/to/csv.csv")
 pprint(categories, sort_dicts=False)
 ```    
 
-You can see from the output we were able to infer that x_value and y_values were geo category with subcategory of latitude and longitude. In some cases these can be impossible to tell apart since all latitude values are valid longitude values. For our date feature the category is time and the subcategory is date. The format is correct and we were able to pick out the time resolution of one day.  
+We've now categoriezed each column in this dataset and have automatically determined which column represents latitude, longitude and date. We've also learned the time format (`%m/%d/%Y`) of the date feature.
 
 ```
 {'x_value': {'category': <Category.geo: 'geo'>,
@@ -68,4 +52,3 @@ You can see from the output we were able to infer that x_value and y_values were
 ```
 
 With this information we can now convert the date values to a timestamp and plot a timeseries with other features.
-
