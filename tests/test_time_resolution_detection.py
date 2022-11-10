@@ -128,4 +128,4 @@ def test_time_resolution_algorithm(unit:TimeUnit, uniformity:Uniformity, num_row
 
 
 if __name__ == '__main__':
-    test_time_resolution_whole_pipeline(TimeUnit.week, Uniformity.PERFECT)
+    test_time_resolution_algorithm(TimeUnit.week, Uniformity.PERFECT)
