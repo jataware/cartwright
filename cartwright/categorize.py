@@ -427,7 +427,6 @@ class CartwrightClassify(CartwrightBase):
 
         return index_nan
 
-
     def columns_classified(self, *, df=None, path=None):
         logging.info("starting classification")
         if path is not None:
