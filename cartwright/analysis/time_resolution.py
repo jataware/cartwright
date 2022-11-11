@@ -1,5 +1,6 @@
 import numpy as np
-from typing import Optional
+from typing import Optional, List
+from datetime import datetime, timezone
 from ..schemas import TimeUnit, Uniformity, Resolution
 from .helpers import get_uniformity, match_unit
 
@@ -36,3 +37,31 @@ def detect_temporal_resolution(times:np.ndarray) -> Optional[Resolution]:
 
     #return the results
     return Resolution(uniformity, unit, scale, error)
+
+
+
+def convert_to_timestamps(times:List[str], fmt:str) -> np.ndarray:
+    """
+    Convert a list of strings to unix timestamps.
+
+    @param times: a list of strings representing times
+    @param format: a string representing the format of the times
+
+    @return: a numpy array of unix timestamps in [SECONDS]
+
+    @example:
+    ```
+    times = ['2019-01-01 00:00:00', '2019-01-01 00:00:01', '2019-01-01 00:00:02']
+    fmt = '%Y-%m-%d %H:%M:%S'
+    convert_to_timestamps(times, fmt)
+    ```
+    """
+    times = [
+        datetime.strptime(str(time_), fmt)
+            .replace(tzinfo=timezone.utc)
+            .timestamp()
+        for time_ in times
+    ]
+    times = np.array(times)
+
+    return times

@@ -427,39 +427,6 @@ class CartwrightClassify(CartwrightBase):
 
         return index_nan
 
-    def predict_temporal_resolution(
-        self, final: schemas.Classifications
-    ) -> schemas.Classifications:
-        found_time = False
-        for classification in final.classifications:
-            try:
-
-                if classification.category != schemas.Category.time:
-                    continue
-                if classification.format is None:
-                    continue
-                found_time = True
-
-                # convert the datetime strings in the dataframe to unix timestamps using the classification format
-                times = self.df[classification.column].to_list()
-                times = [
-                    datetime.datetime.strptime(str(time_), classification.format)
-                    .replace(tzinfo=datetime.timezone.utc)
-                    .timestamp()
-                    for time_ in times
-                ]
-                times = np.array(times)
-
-                classification.time_resolution = time_resolution.detect_temporal_resolution(
-                    times
-                )
-            except Exception as e:
-                print(f"error {e}")
-
-        if not found_time:
-            logging.warning("No time columns found to predict temporal resolution")
-
-        return final
 
     def columns_classified(self, *, df=None, path=None):
         logging.info("starting classification")
@@ -474,7 +441,6 @@ class CartwrightClassify(CartwrightBase):
         output = self.assign_heuristic_function(preds, fuzzy_matched_columns)
         fuzzyMatch = self.fuzzy_match_columns(output)
         final = self.build_skipped_categorization(fuzzyMatch)
-        final = self.predict_temporal_resolution(final)
         return final
 
     def columns_categorized(self, *, df=None, path=None):

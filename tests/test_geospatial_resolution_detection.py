@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
-from cartwright.analysis.space_resolution import preprocess_latlon, detect_latlon_resolution
+from cartwright.analysis.space_resolution import detect_latlon_resolution
 from cartwright.schemas import AngleUnit, Uniformity
 from typing import Tuple
 
@@ -13,10 +13,10 @@ import pdb
     ('tests/test_data/0.25_degree.csv', AngleUnit.degrees, 0.25), #slow
     ('tests/test_data/0.5_degree.csv', AngleUnit.degrees, 0.5),
     ('tests/test_data/1_degree.csv', AngleUnit.degrees, 1.0),
-    ('tests/test_data/zos_AVISO_L4_199210-201012.csv', AngleUnit.degrees, 1.0),
+    ('tests/test_data/1_degree(1).csv', AngleUnit.degrees, 1.0),
     ('tests/test_data/2_degree.csv', AngleUnit.degrees, 2.0),
     ('tests/test_data/2.5_degree.csv', AngleUnit.degrees, 2.5),
-    ('tests/test_data/NOAAGlobalTemp_v5.0.0_gridded_s188001_e202209_c20221008T133300.csv', AngleUnit.degrees, 5.0),
+    ('tests/test_data/5_degree.csv', AngleUnit.degrees, 5.0),
 ])
 def test_known_grid(file:str, unit:AngleUnit, scale:float):
     df = pd.read_csv(file)
@@ -45,7 +45,11 @@ def test_synthetic_square_grid(unit:AngleUnit, scale:float):
 
 
 @pytest.mark.parametrize('unit,lat_scale,lon_scale', [
-    (unit, lat_scale, lon_scale) for unit in AngleUnit for lat_scale in [0.25, 0.5, 1.0, 1.5] for lon_scale in [0.25, 0.5, 1.0, 1.5] if lat_scale != lon_scale
+    (unit, lat_scale, lon_scale) 
+    for unit in AngleUnit 
+        for lat_scale in [0.25, 0.5, 1.0, 1.5] 
+            for lon_scale in [0.25, 0.5, 1.0, 1.5] 
+                if lat_scale != lon_scale
 ])
 def test_synthetic_rect_grid(unit:AngleUnit, lat_scale:float, lon_scale:float):
     lat,lon = generate_latlon_rect(unit.value*lat_scale, unit.value*lon_scale, 20, 20)
@@ -58,6 +62,27 @@ def test_synthetic_rect_grid(unit:AngleUnit, lat_scale:float, lon_scale:float):
     assert res.lon.unit == unit, f'detected resolution longitude unit is not {unit} for {unit} with lat_scale {lat_scale} and lon_scale {lon_scale}'
     assert res.lon.resolution - lon_scale < 1e-6, f'detected resolution longitude scale is not {lon_scale} for {unit} with lat_scale {lat_scale} and lon_scale {lon_scale}'
 
+
+@pytest.mark.parametrize('unit,scale,rotation', [
+    (unit, scale, rotation)
+    for unit in AngleUnit
+        for scale in [1]#[0.25, 0.5, 1.0, 1.5]
+            for rotation in np.random.randn(10,3)
+])
+def test_rotated_square_grid(unit:AngleUnit, scale:float, rotation:np.ndarray):
+    #generate a latlon grid 
+    lat,lon = generate_n_point_latlon_grid(64800)
+    # pdb.set_trace()
+    #convert grid to 3D globe
+    x,y,z = latlon2xyz(lat,lon)
+
+    #rotate using the rotation as an axis-angle representation
+    pts = np.stack([x,y,z], axis=1)
+    # rot 
+
+    #convert back to latlon
+    # pdb.set_trace()
+    pass
 
 
 def test_1_degree_globe():
@@ -188,3 +213,5 @@ def generate_latlon_rect(lat_delta, lon_delta, lat_points, lon_points) -> Tuple[
 
 
 
+if __name__ == '__main__':
+    test_synthetic_square_grid(AngleUnit.degrees, 1.0)

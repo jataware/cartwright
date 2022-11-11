@@ -155,7 +155,6 @@ class Classification(BaseModel):
     category: Optional[Category]
     subcategory: Optional[Subcategory]
     format: str = Field(default=None, description='the date represented in strftime format')
-    time_resolution: Optional[Resolution]
     match_type: List[Matchtype]
     Parser: Optional[Parser]
     fuzzyColumn: Optional[FuzzyColumn]

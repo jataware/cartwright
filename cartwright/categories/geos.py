@@ -96,6 +96,7 @@ class ISO2(GeoBase):
     def generate_training_data(self):
         return self.class_name(), str(getattr(self.fake, "country_code")())
 
+
     def validate(self, value):
         return value.upper() in self.iso2_lookup
 
