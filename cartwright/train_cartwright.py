@@ -16,7 +16,7 @@ from cartwright.CartwrightBase import CartwrightBase
 
 # This class creates a randomized dataset and splits it into training ,validation and testing for model training and validation
 class CartwrightTrainer(CartwrightBase):
-    def __init__(self, seed=1,training_set_size=150000, test_set_size=5000, num_epochs=1, learning_rate=.001):
+    def __init__(self, seed=1, training_set_size=250000, test_set_size=15000, num_epochs=1, learning_rate=.001):
         super().__init__()
         self.category_values = {}
 
@@ -199,9 +199,9 @@ class CartwrightTrainer(CartwrightBase):
             pickle.dump(self.dev_split, f)
 
     # train the model by creating a pseudo dataset
-    def train(self, create_training_date=False):
+    def train(self, create_training_data=False):
         print("Starting training")
-        self.create_or_load_training_date(create_training_data=create_training_date)
+        self.create_or_load_training_date(create_training_data=create_training_data)
 
         self.save_data()
 
@@ -226,12 +226,12 @@ def default_training():
     parser.add_argument("--version", default="0.0.1",help="set the version of the model")
     parser.add_argument("--num_epochs",type=int,default=8, help="number of epochs for model training")
     parser.add_argument("--new_data",  action='store_true', help="generate new training data")
-    parser.add_argument("--training_size", type=int,default=250000, help="size of training dataset")
-    parser.add_argument("--testing_size", type=int,default=10000, help="size of testing dataset")
+    parser.add_argument("--training_size", type=int,default=325000, help="size of training dataset")
+    parser.add_argument("--testing_size", type=int,default=15000, help="size of testing dataset")
     args = parser.parse_args()
     print(args)
     cartwright = CartwrightTrainer(num_epochs=args.num_epochs)
-    cartwright.train(create_training_date=args.new_data)
+    cartwright.train(create_training_data=args.new_data)
     cartwright.save_model(version=str(args.version))
 
 if __name__ == "__main__":

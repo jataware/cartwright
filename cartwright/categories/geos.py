@@ -94,14 +94,14 @@ class ISO2(GeoBase):
         super().__init__()
 
     def generate_training_data(self):
-        return self.class_name(), str(getattr(self.fake, self.class_name())())
+        return self.class_name(), str(getattr(self.fake, "country_code")())
 
     def validate(self, value):
         return value.upper() in self.iso2_lookup
 
 
 #'UZ'
-class country_GID(GeoBase):
+class ISO3(GeoBase):
     def __init__(self):
         super().__init__()
 
@@ -131,7 +131,6 @@ class continent(GeoBase):
                 return True
 
 
-
 #'8.166433'
 class latitude(GeoBase):
     def __init__(self):
@@ -155,6 +154,7 @@ class longitude(GeoBase):
     def validate(self,value):
         if 180 >= float(value) >= -180:
             return True
+
 
 #'74.2533, 179.643'
 class latlong(GeoBase):
