@@ -14,7 +14,7 @@ geo_classes = [
     'city',
     'city_suffix',
     'continent',
-    'country_GID',
+    'ISO3',
     'ISO2',
     'country_name',
     'latitude',
