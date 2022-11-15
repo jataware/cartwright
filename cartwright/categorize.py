@@ -462,6 +462,16 @@ class CartwrightClassify(CartwrightBase):
             }
         return column_categorization
 
+    def categorize(self, *, df=None, path=None):
+        results = dict()
+        column_categorization = self.columns_categorized(df=df, path=path)
+        for kk, vv in column_categorization.items():
+            if vv['category'] != None:
+                result = dict(category=vv['category'],
+                            subcategory=vv['subcategory'],
+                            format=vv['format'])
+                results[kk]= result
+        return results
 
 def main():
     parser = argparse.ArgumentParser()

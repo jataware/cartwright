@@ -43,7 +43,7 @@ date,lat,lon,temp(C)
 We can automatically detect the frequency of measurements
 
 ```
-from cartwright import detect_latlon_resolution
+from cartwright.analysis.space_resolution import detect_latlon_resolution
 import pandas as pd
 
 # Load the data

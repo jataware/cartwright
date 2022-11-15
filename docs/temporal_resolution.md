@@ -36,7 +36,7 @@ date,temperature(C)
 We can automatically detect the frequency of measurements
 
 ```
-from cartwright import convert_to_timestamps, detect_temporal_resolution
+from cartwright.analysis.time_resolution import convert_to_timestamps detect_temporal_resolution
 import pandas as pd
 
 # Load the data
