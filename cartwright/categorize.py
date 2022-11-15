@@ -11,7 +11,7 @@ import time
 import logging
 
 from . import schemas
-from . import time_resolution
+from .analysis import time_resolution
 from .CartwrightBase import CartwrightBase
 
 from .utils import (
@@ -427,41 +427,7 @@ class CartwrightClassify(CartwrightBase):
 
         return index_nan
 
-    def predict_temporal_resolution(
-        self, final: schemas.Classifications
-    ) -> schemas.Classifications:
-        found_time = False
-        for classification in final.classifications:
-            try:
-
-                if classification.category != schemas.Category.time:
-                    continue
-                if classification.format is None:
-                    continue
-                found_time = True
-
-                # convert the datetime strings in the dataframe to unix timestamps using the classification format
-                times = self.df[classification.column].to_list()
-                times = [
-                    datetime.datetime.strptime(str(time_), classification.format)
-                    .replace(tzinfo=datetime.timezone.utc)
-                    .timestamp()
-                    for time_ in times
-                ]
-                times = np.array(times)
-
-                classification.time_resolution = time_resolution.detect_resolution(
-                    times
-                )
-            except Exception as e:
-                print(f"error {e}")
-
-        if not found_time:
-            logging.warning("No time columns found to predict temporal resolution")
-
-        return final
-
-    def columns_classified(self, df=None, path=None):
+    def columns_classified(self, *, df=None, path=None):
         logging.info("starting classification")
         if path is not None:
             self.read_in_csv(path)
@@ -474,10 +440,9 @@ class CartwrightClassify(CartwrightBase):
         output = self.assign_heuristic_function(preds, fuzzy_matched_columns)
         fuzzyMatch = self.fuzzy_match_columns(output)
         final = self.build_skipped_categorization(fuzzyMatch)
-        final = self.predict_temporal_resolution(final)
         return final
 
-    def columns_categorized(self, df=None, path=None):
+    def columns_categorized(self, *, df=None, path=None):
         preds = self.columns_classified(df=df, path=path)
         preds_dict = preds.dict()
         column_categorization = {}
@@ -497,6 +462,16 @@ class CartwrightClassify(CartwrightBase):
             }
         return column_categorization
 
+    def categorize(self, *, df=None, path=None):
+        results = dict()
+        column_categorization = self.columns_categorized(df=df, path=path)
+        for kk, vv in column_categorization.items():
+            if vv['category'] != None:
+                result = dict(category=vv['category'],
+                            subcategory=vv['subcategory'],
+                            format=vv['format'])
+                results[kk]= result
+        return results
 
 def main():
     parser = argparse.ArgumentParser()

@@ -16,7 +16,14 @@ from cartwright.CartwrightBase import CartwrightBase
 
 # This class creates a randomized dataset and splits it into training ,validation and testing for model training and validation
 class CartwrightTrainer(CartwrightBase):
-    def __init__(self, seed=1,training_set_size=150000, test_set_size=5000, num_epochs=1, learning_rate=.001):
+    def __init__(
+        self,
+        seed=1,
+        training_set_size=250000,
+        test_set_size=15000,
+        num_epochs=1,
+        learning_rate=0.001,
+    ):
         super().__init__()
         self.category_values = {}
 
@@ -57,7 +64,7 @@ class CartwrightTrainer(CartwrightBase):
     def get_category_values(self):
 
         for category in self.all_labels:
-            bool_array = self.df['hash'] == category
+            bool_array = self.df["hash"] == category
             self.category_values[category] = self.df[bool_array]
 
     def randomChoice(self, values):
@@ -65,11 +72,11 @@ class CartwrightTrainer(CartwrightBase):
 
     def getRandomSet(self):
         category = self.randomChoice(self.all_labels)
-        line = self.randomChoice(list(self.category_values[category]['obj']))
+        line = self.randomChoice(list(self.category_values[category]["obj"]))
         return (line, category)
 
     def updateAllCharacters(self):
-        for x in (self.df['obj'].values):
+        for x in self.df["obj"].values:
             for y in list(str(x)):
                 if y in self.all_characters:
                     pass
@@ -97,17 +104,16 @@ class CartwrightTrainer(CartwrightBase):
         loss = self.criterion(pred, torch.autograd.Variable(targets))
         return pred, loss
 
-
     def train_model(self, optimizer):
 
         for epoch in range(self.num_epochs):
-            print('Epoch:', epoch)
+            print("Epoch:", epoch)
             y_true = list()
             y_pred = list()
             total_loss = 0
-            for batch, targets, lengths, raw_data in self.create_training_dataset(self.train_split,
-                                                                                  self.character_tokins, self.label2id,
-                                                                                  self.batch_size):
+            for batch, targets, lengths, raw_data in self.create_training_dataset(
+                self.train_split, self.character_tokins, self.label2id, self.batch_size
+            ):
                 batch, targets, lengths = self.sort_batch(batch, targets, lengths)
                 self.model.zero_grad()
                 pred, loss = self.apply(batch, targets, lengths)
@@ -120,16 +126,22 @@ class CartwrightTrainer(CartwrightBase):
                 total_loss += loss
             acc = accuracy_score(y_true, y_pred)
             val_loss, val_acc = self.evaluate_validation_set()
-            print("Train loss: {} - acc: {} \nValidation loss: {} - acc: {}".format(
-                total_loss.data.float() / len(self.train_split), acc,
-                val_loss, val_acc))
+            print(
+                "Train loss: {} - acc: {} \nValidation loss: {} - acc: {}".format(
+                    total_loss.data.float() / len(self.train_split),
+                    acc,
+                    val_loss,
+                    val_acc,
+                )
+            )
 
     def evaluate_validation_set(self):
         y_true = list()
         y_pred = list()
         total_loss = 0
-        for batch, targets, lengths, raw_data in self.create_training_dataset(self.dev_split, self.character_tokins,
-                                                                              self.label2id, batch_size=1):
+        for batch, targets, lengths, raw_data in self.create_training_dataset(
+            self.dev_split, self.character_tokins, self.label2id, batch_size=1
+        ):
             batch, targets, lengths = self.sort_batch(batch, targets, lengths)
             pred, loss = self.apply(batch, targets, lengths)
             pred_idx = torch.max(pred, 1)[1]
@@ -143,8 +155,9 @@ class CartwrightTrainer(CartwrightBase):
         y_true = list()
         y_pred = list()
 
-        for batch, targets, lengths, raw_data in self.create_training_dataset(self.test_split, self.character_tokins,
-                                                                              self.label2id, batch_size=1):
+        for batch, targets, lengths, raw_data in self.create_training_dataset(
+            self.test_split, self.character_tokins, self.label2id, batch_size=1
+        ):
             batch, targets, lengths = self.sort_batch(batch, targets, lengths)
             pred = self.model(torch.autograd.Variable(batch), lengths.cpu().numpy())
             pred_idx = torch.max(pred, 1)[1]
@@ -167,49 +180,53 @@ class CartwrightTrainer(CartwrightBase):
 
         plt.show()
 
-    def create_or_load_training_date(self,create_training_data):
+    def create_or_load_training_date(self, create_training_data):
         if create_training_data:
             random.seed(self.seed)
             self.dataframe(size=self.get_training_data_size())
             self.split_data()
 
         else:
-            self.test_split=[]
-            self.train_split=[]
-            self.dev_split=[]
+            self.test_split = []
+            self.train_split = []
+            self.dev_split = []
 
-            with open('cartwright/resources/training_data.pickle', 'rb') as f:
+            with open("cartwright/resources/training_data.pickle", "rb") as f:
                 self.train_split = pickle.load(f)
 
-            with open('cartwright/resources/testing_data.pickle', 'rb') as f:
+            with open("cartwright/resources/testing_data.pickle", "rb") as f:
                 self.test_split = pickle.load(f)
 
-            with open('cartwright/resources/dev_data.pickle', 'rb') as f:
+            with open("cartwright/resources/dev_data.pickle", "rb") as f:
                 self.dev_split = pickle.load(f)
 
     def save_data(self):
-        self.df.to_csv('cartwright/resources/all_training_data.csv')
-        with open('cartwright/resources/training_data.pickle', 'wb') as f:
+        self.df.to_csv("cartwright/resources/all_training_data.csv")
+        with open("cartwright/resources/training_data.pickle", "wb") as f:
             pickle.dump(self.train_split, f)
 
-        with open('cartwright/resources/testing_data.pickle', 'wb') as f:
+        with open("cartwright/resources/testing_data.pickle", "wb") as f:
             pickle.dump(self.test_split, f)
 
-        with open('cartwright/resources/dev_data.pickle', 'wb') as f:
+        with open("cartwright/resources/dev_data.pickle", "wb") as f:
             pickle.dump(self.dev_split, f)
 
     # train the model by creating a pseudo dataset
-    def train(self, create_training_date=False):
+    def train(self, create_training_data=False):
         print("Starting training")
-        self.create_or_load_training_date(create_training_data=create_training_date)
+        self.create_or_load_training_date(create_training_data=create_training_data)
 
         self.save_data()
 
-        print('Training samples:', len(self.train_split))
-        print('Valid samples:', len(self.dev_split))
-        print('Test samples:', len(self.test_split))
+        print("Training samples:", len(self.train_split))
+        print("Valid samples:", len(self.dev_split))
+        print("Test samples:", len(self.test_split))
 
-        optimizer = optim.SGD(self.model.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay)
+        optimizer = optim.SGD(
+            self.model.parameters(),
+            lr=self.learning_rate,
+            weight_decay=self.weight_decay,
+        )
 
         self.train_model(optimizer)
 
@@ -217,22 +234,33 @@ class CartwrightTrainer(CartwrightBase):
 
     def save_model(self, version):
         # If the model performed well you can save it locally
-        path = f'cartwright/models/LSTM_RNN_Cartwright_v_{version}_dict.pth'
+        path = f"cartwright/models/LSTM_RNN_Cartwright_v_{version}_dict.pth"
         torch.save(self.model.state_dict(), path)
 
 
 def default_training():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--version", default="0.0.1",help="set the version of the model")
-    parser.add_argument("--num_epochs",type=int,default=8, help="number of epochs for model training")
-    parser.add_argument("--new_data",  action='store_true', help="generate new training data")
-    parser.add_argument("--training_size", type=int,default=250000, help="size of training dataset")
-    parser.add_argument("--testing_size", type=int,default=10000, help="size of testing dataset")
+    parser.add_argument(
+        "--version", default="0.0.1", help="set the version of the model"
+    )
+    parser.add_argument(
+        "--num_epochs", type=int, default=8, help="number of epochs for model training"
+    )
+    parser.add_argument(
+        "--new_data", action="store_true", help="generate new training data"
+    )
+    parser.add_argument(
+        "--training_size", type=int, default=325000, help="size of training dataset"
+    )
+    parser.add_argument(
+        "--testing_size", type=int, default=15000, help="size of testing dataset"
+    )
     args = parser.parse_args()
     print(args)
     cartwright = CartwrightTrainer(num_epochs=args.num_epochs)
-    cartwright.train(create_training_date=args.new_data)
+    cartwright.train(create_training_data=args.new_data)
     cartwright.save_model(version=str(args.version))
+
 
 if __name__ == "__main__":
     default_training()
