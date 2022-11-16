@@ -2,6 +2,7 @@
 # Cartwright
 ![Tests](https://github.com/jataware/cartwright/actions/workflows/tests.yml/badge.svg)
 
+<img src="docs/assets/cartwright-logo.png" width="175px" align="left"/>
 Cartwright is a data profiler that identifies and categorizes spatial and temporal features. Cartwright uses deep learning, natural language processing, and a variety of heuristics to determine whether a column in a dataset contains spatial or temporal information and, if so, what is specifically contained.
 
 Cartwright was built to automate complex data pipelines for heterogenous climate and geopolitical data that are generally oriented around geospatial and temporal features (_think maps and time series_). The challenge that Cartwright solves is automatically detecting those features so they can be parsed and normalized. This problem turns out to be quite tricky, but Cartwright makes it simple.
