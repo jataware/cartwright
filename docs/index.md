@@ -7,6 +7,8 @@ has_toc: true
 
 # Cartwright
 
+<img src="./assets/cartwright-logo.png" width="175px" align="left"/>
+
 Cartwright is a tool designed to automatically infer metadata on features in a dataset.
 
 It provides several heuristic and neural-based methods for analyzing dataset features and annotating. For example, Cartwright can infer that a feature column consists of dates, determine what the datetime format is, and predict the frequency of data measurements (e.g. hours, days, weeks, etc).
