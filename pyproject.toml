@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cartwright"
-version = "0.0.1"
+version = "0.0.3"
 description = "A recurrent neural network paired with heuristic methods that automatically infer geospatial, temporal and feature columns"
 authors = ["Kyle Marsh <kyle@jataware.com>", "David Samson <david@jataware.com>", "Brandon Rose <brandon@jataware.com>"]
 license = "LGPL-3.0-or-later"
