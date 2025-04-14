@@ -16,7 +16,7 @@ pandas = ">=1.1"
 joblib = "1.0.1"
 torch = ">=1.8"
 torchvision = ">=0.9"
-pydantic = "1.8.2"
+pydantic = ">=1.8.2"
 python-levenshtein = "0.20.7"
 faker = ">=14.0"
 
